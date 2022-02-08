@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PolicyKeywordMap implements Serializable {
+public class PolicyMap implements Serializable {
 
     private static final long serialVersionUID = -3346339720812551893L;
 

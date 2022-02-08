@@ -4,11 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Data
 @Table
@@ -16,20 +14,15 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageTemplate implements Serializable {
+public class CommunicationRecipients implements Serializable {
 
-    private static final long serialVersionUID = 6076263801400084720L;
+    private static final long serialVersionUID = 393945302551301426L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    private String commLogId;
 
-    private Long externalUserId;
-
-    @CreationTimestamp
-    private LocalDateTime dateCreated;
-
-    private boolean deleted;
+    private String recipient;
 }
