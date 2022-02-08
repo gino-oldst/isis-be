@@ -1,23 +1,23 @@
 server:
   port: ${APP_SERVER_PORT}
   servlet:
-    contextPath: /extraction-service
+    contextPath: /storage-service
 spring:
   datasource:
     url: ${DATABASE_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
     tomcat:
       test-while-idle: true
       validation-query: SELECT 1
     initialization-mode: never
     platform: mysql
   jpa:
-    database: mysql
+    database: SQL_SERVER
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL5Dialect
+        dialect: org.hibernate.dialect.SQLServer2008Dialect
         jdbc:
           time_zone: UTC
     hibernate:
