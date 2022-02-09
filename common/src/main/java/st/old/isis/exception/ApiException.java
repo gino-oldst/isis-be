@@ -1,4 +1,4 @@
-package st.old.isis.dto.exception;
+package st.old.isis.exception;
 
 import lombok.Data;
 import org.springframework.http.HttpStatus;

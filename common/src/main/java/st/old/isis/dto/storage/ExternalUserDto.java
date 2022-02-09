@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -35,4 +36,7 @@ public class ExternalUserDto implements Dto {
     private LocalDateTime dateCreated;
 
     private boolean deleted;
+
+    private List<String> ids;
+    private List<String> externalIds;
 }
