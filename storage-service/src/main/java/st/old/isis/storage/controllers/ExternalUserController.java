@@ -1,4 +1,4 @@
-package st.old.isis.storage;
+package st.old.isis.storage.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

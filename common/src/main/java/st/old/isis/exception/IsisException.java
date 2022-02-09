@@ -55,4 +55,8 @@ public class IsisException extends Exception {
     public static IsisException internalServerError(@NonNull final String message, @NonNull final String exception) {
         return new IsisException(HttpStatus.INTERNAL_SERVER_ERROR, message, exception);
     }
+
+    public static IsisException conflict(@NonNull final String message, @NonNull final String exception) {
+        return new IsisException(HttpStatus.CONFLICT, message, exception);
+    }
 }

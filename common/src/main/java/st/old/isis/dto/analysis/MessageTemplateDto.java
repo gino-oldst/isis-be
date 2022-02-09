@@ -17,7 +17,9 @@ public class MessageTemplateDto implements Dto {
 
     private static final long serialVersionUID = -8336343845400934731L;
 
-    private Long id;
+    private String id;
+
+    private String name;
 
     private String textTemplate;
 
