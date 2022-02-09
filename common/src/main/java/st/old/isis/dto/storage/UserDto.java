@@ -28,5 +28,7 @@ public class UserDto implements Dto {
 
     private LocalDateTime dateCreated;
 
+    private LocalDateTime dateModified;
+
     private boolean deleted;
 }
