@@ -23,34 +23,34 @@ public class UserService {
 
     public UserDto create(@NonNull final UserDto dto) {
 
-        final var template = mapToEntity(dto);
+        final var entity = mapToEntity(dto);
 
-        final var createdTemplate = repository.save(template);
+        final var createdEntity = repository.save(entity);
 
-        return mapToResource(createdTemplate);
+        return mapToResource(createdEntity);
     }
 
     public UserDto update(@NonNull final UserDto dto) {
 
-        final var newTemplate = mapToEntity(dto);
+        final var newEntity = mapToEntity(dto);
 
-        final var updatedTemplate = repository.save(newTemplate);
+        final var updatedEntity = repository.save(newEntity);
 
-        return mapToResource(updatedTemplate);
+        return mapToResource(updatedEntity);
     }
 
     public UserDto getById(@NonNull final String id) throws IsisException {
 
-        final var template = findById(id);
+        final var entity = findById(id);
 
-        return mapToResource(template);
+        return mapToResource(entity);
     }
 
     public void delete(@NonNull final String id) throws IsisException {
 
-        final var template = findById(id);
+        final var entity = findById(id);
 
-        repository.delete(template);
+        repository.delete(entity);
     }
 
     public ListDto<UserDto> search(@NonNull final UserDto filter) {

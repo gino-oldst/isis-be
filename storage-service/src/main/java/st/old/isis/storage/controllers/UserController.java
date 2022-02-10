@@ -18,13 +18,13 @@ public class UserController {
     private final UserService service;
 
     @PostMapping
-    public UserDto create(@RequestBody final UserDto template) {
-        return service.create(template);
+    public UserDto create(@RequestBody final UserDto user) {
+        return service.create(user);
     }
 
     @PutMapping
-    public UserDto update(@RequestBody final UserDto template) {
-        return service.update(template);
+    public UserDto update(@RequestBody final UserDto user) {
+        return service.update(user);
     }
 
     @GetMapping("/{id}")

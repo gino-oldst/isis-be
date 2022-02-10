@@ -2,6 +2,7 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
@@ -66,13 +67,57 @@ public class ExternalUserService {
                 .externalIds(extIds)
                 .build();
 
-        final var results = search(filter);
+        final var results = findAll(filter);
 
         return results.stream()
                 .collect(Collectors.toMap(ExternalUser::getExternalId, Function.identity()));
     }
 
-    private List<ExternalUser> search(@NonNull final ExternalUserDto filter) {
+    public ExternalUserDto getById(@NonNull final String id) throws IsisException {
+
+        final var entity = findById(id);
+
+        return mapToResource(entity);
+    }
+
+    public ListDto<ExternalUserDto> search(@NonNull final ExternalUserDto filter) {
+
+        final var results = findAll(filter)
+                .stream()
+                .map(this::mapToResource)
+                .collect(Collectors.toList());
+
+        final var size = results.size();
+
+        return ListDto.<ExternalUserDto>builder()
+                .data(results)
+                .totalNoOfRecords(size)
+                .totalPages(size)
+                .totalCurrentElements(size)
+                .build()
+                .success();
+    }
+
+    public ListDto<ExternalUserDto> search(@NonNull final ExternalUserDto filter, Pageable pageable) {
+
+        final var spec = new ExternalUserSpecification(filter);
+
+        final var searchResults = repository.findAll(spec, pageable);
+
+        final var results = searchResults.stream()
+                .map(this::mapToResource)
+                .collect(Collectors.toList());
+
+        return ListDto.<ExternalUserDto>builder()
+                .data(results)
+                .totalNoOfRecords(searchResults.getTotalElements())
+                .totalPages(searchResults.getTotalPages())
+                .totalCurrentElements(searchResults.getNumberOfElements())
+                .build()
+                .success();
+    }
+
+    private List<ExternalUser> findAll(@NonNull final ExternalUserDto filter) {
 
         final var spec = new ExternalUserSpecification(filter);
 

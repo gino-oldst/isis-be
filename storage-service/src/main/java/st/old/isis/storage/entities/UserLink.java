@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -21,12 +22,13 @@ public class UserLink implements Serializable {
     private static final long serialVersionUID = 6076263801400084720L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
+    private String id;
 
-    private Long userId;
+    private String userId;
 
-    private Long externalUserId;
+    private String externalUserId;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;
