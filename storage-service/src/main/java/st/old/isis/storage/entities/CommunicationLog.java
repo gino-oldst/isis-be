@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
@@ -22,10 +23,13 @@ public class CommunicationLog implements Serializable {
     private static final long serialVersionUID = 3476394832337716307L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "uuid2")
+    private String id;
 
     private String chainLinkId;
+
+    private String sender;
 
     private String subject;
 
@@ -33,8 +37,6 @@ public class CommunicationLog implements Serializable {
     private String message;
 
     private LocalDateTime timeSent;
-
-    private Long sender;
 
     private String source;
 

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,4 +21,6 @@ public class CommunicationRecipientDto implements Dto {
     private String commLogId;
 
     private String recipient;
+
+    private List<String> recipients;
 }
