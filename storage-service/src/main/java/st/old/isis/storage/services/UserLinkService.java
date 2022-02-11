@@ -101,7 +101,7 @@ public class UserLinkService {
     private UserLink findById(@NonNull final String id) throws IsisException {
         return repository.findById(id)
                 .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find user with id: [%s]", id),
+                        String.format("Cannot find user link with id: [%s]", id),
                         "NotFoundException"));
     }
 
