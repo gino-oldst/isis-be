@@ -23,7 +23,7 @@ public class PolicyMapController {
     }
 
     @PutMapping
-    public PolicyMapDto update(@RequestBody final PolicyMapDto user) {
+    public PolicyMapDto update(@RequestBody final PolicyMapDto user) throws IsisException {
         return service.update(user);
     }
 

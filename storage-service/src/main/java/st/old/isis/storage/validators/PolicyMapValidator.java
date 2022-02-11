@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.PolicyMapDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.PolicyMap;
 import st.old.isis.storage.repositories.PolicyMapRepository;
 import st.old.isis.storage.services.KeywordService;
 
@@ -28,5 +29,10 @@ public class PolicyMapValidator {
         if (optPolicyMap.isPresent()) {
             throw IsisException.conflict("Policy map already exists", "ConflictException");
         }
+    }
+
+    public void updateValidate(@NonNull final PolicyMap oldEntity,
+                               @NonNull final PolicyMapDto dto) throws IsisException {
+
     }
 }

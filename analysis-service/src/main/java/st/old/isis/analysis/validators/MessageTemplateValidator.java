@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
+import st.old.isis.analysis.entities.MessageTemplate;
 import st.old.isis.analysis.repositories.MessageTemplateRepository;
 import st.old.isis.dto.analysis.MessageTemplateDto;
 import st.old.isis.exception.IsisException;
@@ -40,14 +41,8 @@ public class MessageTemplateValidator {
         validate(dto);
     }
 
-    public void updateValidate(@NonNull final MessageTemplateDto dto) throws IsisException {
-
-        final var id = dto.getId();
-
-        repository.findById(dto.getId())
-                .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find template with id: [%s]", id),
-                        "NotFoundException"));
+    public void updateValidate(@NonNull final MessageTemplate oldEntity,
+                               @NonNull final MessageTemplateDto dto) throws IsisException {
 
         validate(dto);
     }

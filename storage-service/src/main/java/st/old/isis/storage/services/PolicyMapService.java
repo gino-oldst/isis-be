@@ -34,9 +34,13 @@ public class PolicyMapService {
         return mapToResource(createdEntity);
     }
 
-    public PolicyMapDto update(@NonNull final PolicyMapDto dto) {
+    public PolicyMapDto update(@NonNull final PolicyMapDto dto) throws IsisException {
 
-        final var newEntity = mapToEntity(dto);
+        final var oldEntity = findById(dto.getId());
+
+        validator.updateValidate(oldEntity, dto);
+
+        final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -123,5 +127,14 @@ public class PolicyMapService {
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private PolicyMap mapToEntity(@NonNull PolicyMap oldEntity, @NonNull PolicyMapDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }

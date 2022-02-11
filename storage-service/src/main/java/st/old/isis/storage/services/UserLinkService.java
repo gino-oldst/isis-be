@@ -36,9 +36,11 @@ public class UserLinkService {
 
     public UserLinkDto update(@NonNull final UserLinkDto dto) throws IsisException {
 
-        validator.validate(dto);
+        final var oldEntity = findById(dto.getId());
 
-        final var newEntity = mapToEntity(dto);
+        validator.updateValidate(oldEntity, dto);
+
+        final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -123,5 +125,14 @@ public class UserLinkService {
                 .dateCreated(entity.getDateCreated())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private UserLink mapToEntity(@NonNull UserLink oldEntity, @NonNull UserLinkDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }

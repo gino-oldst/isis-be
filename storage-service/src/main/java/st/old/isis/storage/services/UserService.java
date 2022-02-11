@@ -11,6 +11,7 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.User;
 import st.old.isis.storage.repositories.UserRepository;
 import st.old.isis.storage.specifications.UserSpecification;
+import st.old.isis.storage.validators.UserValidator;
 
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository repository;
+    private final UserValidator validator;
 
     public UserDto create(@NonNull final UserDto dto) {
 
@@ -30,9 +32,13 @@ public class UserService {
         return mapToResource(createdEntity);
     }
 
-    public UserDto update(@NonNull final UserDto dto) {
+    public UserDto update(@NonNull final UserDto dto) throws IsisException {
 
-        final var newEntity = mapToEntity(dto);
+        final var oldEntity = findById(dto.getId());
+
+        validator.updateValidate(oldEntity, dto);
+
+        final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -123,5 +129,14 @@ public class UserService {
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private User mapToEntity(@NonNull User oldEntity, @NonNull UserDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }

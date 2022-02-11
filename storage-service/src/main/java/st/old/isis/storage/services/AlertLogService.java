@@ -11,6 +11,7 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.specifications.AlertLogSpecification;
+import st.old.isis.storage.validators.AlertLogValidator;
 
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class AlertLogService {
 
     private final AlertLogRepository repository;
+    private final AlertLogValidator validator;
 
     public AlertLogDto create(@NonNull final AlertLogDto dto) {
 
@@ -30,9 +32,13 @@ public class AlertLogService {
         return mapToResource(createdEntity);
     }
 
-    public AlertLogDto update(@NonNull final AlertLogDto dto) {
+    public AlertLogDto update(@NonNull final AlertLogDto dto) throws IsisException {
 
-        final var newEntity = mapToEntity(dto);
+        final var oldEntity = findById(dto.getId());
+
+        validator.updateValidate(oldEntity, dto);
+
+        final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -125,5 +131,14 @@ public class AlertLogService {
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private AlertLog mapToEntity(@NonNull AlertLog oldEntity, @NonNull AlertLogDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }

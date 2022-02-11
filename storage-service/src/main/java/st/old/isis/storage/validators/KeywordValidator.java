@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.Keyword;
 import st.old.isis.storage.repositories.KeywordRepository;
 
 @Component
@@ -20,5 +21,10 @@ public class KeywordValidator {
         if (optKeyword.isPresent()) {
             throw IsisException.conflict("Keyword already exists", "ConflictException");
         }
+    }
+
+    public void updateValidate(@NonNull final Keyword oldEntity,
+                               @NonNull final KeywordDto dto) throws IsisException {
+
     }
 }

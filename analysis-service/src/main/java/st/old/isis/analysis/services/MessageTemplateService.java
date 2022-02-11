@@ -31,11 +31,13 @@ public class MessageTemplateService {
 
     public MessageTemplateDto update(@NonNull final MessageTemplateDto dto) throws IsisException {
 
-        validator.updateValidate(dto);
+        final var oldEntity = findById(dto.getId());
 
-        final var newTemplate = mapToEntity(dto);
+        validator.updateValidate(oldEntity, dto);
 
-        final var updatedTemplate = repository.save(newTemplate);
+        final var newEntity = mapToEntity(oldEntity, dto);
+
+        final var updatedTemplate = repository.save(newEntity);
 
         return mapToResource(updatedTemplate);
     }
@@ -99,5 +101,14 @@ public class MessageTemplateService {
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private MessageTemplate mapToEntity(@NonNull MessageTemplate oldEntity, @NonNull MessageTemplateDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }

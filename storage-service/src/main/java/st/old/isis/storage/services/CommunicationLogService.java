@@ -131,4 +131,14 @@ public class CommunicationLogService {
                 .deleted(entity.isDeleted())
                 .build();
     }
+
+    //map read-only properties from old entity to new entity
+    private CommunicationLog mapToEntity(@NonNull CommunicationLog oldEntity,
+                                         @NonNull CommunicationLogDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
+    }
 }

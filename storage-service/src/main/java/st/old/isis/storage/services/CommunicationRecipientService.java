@@ -11,6 +11,7 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationRecipient;
 import st.old.isis.storage.repositories.CommunicationRecipientRepository;
 import st.old.isis.storage.specifications.CommunicationRecipientSpecification;
+import st.old.isis.storage.validators.CommunicationRecipientValidator;
 
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class CommunicationRecipientService {
 
     private final CommunicationRecipientRepository repository;
+    private final CommunicationRecipientValidator validator;
 
     public CommunicationRecipientDto create(@NonNull final CommunicationRecipientDto dto) {
 
@@ -30,7 +32,11 @@ public class CommunicationRecipientService {
         return mapToResource(createdEntity);
     }
 
-    public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto) {
+    public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto) throws IsisException {
+
+        final var oldEntity = findById(dto.getId());
+
+        validator.updateValidate(oldEntity, dto);
 
         final var newEntity = mapToEntity(dto);
 

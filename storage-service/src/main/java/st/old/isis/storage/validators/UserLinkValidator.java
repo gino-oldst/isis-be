@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.UserLink;
 import st.old.isis.storage.repositories.UserLinkRepository;
 import st.old.isis.storage.services.ExternalUserService;
 import st.old.isis.storage.services.UserService;
@@ -31,7 +32,12 @@ public class UserLinkValidator {
         }
     }
 
-    public void validate(@NonNull final UserLinkDto dto) throws IsisException {
+    public void updateValidate(@NonNull final UserLink oldEntity,
+                               @NonNull final UserLinkDto dto) throws IsisException {
+
+    }
+
+    private void validate(@NonNull final UserLinkDto dto) throws IsisException {
 
         //check if user id and external id are existing
         userService.getById(dto.getUserId());

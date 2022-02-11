@@ -23,7 +23,7 @@ public class UserController {
     }
 
     @PutMapping
-    public UserDto update(@RequestBody final UserDto user) {
+    public UserDto update(@RequestBody final UserDto user) throws IsisException {
         return service.update(user);
     }
 

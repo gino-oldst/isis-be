@@ -36,9 +36,11 @@ public class NotificationLogService {
 
     public NotificationLogDto update(@NonNull final NotificationLogDto dto) throws IsisException {
 
-        validator.validate(dto);
+        final var oldEntity = findById(dto.getId());
 
-        final var newEntity = mapToEntity(dto);
+        validator.updateValidate(oldEntity, dto);
+
+        final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -126,5 +128,15 @@ public class NotificationLogService {
                 .dateCreated(entity.getDateCreated())
                 .deleted(entity.isDeleted())
                 .build();
+    }
+
+    //map read-only properties from old entity to new entity
+    private NotificationLog mapToEntity(@NonNull NotificationLog oldEntity,
+                                        @NonNull NotificationLogDto newDto) {
+
+        final var entity = mapToEntity(newDto);
+        entity.setDateCreated(oldEntity.getDateCreated());
+
+        return entity;
     }
 }
