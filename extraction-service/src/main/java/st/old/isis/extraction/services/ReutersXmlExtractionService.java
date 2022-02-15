@@ -1,4 +1,4 @@
-package st.old.isis.services;
+package st.old.isis.extraction.services;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReutersXmlExtractionService {
 
-    public void processXml(MultipartFile multipartFile, LocalDate importDate) throws JAXBException, IOException {
+    public ListDto<CommunicationLogDto> processXml(MultipartFile multipartFile, LocalDate importDate) throws JAXBException, IOException {
 
         log.info("START - Processing Reuters XML File for date {}", importDate);
 
@@ -58,6 +58,7 @@ public class ReutersXmlExtractionService {
 
         log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 
+        return communicationLogs;
 
     }
 
