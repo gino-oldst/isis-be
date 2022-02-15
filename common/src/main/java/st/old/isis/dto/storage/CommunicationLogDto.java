@@ -31,6 +31,8 @@ public class CommunicationLogDto implements Dto {
 
     private String source;
 
+    private String sourceMessageId;
+
     private LocalDateTime dateCreated;
 
     private LocalDateTime dateModified;
