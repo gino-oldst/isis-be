@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,12 +45,16 @@ public class ReutersXmlExtractionService {
         //Process userLink entries
         final var communicationRecipients= parseCommunicationRecipients(activity);
 
-        //TODO Convert to communication activity
+        //TODO call userLink service here
+
+        //Process communication logs
         final var communicationLogs = parseCommunicationLogs(activity);
 
-
+        //TODO call communication logs service here
 
         temp.delete();
+
+        //TODO add database logging for extraction activity
 
         log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 
@@ -62,49 +67,48 @@ public class ReutersXmlExtractionService {
 
             final var chatsList = activity.getChats().getChat();
 
-            final List<CommunicationLogDto> communicationLogList = chatsList.stream()
-                    .map(chat -> {
+            final List<CommunicationLogDto> commLogList= new ArrayList<>();
 
-                        final var chainLinkId= chat.getIdentifier();
-                        final var recipients = parseChatParticipants(chat.getParticipants());
+            for(ComplianceActivity.Chats.Chat chat: chatsList){
 
-                        if(null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
+                final var chainLinkId= chat.getIdentifier();
+                final var recipients = parseChatParticipants(chat.getParticipants());
 
-                            final var eventList= chat.getEvents().getEvent();
+                if(null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
 
-                            for(ComplianceActivity.Chats.Chat.Events.Event event:eventList){
+                    final var eventList= chat.getEvents().getEvent();
 
-                                //TODO Cleanup validation here
+                    for(ComplianceActivity.Chats.Chat.Events.Event event:eventList){
 
-                                if(event.getType().equals(ReutersConstants.EVENT_TYPE_SEND)){
+                        //TODO Cleanup validation here
 
-                                    final var message = event.getMessage().get(0);
-                                    final var timeSent= event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+                        if(event.getType().equals(ReutersConstants.EVENT_TYPE_SEND)){
 
-                                    return CommunicationLogDto.builder()
-                                            .chainLinkId(chainLinkId)
-                                            .recipients(recipients)
-                                            .sender(event.getUser())
-                                            .sourceMessageId(String.valueOf(message.getMessageID()))
-                                            .message(message.getContent())
-                                            .timeSent(timeSent)
-                                            .source(SourceType.REUTERS.toString())
-                                            .build();
-                                }
+                            final var message = event.getMessage().get(0);
+                            final var timeSent= event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 
-                                return null;
+                            final var commLog= CommunicationLogDto.builder()
+                                    .chainLinkId(chainLinkId)
+                                    .recipients(recipients)
+                                    .sender(event.getUser())
+                                    .sourceMessageId(String.valueOf(message.getMessageID()))
+                                    .message(message.getContent())
+                                    .timeSent(timeSent)
+                                    .source(SourceType.REUTERS.toString())
+                                    .build();
 
-                            }
+                            commLogList.add(commLog);
                         }
-                        return null;
-                    })
-                    .filter(out -> out != null)
-                    .collect(Collectors.toList());
+
+                    }
+                }
+
+            }
 
             return ListDto.<CommunicationLogDto>builder()
-                    .data(communicationLogList)
-                    .totalNoOfRecords(chatsList.size())
-                    .totalCurrentElements(chatsList.size())
+                    .data(commLogList)
+                    .totalNoOfRecords(commLogList.size())
+                    .totalCurrentElements(commLogList.size())
                     .build().success();
 
         }
