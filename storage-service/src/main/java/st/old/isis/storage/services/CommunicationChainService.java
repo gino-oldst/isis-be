@@ -13,6 +13,7 @@ import st.old.isis.storage.entities.CommunicationChain;
 import st.old.isis.storage.repositories.CommunicationChainRepository;
 import st.old.isis.storage.specifications.CommunicationChainSpecification;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +24,45 @@ public class CommunicationChainService {
 
     private final CommunicationChainRepository repository;
 
-    //Todo: Gino will handle saving communication logs in batch
+    private final CommunicationMessageService messageService;
+
+    private final CommunicationRecipientService recipientService;
+
+    public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) {
+
+        List<CommunicationChainDto> results = new ArrayList<>();
+
+        request.getData().stream().forEach(chain -> {
+
+            final var newChain= repository.save(mapToEntity(chain));
+            final var chainLinkId= newChain.getId();
+
+            final var messages= chain.getMessages().stream()
+                    .map(message -> {
+                        message.setChainLinkId(chainLinkId);
+                        return messageService.create(message);
+                    })
+                    .collect(Collectors.toList());
+
+            final var recipients = chain.getRecipients().stream()
+                    .map(recipient -> {
+                        recipient.setChainLinkId(chainLinkId);
+                        return recipientService.create(recipient);
+                    })
+                    .collect(Collectors.toList());
+
+            final var chainDto= mapToResource(newChain);
+            chainDto.setMessages(messages);
+            chainDto.setRecipients(recipients);
+
+            results.add(chainDto);
+        });
+
+        return ListDto.<CommunicationChainDto>builder()
+                .data(results)
+                .totalNoOfRecords(results.size())
+                .build().success();
+    }
 
     public CommunicationChainDto getById(@NonNull final String id) throws IsisException {
 
@@ -143,4 +182,5 @@ public class CommunicationChainService {
 
         return entity;
     }
+
 }

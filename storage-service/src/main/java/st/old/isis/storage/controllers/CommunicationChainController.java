@@ -13,7 +13,7 @@ import st.old.isis.storage.services.CommunicationChainService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/communication")
-public class CommunicationLogController {
+public class CommunicationChainController {
 
     private final CommunicationChainService service;
 
@@ -30,6 +30,11 @@ public class CommunicationLogController {
     @PostMapping("/search/paged")
     public ListDto<CommunicationChainDto> pagedSearch(@RequestBody final CommunicationChainDto filter, Pageable pageable) {
         return service.search(filter, pageable);
+    }
+
+    @PostMapping("/import")
+    public ListDto<CommunicationChainDto> importData(@RequestBody final ListDto<CommunicationChainDto> request) {
+        return service.importData(request);
     }
 
     @DeleteMapping("/{id}")
