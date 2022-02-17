@@ -24,3 +24,15 @@ spring:
       naming:
         physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
       ddl-auto: update
+  flyway:
+    locations:
+      - classpath:db/migration
+    table: flyway_storage_schema_history
+    baseline-on-migrate: true
+isis:
+  security:
+    jwt-public-key: ${JWT_PUBLIC_KEY}
+  internal:
+    authentication:
+      api-key: ${API_KEY}
+      api-secret: ${API_SECRET}
