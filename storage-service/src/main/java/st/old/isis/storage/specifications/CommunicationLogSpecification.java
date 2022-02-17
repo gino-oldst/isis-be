@@ -3,7 +3,7 @@ package st.old.isis.storage.specifications;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
-import st.old.isis.dto.storage.CommunicationLogDto;
+import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.storage.entities.CommunicationLog;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -18,7 +18,7 @@ public class CommunicationLogSpecification implements Specification<Communicatio
 
     private static final long serialVersionUID = -6678487832401698029L;
 
-    private final CommunicationLogDto filter;
+    private final CommunicationChainDto filter;
 
     @Override
     public Predicate toPredicate(@NonNull final Root<CommunicationLog> root,

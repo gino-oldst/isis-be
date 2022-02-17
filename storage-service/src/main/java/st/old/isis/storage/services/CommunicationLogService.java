@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.CommunicationLogDto;
+import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationLog;
@@ -25,7 +25,7 @@ public class CommunicationLogService {
 
     //Todo: Gino will handle saving communication logs in batch
 
-    public CommunicationLogDto getById(@NonNull final String id) throws IsisException {
+    public CommunicationChainDto getById(@NonNull final String id) throws IsisException {
 
         final var entity = findById(id);
 
@@ -39,7 +39,7 @@ public class CommunicationLogService {
         repository.delete(entity);
     }
 
-    public ListDto<CommunicationLogDto> search(@NonNull final CommunicationLogDto filter) {
+    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter) {
 
         final var spec = new CommunicationLogSpecification(filter);
 
@@ -50,7 +50,7 @@ public class CommunicationLogService {
 
         final var size = results.size();
 
-        return ListDto.<CommunicationLogDto>builder()
+        return ListDto.<CommunicationChainDto>builder()
                 .data(results)
                 .totalNoOfRecords(size)
                 .totalPages(size)
@@ -59,7 +59,7 @@ public class CommunicationLogService {
                 .success();
     }
 
-    public ListDto<CommunicationLogDto> search(@NonNull final CommunicationLogDto filter, Pageable pageable) {
+    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter, Pageable pageable) {
 
         final var spec = new CommunicationLogSpecification(filter);
 
@@ -69,7 +69,7 @@ public class CommunicationLogService {
                 .map(this::mapToResource)
                 .collect(Collectors.toList());
 
-        return ListDto.<CommunicationLogDto>builder()
+        return ListDto.<CommunicationChainDto>builder()
                 .data(results)
                 .totalNoOfRecords(searchResults.getTotalElements())
                 .totalPages(searchResults.getTotalPages())
@@ -85,7 +85,7 @@ public class CommunicationLogService {
                         "NotFoundException"));
     }
 
-    private CommunicationLog mapToEntity(@NonNull final CommunicationLogDto dto) {
+    private CommunicationLog mapToEntity(@NonNull final CommunicationChainDto dto) {
         return CommunicationLog.builder()
                 .id(dto.getId())
                 .chainLinkId(dto.getChainLinkId())
@@ -100,8 +100,8 @@ public class CommunicationLogService {
                 .build();
     }
 
-    private CommunicationLogDto mapToResource(@NonNull final CommunicationLog entity) {
-        return CommunicationLogDto.builder()
+    private CommunicationChainDto mapToResource(@NonNull final CommunicationLog entity) {
+        return CommunicationChainDto.builder()
                 .id(entity.getId())
                 .chainLinkId(entity.getChainLinkId())
                 .sender(entity.getSender())
@@ -115,9 +115,9 @@ public class CommunicationLogService {
                 .build();
     }
 
-    private CommunicationLogDto mapToResource(@NonNull final CommunicationLog entity,
-                                              @NonNull final List<CommunicationRecipientDto> recipients) {
-        return CommunicationLogDto.builder()
+    private CommunicationChainDto mapToResource(@NonNull final CommunicationLog entity,
+                                                @NonNull final List<CommunicationRecipientDto> recipients) {
+        return CommunicationChainDto.builder()
                 .id(entity.getId())
                 .chainLinkId(entity.getChainLinkId())
                 .sender(entity.getSender())
@@ -134,7 +134,7 @@ public class CommunicationLogService {
 
     //map read-only properties from old entity to new entity
     private CommunicationLog mapToEntity(@NonNull CommunicationLog oldEntity,
-                                         @NonNull CommunicationLogDto newDto) {
+                                         @NonNull CommunicationChainDto newDto) {
 
         final var entity = mapToEntity(newDto);
         entity.setDateCreated(oldEntity.getDateCreated());

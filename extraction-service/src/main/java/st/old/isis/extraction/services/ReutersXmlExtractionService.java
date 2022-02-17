@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.constants.ReutersConstants;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.CommunicationLogDto;
+import st.old.isis.dto.storage.CommunicationChainDto;
+import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.UserDto;
 import st.old.isis.entities.generated.ComplianceActivity;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReutersXmlExtractionService {
 
-    public ListDto<CommunicationLogDto> processXml(MultipartFile multipartFile, LocalDate importDate) throws JAXBException, IOException {
+    public ListDto<CommunicationChainDto> processXml(MultipartFile multipartFile, LocalDate importDate) throws JAXBException, IOException {
 
         log.info("START - Processing Reuters XML File for date {}", importDate);
 
@@ -48,7 +49,7 @@ public class ReutersXmlExtractionService {
         //TODO call userLink service here
 
         //Process communication logs
-        final var communicationLogs = parseCommunicationLogs(activity);
+        final var communicationLogs = parseCommunicationChains(activity, importDate);
 
         //TODO call communication logs service here
 
@@ -62,17 +63,24 @@ public class ReutersXmlExtractionService {
 
     }
 
-    private ListDto<CommunicationLogDto> parseCommunicationLogs(ComplianceActivity activity) {
+    private ListDto<CommunicationChainDto> parseCommunicationChains(ComplianceActivity activity, LocalDate importDate) {
+
+        log.info("START - Parsing Communication Chains");
+
+        final var datePeriod= parseDatePeriodFromDateFrom(activity.getHeaders());
+        log.info("Parsed date period from header date from {}", datePeriod);
 
         if(null != activity.getChats() && !activity.getChats().getChat().isEmpty()) {
 
             final var chatsList = activity.getChats().getChat();
 
-            final List<CommunicationLogDto> commLogList= new ArrayList<>();
+            final List<CommunicationChainDto> commLogList= new ArrayList<>();
 
             for(ComplianceActivity.Chats.Chat chat: chatsList){
 
-                final var chainLinkId= chat.getIdentifier();
+                final List<CommunicationMessageDto> commMessageList= new ArrayList<>();
+
+                final var sourceChainId= chat.getIdentifier();
                 final var recipients = parseChatParticipants(chat.getParticipants());
 
                 if(null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
@@ -81,6 +89,8 @@ public class ReutersXmlExtractionService {
 
                     for(ComplianceActivity.Chats.Chat.Events.Event event:eventList){
 
+                        final var eventUser= event.getUser();
+
                         //TODO Cleanup validation here
 
                         if(event.getType().equals(ReutersConstants.EVENT_TYPE_SEND)){
@@ -88,25 +98,38 @@ public class ReutersXmlExtractionService {
                             final var message = event.getMessage().get(0);
                             final var timeSent= event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 
-                            final var commLog= CommunicationLogDto.builder()
-                                    .chainLinkId(chainLinkId)
-                                    .recipients(recipients)
-                                    .sender(event.getUser())
-                                    .sourceMessageId(String.valueOf(message.getMessageID()))
+                            final var commMessage= CommunicationMessageDto.builder()
                                     .message(message.getContent())
+                                    .sourceMessageId(String.valueOf(message.getMessageID()))
                                     .timeSent(timeSent)
-                                    .source(SourceType.REUTERS.toString())
+                                    .sender(eventUser)
                                     .build();
 
-                            commLogList.add(commLog);
+                            commMessageList.add(commMessage);
+
                         }
 
                     }
+
+
+                    final var commLog= CommunicationChainDto.builder()
+                            .source(SourceType.REUTERS.toString())
+                            .sourceChainId(sourceChainId)
+                            .datePeriod(datePeriod)
+                            .dateImported(importDate)
+                            .messages(commMessageList)
+                            .recipients(recipients)
+                            .build();
+
+                    commLogList.add(commLog);
+
                 }
 
             }
 
-            return ListDto.<CommunicationLogDto>builder()
+            log.info("COMPLETE - Parsing Communication Chains");
+
+            return ListDto.<CommunicationChainDto>builder()
                     .data(commLogList)
                     .totalNoOfRecords(commLogList.size())
                     .totalCurrentElements(commLogList.size())
@@ -114,8 +137,13 @@ public class ReutersXmlExtractionService {
 
         }
 
-        return new ListDto<>().emptyList();
+        return ListDto.emptyList();
 
+    }
+
+    private LocalDate parseDatePeriodFromDateFrom(ComplianceActivity.Headers headers) {
+        final var dateFrom= headers.getDataPeriod().getFrom();
+        return dateFrom.toGregorianCalendar().toZonedDateTime().toLocalDate();
     }
 
     private List<CommunicationRecipientDto> parseChatParticipants(ComplianceActivity.Chats.Chat.Participants participants) {
@@ -125,11 +153,9 @@ public class ReutersXmlExtractionService {
             final var users= participants.getUser();
 
             return users.stream()
-                    .map(user -> {
-                        return CommunicationRecipientDto.builder()
-                                .recipient(user)
-                                .build();
-                    }).collect(Collectors.toList());
+                    .map(user -> CommunicationRecipientDto.builder()
+                            .recipient(user)
+                            .build()).collect(Collectors.toList());
 
         }
 
@@ -153,7 +179,7 @@ public class ReutersXmlExtractionService {
 
         }
 
-        return new ListDto<>().emptyList();
+        return ListDto.emptyList();
 
     }
 

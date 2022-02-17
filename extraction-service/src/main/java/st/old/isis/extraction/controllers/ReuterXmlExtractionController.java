@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.CommunicationLogDto;
+import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.extraction.services.ReutersXmlExtractionService;
 
 import javax.xml.bind.JAXBException;
@@ -27,7 +27,7 @@ public class ReuterXmlExtractionController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(description = "Upload Reuters/ Refinitiv/ Eikon Data")
-    public ListDto<CommunicationLogDto> processXml(@RequestPart MultipartFile file, @RequestPart String dateImported)
+    public ListDto<CommunicationChainDto> processXml(@RequestPart MultipartFile file, @RequestPart String dateImported)
             throws JAXBException, IOException {
         return service.processXml(file, LocalDate.parse(dateImported));
     }
