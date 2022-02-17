@@ -3,8 +3,8 @@ package st.old.isis.storage.specifications;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
-import st.old.isis.dto.storage.CommunicationChainDto;
-import st.old.isis.storage.entities.CommunicationLog;
+import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.storage.entities.CommunicationMessage;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -14,14 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
-public class CommunicationLogSpecification implements Specification<CommunicationLog> {
+public class CommunicationMessageSpecification implements Specification<CommunicationMessage> {
 
-    private static final long serialVersionUID = -6678487832401698029L;
-
-    private final CommunicationChainDto filter;
+    private final CommunicationMessageDto filter;
 
     @Override
-    public Predicate toPredicate(@NonNull final Root<CommunicationLog> root,
+    public Predicate toPredicate(@NonNull final Root<CommunicationMessage> root,
                                  @NonNull final CriteriaQuery<?> query,
                                  @NonNull final CriteriaBuilder cb) {
 

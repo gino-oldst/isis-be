@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.services.CommunicationLogService;
+import st.old.isis.storage.services.CommunicationChainService;
 
 @Slf4j
 @RestController
@@ -15,7 +15,7 @@ import st.old.isis.storage.services.CommunicationLogService;
 @RequestMapping("/communication")
 public class CommunicationLogController {
 
-    private final CommunicationLogService service;
+    private final CommunicationChainService service;
 
     @GetMapping("/{id}")
     public CommunicationChainDto getById(@PathVariable final String id) throws IsisException {

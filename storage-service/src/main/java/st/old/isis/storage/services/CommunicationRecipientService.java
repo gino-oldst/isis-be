@@ -108,7 +108,7 @@ public class CommunicationRecipientService {
     private CommunicationRecipient mapToEntity(@NonNull final CommunicationRecipientDto dto) {
         return CommunicationRecipient.builder()
                 .id(dto.getId())
-                .commLogId(dto.getCommLogId())
+                .chainLinkId(dto.getChainLinkId())
                 .recipient(dto.getRecipient())
                 .build();
     }
@@ -116,7 +116,7 @@ public class CommunicationRecipientService {
     private CommunicationRecipientDto mapToResource(@NonNull final CommunicationRecipient entity) {
         return CommunicationRecipientDto.builder()
                 .id(entity.getId())
-                .commLogId(entity.getCommLogId())
+                .chainLinkId(entity.getChainLinkId())
                 .recipient(entity.getRecipient())
                 .build();
     }
