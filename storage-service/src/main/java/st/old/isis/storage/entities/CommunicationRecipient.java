@@ -24,7 +24,7 @@ public class CommunicationRecipient implements Serializable {
     @GenericGenerator(name = "uuid", strategy = "uuid2")
     private String id;
 
-    private String commLogId;
+    private String chainLinkId;
 
     private String recipient;
 }

@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunicationLog implements Serializable {
+public class CommunicationMessage implements Serializable {
 
     private static final long serialVersionUID = 3476394832337716307L;
 
@@ -29,16 +29,14 @@ public class CommunicationLog implements Serializable {
 
     private String chainLinkId;
 
-    private String sender;
-
-    private String subject;
-
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    private String sourceMessageId;
+
     private LocalDateTime timeSent;
 
-    private String source;
+    private String sender;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;

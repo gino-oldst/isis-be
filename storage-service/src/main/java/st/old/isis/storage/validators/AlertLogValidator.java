@@ -4,10 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.AlertLogDto;
-import st.old.isis.dto.storage.CommunicationLogDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
-import st.old.isis.storage.entities.CommunicationLog;
 
 @Component
 @RequiredArgsConstructor

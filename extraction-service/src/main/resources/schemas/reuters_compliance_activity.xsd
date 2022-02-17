@@ -1,0 +1,110 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="ComplianceActivity">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element type="xs:float" name="Version"/>
+        <xs:element name="Headers">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ComplianceSetup">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:int" name="ID"/>
+                    <xs:element type="xs:string" name="Name"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DataPeriod">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:dateTime" name="From"/>
+                    <xs:element type="xs:dateTime" name="To"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Users">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="UserInfo" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="Identifier"/>
+                    <xs:element type="xs:string" name="Email"/>
+                    <xs:element type="xs:string" name="FirstName"/>
+                    <xs:element type="xs:string" name="LastName"/>
+                    <xs:element name="ComplianceSetup">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element type="xs:int" name="ID"/>
+                          <xs:element type="xs:string" name="Name"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="SiteLocation">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element type="xs:string" name="ID"/>
+                          <xs:element type="xs:string" name="Name"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Chats">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Chat" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element type="xs:string" name="Identifier"/>
+                    <xs:element type="xs:string" name="Topic"/>
+                    <xs:element type="xs:string" name="Disclaimer"/>
+                    <xs:element name="Participants">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element type="xs:string" name="User" maxOccurs="unbounded" minOccurs="0"/>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="Events">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="Event" maxOccurs="unbounded" minOccurs="0">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element type="xs:string" name="Type"/>
+                                <xs:element type="xs:string" name="User"/>
+                                <xs:element type="xs:dateTime" name="UTCTime"/>
+                                <xs:element name="Message" maxOccurs="unbounded" minOccurs="0">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element type="xs:long" name="MessageID"/>
+                                      <xs:element type="xs:string" name="User" minOccurs="0"/>
+                                      <xs:element type="xs:dateTime" name="UTCTime" minOccurs="0"/>
+                                      <xs:element type="xs:string" name="Content"/>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

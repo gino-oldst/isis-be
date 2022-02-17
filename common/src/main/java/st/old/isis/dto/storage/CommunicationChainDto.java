@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,29 +14,33 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunicationLogDto implements Dto {
+public class CommunicationChainDto implements Dto {
 
     private static final long serialVersionUID = 8815849146610375028L;
 
     private String id;
 
-    private String chainLinkId;
+    private String source;
+
+    private String sourceChainId;
 
     private String subject;
 
-    private String message;
+    private LocalDate datePeriod;
 
-    private LocalDateTime timeSent;
+    private LocalDate dateImported;
 
-    private String sender;
+    private LocalDateTime dateFrom;
 
-    private String source;
+    private LocalDateTime dateTo;
 
     private LocalDateTime dateCreated;
 
     private LocalDateTime dateModified;
 
     private boolean deleted;
+
+    private List<CommunicationMessageDto> messages;
 
     private List<CommunicationRecipientDto> recipients;
 }

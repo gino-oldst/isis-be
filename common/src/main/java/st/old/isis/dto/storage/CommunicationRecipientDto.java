@@ -18,7 +18,7 @@ public class CommunicationRecipientDto implements Dto {
 
     private String id;
 
-    private String commLogId;
+    private String chainLinkId;
 
     private String recipient;
 

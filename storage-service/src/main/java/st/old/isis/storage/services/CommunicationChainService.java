@@ -6,12 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.CommunicationLogDto;
+import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.entities.CommunicationLog;
-import st.old.isis.storage.repositories.CommunicationLogRepository;
-import st.old.isis.storage.specifications.CommunicationLogSpecification;
+import st.old.isis.storage.entities.CommunicationChain;
+import st.old.isis.storage.repositories.CommunicationChainRepository;
+import st.old.isis.storage.specifications.CommunicationChainSpecification;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CommunicationLogService {
+public class CommunicationChainService {
 
-    private final CommunicationLogRepository repository;
+    private final CommunicationChainRepository repository;
 
     //Todo: Gino will handle saving communication logs in batch
 
-    public CommunicationLogDto getById(@NonNull final String id) throws IsisException {
+    public CommunicationChainDto getById(@NonNull final String id) throws IsisException {
 
         final var entity = findById(id);
 
@@ -39,9 +39,9 @@ public class CommunicationLogService {
         repository.delete(entity);
     }
 
-    public ListDto<CommunicationLogDto> search(@NonNull final CommunicationLogDto filter) {
+    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter) {
 
-        final var spec = new CommunicationLogSpecification(filter);
+        final var spec = new CommunicationChainSpecification(filter);
 
         final var results = repository.findAll(spec)
                 .stream()
@@ -50,7 +50,7 @@ public class CommunicationLogService {
 
         final var size = results.size();
 
-        return ListDto.<CommunicationLogDto>builder()
+        return ListDto.<CommunicationChainDto>builder()
                 .data(results)
                 .totalNoOfRecords(size)
                 .totalPages(size)
@@ -59,9 +59,9 @@ public class CommunicationLogService {
                 .success();
     }
 
-    public ListDto<CommunicationLogDto> search(@NonNull final CommunicationLogDto filter, Pageable pageable) {
+    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter, Pageable pageable) {
 
-        final var spec = new CommunicationLogSpecification(filter);
+        final var spec = new CommunicationChainSpecification(filter);
 
         final var searchResults = repository.findAll(spec, pageable);
 
@@ -69,7 +69,7 @@ public class CommunicationLogService {
                 .map(this::mapToResource)
                 .collect(Collectors.toList());
 
-        return ListDto.<CommunicationLogDto>builder()
+        return ListDto.<CommunicationChainDto>builder()
                 .data(results)
                 .totalNoOfRecords(searchResults.getTotalElements())
                 .totalPages(searchResults.getTotalPages())
@@ -78,54 +78,56 @@ public class CommunicationLogService {
                 .success();
     }
 
-    private CommunicationLog findById(@NonNull final String id) throws IsisException {
+    private CommunicationChain findById(@NonNull final String id) throws IsisException {
         return repository.findById(id)
                 .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find communication log with id: [%s]", id),
+                        String.format("Cannot find communication chain with id: [%s]", id),
                         "NotFoundException"));
     }
 
-    private CommunicationLog mapToEntity(@NonNull final CommunicationLogDto dto) {
-        return CommunicationLog.builder()
+    private CommunicationChain mapToEntity(@NonNull final CommunicationChainDto dto) {
+        return CommunicationChain.builder()
                 .id(dto.getId())
-                .chainLinkId(dto.getChainLinkId())
-                .sender(dto.getSender())
-                .subject(dto.getSubject())
-                .message(dto.getMessage())
                 .source(dto.getSource())
-                .timeSent(dto.getTimeSent())
+                .sourceChainId(dto.getSourceChainId())
+                .subject(dto.getSubject())
+                .datePeriod(dto.getDatePeriod())
+                .dateImported(dto.getDateImported())
+                .dateFrom(dto.getDateFrom())
+                .dateTo(dto.getDateTo())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
                 .deleted(dto.isDeleted())
                 .build();
     }
 
-    private CommunicationLogDto mapToResource(@NonNull final CommunicationLog entity) {
-        return CommunicationLogDto.builder()
+    private CommunicationChainDto mapToResource(@NonNull final CommunicationChain entity) {
+        return CommunicationChainDto.builder()
                 .id(entity.getId())
-                .chainLinkId(entity.getChainLinkId())
-                .sender(entity.getSender())
-                .subject(entity.getSubject())
-                .message(entity.getMessage())
                 .source(entity.getSource())
-                .timeSent(entity.getTimeSent())
+                .sourceChainId(entity.getSourceChainId())
+                .subject(entity.getSubject())
+                .datePeriod(entity.getDatePeriod())
+                .dateImported(entity.getDateImported())
+                .dateFrom(entity.getDateFrom())
+                .dateTo(entity.getDateTo())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
     }
 
-    private CommunicationLogDto mapToResource(@NonNull final CommunicationLog entity,
-                                              @NonNull final List<CommunicationRecipientDto> recipients) {
-        return CommunicationLogDto.builder()
+    private CommunicationChainDto mapToResource(@NonNull final CommunicationChain entity,
+                                                @NonNull final List<CommunicationRecipientDto> recipients) {
+        return CommunicationChainDto.builder()
                 .id(entity.getId())
-                .chainLinkId(entity.getChainLinkId())
-                .sender(entity.getSender())
-                .subject(entity.getSubject())
-                .message(entity.getMessage())
                 .source(entity.getSource())
-                .timeSent(entity.getTimeSent())
-                .recipients(recipients)
+                .sourceChainId(entity.getSourceChainId())
+                .subject(entity.getSubject())
+                .datePeriod(entity.getDatePeriod())
+                .dateImported(entity.getDateImported())
+                .dateFrom(entity.getDateFrom())
+                .dateTo(entity.getDateTo())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
@@ -133,8 +135,8 @@ public class CommunicationLogService {
     }
 
     //map read-only properties from old entity to new entity
-    private CommunicationLog mapToEntity(@NonNull CommunicationLog oldEntity,
-                                         @NonNull CommunicationLogDto newDto) {
+    private CommunicationChain mapToEntity(@NonNull CommunicationChain oldEntity,
+                                           @NonNull CommunicationChainDto newDto) {
 
         final var entity = mapToEntity(newDto);
         entity.setDateCreated(oldEntity.getDateCreated());
