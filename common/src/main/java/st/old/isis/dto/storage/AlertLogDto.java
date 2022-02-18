@@ -33,5 +33,9 @@ public class AlertLogDto implements Dto {
 
     private LocalDateTime dateModified;
 
+    private LocalDateTime dateCreatedFromRange;
+
+    private LocalDateTime dateCreatedToRange;
+
     private boolean deleted;
 }
