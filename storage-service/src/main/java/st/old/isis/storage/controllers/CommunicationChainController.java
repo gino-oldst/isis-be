@@ -12,7 +12,7 @@ import st.old.isis.storage.services.CommunicationChainService;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/communication")
+@RequestMapping("/chain")
 public class CommunicationChainController {
 
     private final CommunicationChainService service;

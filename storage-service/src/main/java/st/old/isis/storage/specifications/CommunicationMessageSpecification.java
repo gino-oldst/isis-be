@@ -25,6 +25,10 @@ public class CommunicationMessageSpecification implements Specification<Communic
 
         final List<Predicate> predicates = new ArrayList<>();
 
+        if(filter.getChainLinkId() != null){
+            predicates.add(cb.equal(root.get("chainLinkId"), filter.getChainLinkId()));
+        }
+
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
         return cb.and(predicates.toArray(Predicate[]::new));
