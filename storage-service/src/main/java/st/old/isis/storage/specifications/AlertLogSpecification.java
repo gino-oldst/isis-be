@@ -29,6 +29,22 @@ public class AlertLogSpecification implements Specification<AlertLog> {
 
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
+        if (filter.getKeyword() != null) {
+            predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
+        }
+
+        if (filter.getMessage() != null) {
+            predicates.add(cb.like(root.get("message"), "%"+filter.getMessage()+"%"));
+        }
+
+        if (filter.getStatus() != null) {
+            predicates.add(cb.equal(root.get("status"), filter.getStatus()));
+        }
+
+        if (filter.getDateCreatedFromRange() != null && filter.getDateCreatedToRange() != null) {
+            predicates.add(cb.between(root.get("dateCreated"), filter.getDateCreatedFromRange(), filter.getDateCreatedToRange()));
+        }
+
         return cb.and(predicates.toArray(Predicate[]::new));
     }
 }
