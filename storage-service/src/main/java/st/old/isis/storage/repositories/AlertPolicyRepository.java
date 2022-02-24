@@ -11,4 +11,6 @@ public interface AlertPolicyRepository extends JpaRepository<AlertPolicy, String
         JpaSpecificationExecutor<AlertPolicy> {
 
     Optional<AlertPolicy> findByName(@NonNull final String name);
+
+    Optional<AlertPolicy> findByInternalCode(@NonNull final String internalCode);
 }

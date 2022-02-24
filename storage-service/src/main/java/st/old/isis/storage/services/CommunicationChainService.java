@@ -58,6 +58,8 @@ public class CommunicationChainService {
             results.add(chainDto);
         });
 
+        //TODO Add create import data table for importDate
+
         return ListDto.<CommunicationChainDto>builder()
                 .data(results)
                 .totalNoOfRecords(results.size())

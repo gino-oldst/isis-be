@@ -27,6 +27,10 @@ public class PolicyMapSpecification implements Specification<PolicyMap> {
 
         final List<Predicate> predicates = new ArrayList<>();
 
+        if(filter.getPolicyId() != null) {
+            predicates.add(cb.equal(root.get("policyId"), filter.getPolicyId()));
+        }
+
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
         return cb.and(predicates.toArray(Predicate[]::new));

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
+import st.old.isis.enums.AlertPolicyStatus;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -32,6 +33,8 @@ public class AlertPolicy implements Serializable {
     private String internalCode;
 
     private String description;
+
+    private AlertPolicyStatus status;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;

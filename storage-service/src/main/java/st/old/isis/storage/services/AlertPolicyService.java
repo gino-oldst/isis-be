@@ -61,6 +61,13 @@ public class AlertPolicyService {
         return mapToResource(template);
     }
 
+    public AlertPolicyDto getByInternalCode(@NonNull final String internalCode) throws IsisException {
+
+        final var template = findByInternalCode(internalCode);
+
+        return mapToResource(template);
+    }
+
     public void delete(@NonNull final String id) throws IsisException{
 
         final var entity = findById(id);
@@ -121,11 +128,19 @@ public class AlertPolicyService {
                         "NotFoundException"));
     }
 
+    private AlertPolicy findByInternalCode(@NonNull final String internalCode) throws IsisException {
+        return repository.findByInternalCode(internalCode)
+                .orElseThrow(() -> IsisException.notFound(
+                        String.format("Cannot find alert with internal code: [%s]", internalCode),
+                        "NotFoundException"));
+    }
+
     private AlertPolicy mapToEntity(@NonNull final AlertPolicyDto dto){
         return AlertPolicy.builder()
                 .id(dto.getId())
                 .name(dto.getName())
                 .internalCode(dto.getInternalCode())
+                .status(dto.getStatus())
                 .description(dto.getDescription())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
@@ -138,6 +153,7 @@ public class AlertPolicyService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .internalCode(entity.getInternalCode())
+                .status(entity.getStatus())
                 .description(entity.getDescription())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
