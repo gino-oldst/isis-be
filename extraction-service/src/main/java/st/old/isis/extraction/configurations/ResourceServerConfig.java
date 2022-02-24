@@ -85,7 +85,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
   }
 
   private String[] internalEndpoints() {
-    return List.of("/extract/**").toArray(new String[0]);
+    return List.of("/extract/**", "/download/**").toArray(new String[0]);
   }
 
   private String[] adminEndpoints() {

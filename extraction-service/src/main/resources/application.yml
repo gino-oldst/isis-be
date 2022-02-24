@@ -39,3 +39,8 @@ isis:
     services:
       storage:
         endpoint: ${STORAGE_SERVICE_ENDPOINT}
+  download:
+    timeout: ${AZURE_DOWNLOAD_TIMEOUT}
+  azure:
+    connection-string: ${AZURE_CONNECTION_STRING}
+    share-name: ${AZURE_SHARE_NAME}
