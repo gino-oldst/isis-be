@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
-import st.old.isis.enums.AlertStatus;
+import st.old.isis.enums.AlertStatusType;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -28,17 +28,24 @@ public class AlertLog implements Serializable {
     @GenericGenerator(name = "uuid", strategy = "uuid2")
     private String id;
 
-    private String commLogId;
+    private String commChainLinkId;
 
-    private String behaviorId;
+    private String commMessageId;
+
+    private String policyId;
 
     @Column(columnDefinition = "TEXT")
-    private String message;
+    private String description;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     private String keyword;
 
+    private String keywordId;
+
     @Enumerated(EnumType.STRING)
-    private AlertStatus status;
+    private AlertStatusType status;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;

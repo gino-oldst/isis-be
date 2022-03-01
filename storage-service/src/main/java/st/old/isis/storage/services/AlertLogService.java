@@ -108,10 +108,13 @@ public class AlertLogService {
     private AlertLog mapToEntity(@NonNull final AlertLogDto dto) {
         return AlertLog.builder()
                 .id(dto.getId())
-                .commLogId(dto.getCommLogId())
-                .behaviorId(dto.getBehaviorId())
+                .commChainLinkId(dto.getCommChainLinkId())
+                .commMessageId(dto.getCommMessageId())
+                .policyId(dto.getPolicyId())
                 .keyword(dto.getKeyword())
-                .message(dto.getMessage())
+                .keywordId(dto.getKeywordId())
+                .description(dto.getDescription())
+                .notes(dto.getNotes())
                 .status(dto.getStatus())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
@@ -122,10 +125,13 @@ public class AlertLogService {
     private AlertLogDto mapToResource(@NonNull final AlertLog entity) {
         return AlertLogDto.builder()
                 .id(entity.getId())
-                .commLogId(entity.getCommLogId())
-                .behaviorId(entity.getBehaviorId())
+                .commChainLinkId(entity.getCommChainLinkId())
+                .commMessageId(entity.getCommMessageId())
+                .policyId(entity.getPolicyId())
                 .keyword(entity.getKeyword())
-                .message(entity.getMessage())
+                .keywordId(entity.getKeywordId())
+                .description(entity.getDescription())
+                .notes(entity.getNotes())
                 .status(entity.getStatus())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
@@ -141,4 +147,5 @@ public class AlertLogService {
 
         return entity;
     }
+
 }
