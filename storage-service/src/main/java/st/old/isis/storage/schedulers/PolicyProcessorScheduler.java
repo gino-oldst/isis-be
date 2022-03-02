@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PolicyProcessorScheduler {
 
-    @Scheduled(cron = "* * * ? * *")
+    @Scheduled(cron = "0 5 * ? * *")
     @SchedulerLock(name = "PolicyProcessorScheduler_processAllPendingImportData")
     public void processAllPendingImportData() {
         log.info("SCHEDULED - Processing Policies for All Pending Import Date...");

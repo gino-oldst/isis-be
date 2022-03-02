@@ -51,6 +51,7 @@ public class ReutersXmlExtractionService {
         //Process communication logs
         final var communicationLogs = parseCommunicationChains(activity, importDate);
 
+
         //TODO call communication logs service here
 
         temp.delete();

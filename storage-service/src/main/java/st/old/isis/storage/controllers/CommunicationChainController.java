@@ -33,7 +33,7 @@ public class CommunicationChainController {
     }
 
     @PostMapping("/import")
-    public ListDto<CommunicationChainDto> importData(@RequestBody final ListDto<CommunicationChainDto> request) {
+    public ListDto<CommunicationChainDto> importData(@RequestBody final ListDto<CommunicationChainDto> request) throws IsisException {
         return service.importData(request);
     }
 

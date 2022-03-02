@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.enums.ProcessedStatus;
+import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationChain;
 import st.old.isis.storage.repositories.CommunicationChainRepository;
@@ -28,7 +31,9 @@ public class CommunicationChainService {
 
     private final CommunicationRecipientService recipientService;
 
-    public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) {
+    private final DataImportRecordService dataImportRecordService;
+
+    public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) throws IsisException {
 
         List<CommunicationChainDto> results = new ArrayList<>();
 
@@ -58,7 +63,16 @@ public class CommunicationChainService {
             results.add(chainDto);
         });
 
-        //TODO Add create import data table for importDate
+        //TODO When factory pattern is implemented,
+        // we can include post factory call instead of calling from inside individual services
+
+        DataImportRecordDto dataImportRecordDto= DataImportRecordDto.builder()
+                .importDate(results.get(0).getDateImported())
+                .processedStatus(ProcessedStatus.PENDING_PROCESS)
+                .source(SourceType.REUTERS.toString())
+                .build();
+
+        dataImportRecordService.create(dataImportRecordDto);
 
         return ListDto.<CommunicationChainDto>builder()
                 .data(results)
