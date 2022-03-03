@@ -29,6 +29,10 @@ public class CommunicationMessageSpecification implements Specification<Communic
             predicates.add(cb.equal(root.get("chainLinkId"), filter.getChainLinkId()));
         }
 
+        if(filter.getImportDate() != null){
+            predicates.add(cb.equal(root.get("importDate"), filter.getImportDate()));
+        }
+
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
         return cb.and(predicates.toArray(Predicate[]::new));

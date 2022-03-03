@@ -24,3 +24,9 @@ spring:
       naming:
         physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
       ddl-auto: update
+isis:
+  scheduler:
+    policy-processor:
+      all-pending:
+        cron:  ${SCHEDULER_PROCESSOR_ALL_PENDING_CRON}
+        lock-time: ${SCHEDULER_PROCESSOR_ALL_PENDING_LOCK_TIME}

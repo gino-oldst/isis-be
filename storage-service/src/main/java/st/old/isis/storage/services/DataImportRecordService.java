@@ -4,10 +4,14 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.DataImportRecord;
 import st.old.isis.storage.repositories.DataImportRecordRepository;
+
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -61,6 +65,21 @@ public class DataImportRecordService {
                 .orElseThrow(() -> IsisException.notFound(
                        String.format("Cannot find Policy with id: [%s]", id),
                        "NotFoundException"));
+    }
+
+    public ListDto<DataImportRecordDto> findByStatus(ProcessedStatus status){
+        final var records = repository.findByProcessedStatusOrderByImportDateAsc(status);
+        ListDto<DataImportRecordDto> results = new ListDto<>();
+        results.setData(new ArrayList<>());
+
+        records.stream().forEach(x-> {
+            var dto = mapToResource(x);
+            results.getData().add(dto);
+
+        });
+
+        results.setResponseStatus("success");
+        return results;
     }
 
     private DataImportRecord mapToEntity(@NonNull final DataImportRecordDto dto){

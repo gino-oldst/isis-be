@@ -41,10 +41,12 @@ public class CommunicationChainService {
 
             final var newChain= repository.save(mapToEntity(chain));
             final var chainLinkId= newChain.getId();
+            final var importDate= chain.getDateImported();
 
             final var messages= chain.getMessages().stream()
                     .map(message -> {
                         message.setChainLinkId(chainLinkId);
+                        message.setImportDate(importDate);
                         return messageService.create(message);
                     })
                     .collect(Collectors.toList());
@@ -65,11 +67,12 @@ public class CommunicationChainService {
 
         //TODO When factory pattern is implemented,
         // we can include post factory call instead of calling from inside individual services
+        // ex. Import Reuters then Bloomberg then ... then create data import record
 
         DataImportRecordDto dataImportRecordDto= DataImportRecordDto.builder()
                 .importDate(results.get(0).getDateImported())
                 .processedStatus(ProcessedStatus.PENDING_PROCESS)
-                .source(SourceType.REUTERS.toString())
+                .source(SourceType.REUTERS.toString())  //TODO Remove this once factory implementation is done.
                 .build();
 
         dataImportRecordService.create(dataImportRecordDto);

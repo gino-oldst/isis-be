@@ -91,10 +91,8 @@ public class InappropriateLanguagePolicy {
                                     .keywordId(keywordDto.getId())
                                     .build();
 
-                            log.info("Alert Entry Found - Keyword: {} in Message: {}", emit.getKeyword() , message.getMessage());
-
+                            log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
                             alertLogService.create(alert);
-
                         });
             }
         }
