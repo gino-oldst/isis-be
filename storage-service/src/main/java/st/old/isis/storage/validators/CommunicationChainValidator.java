@@ -9,10 +9,10 @@ import st.old.isis.storage.entities.CommunicationChain;
 
 @Component
 @RequiredArgsConstructor
-public class CommunicationLogValidator {
+public class CommunicationChainValidator {
 
     public void validate(@NonNull final CommunicationChainDto dto) throws IsisException {
-        //todo: add validations for communication log
+        //todo: add validations for communication chain
     }
 
     public void updateValidate(@NonNull final CommunicationChain oldEntity,

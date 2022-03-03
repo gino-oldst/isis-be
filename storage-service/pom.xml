@@ -15,6 +15,7 @@
     <description>Storage service for project ISIS</description>
     <properties>
         <java.version>11</java.version>
+	<shedlock.version>4.21.0</shedlock.version>
     </properties>
     <dependencies>
         <dependency>
@@ -58,6 +59,23 @@
             <artifactId>flyway-maven-plugin</artifactId>
             <version>8.2.1</version>
         </dependency>
+
+	<dependency>
+		<groupId>org.ahocorasick</groupId>
+		<artifactId>ahocorasick</artifactId>
+		<version>0.4.0</version>
+	</dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>${shedlock.version}</version>
+        </dependency>
+	<dependency>
+		<groupId>net.javacrumbs.shedlock</groupId>
+		<artifactId>shedlock-spring</artifactId>
+		<version>${shedlock.version}</version>
+	</dependency>
+	
     </dependencies>
 
     <build>

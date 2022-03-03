@@ -5,8 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
-import st.old.isis.enums.AlertStatus;
+import st.old.isis.enums.AlertStatusType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,15 +20,25 @@ public class AlertLogDto implements Dto {
 
     private String id;
 
-    private String commLogId;
+    private String commChainLinkId;
 
-    private String behaviorId;
+    private String commMessageId;
 
-    private String message;
+    private String policyId;
+
+    private String description;
+
+    private String notes;
 
     private String keyword;
 
-    private AlertStatus status;
+    private String keywordId;
+
+    private String assignedUserId;
+
+    private AlertStatusType status;
+
+    private LocalDate alertDate;
 
     private LocalDateTime dateCreated;
 

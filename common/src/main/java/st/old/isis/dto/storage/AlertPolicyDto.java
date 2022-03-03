@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.enums.AlertPolicyStatus;
 
 import java.time.LocalDateTime;
 
@@ -23,6 +24,8 @@ public class AlertPolicyDto implements Dto {
     private String internalCode;
 
     private String description;
+
+    private AlertPolicyStatus status;
 
     private LocalDateTime dateCreated;
 

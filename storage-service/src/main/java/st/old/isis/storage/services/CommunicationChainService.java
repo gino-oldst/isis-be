@@ -8,11 +8,15 @@ import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.enums.ProcessedStatus;
+import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationChain;
 import st.old.isis.storage.repositories.CommunicationChainRepository;
 import st.old.isis.storage.specifications.CommunicationChainSpecification;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +27,61 @@ public class CommunicationChainService {
 
     private final CommunicationChainRepository repository;
 
-    //Todo: Gino will handle saving communication logs in batch
+    private final CommunicationMessageService messageService;
+
+    private final CommunicationRecipientService recipientService;
+
+    private final DataImportRecordService dataImportRecordService;
+
+    public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) throws IsisException {
+
+        List<CommunicationChainDto> results = new ArrayList<>();
+
+        request.getData().stream().forEach(chain -> {
+
+            final var newChain= repository.save(mapToEntity(chain));
+            final var chainLinkId= newChain.getId();
+            final var importDate= chain.getDateImported();
+
+            final var messages= chain.getMessages().stream()
+                    .map(message -> {
+                        message.setChainLinkId(chainLinkId);
+                        message.setImportDate(importDate);
+                        return messageService.create(message);
+                    })
+                    .collect(Collectors.toList());
+
+            final var recipients = chain.getRecipients().stream()
+                    .map(recipient -> {
+                        recipient.setChainLinkId(chainLinkId);
+                        return recipientService.create(recipient);
+                    })
+                    .collect(Collectors.toList());
+
+            final var chainDto= mapToResource(newChain);
+            chainDto.setMessages(messages);
+            chainDto.setRecipients(recipients);
+
+            results.add(chainDto);
+        });
+
+        //TODO When factory pattern is implemented,
+        // we can include post factory call instead of calling from inside individual services
+        // ex. Import Reuters then Bloomberg then ... then create data import record
+
+        DataImportRecordDto dataImportRecordDto= DataImportRecordDto.builder()
+                .importDate(results.get(0).getDateImported())
+                .processedStatus(ProcessedStatus.PENDING_PROCESS)
+                .source(SourceType.REUTERS.toString())  //TODO Remove this once factory implementation is done.
+                .build();
+
+        dataImportRecordService.create(dataImportRecordDto);
+
+        return ListDto.<CommunicationChainDto>builder()
+                .data(results)
+                .totalNoOfRecords(results.size())
+                .build().success();
+    }
 
     public CommunicationChainDto getById(@NonNull final String id) throws IsisException {
 
@@ -143,4 +201,5 @@ public class CommunicationChainService {
 
         return entity;
     }
+
 }

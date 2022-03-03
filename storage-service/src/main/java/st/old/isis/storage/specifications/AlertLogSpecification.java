@@ -33,8 +33,8 @@ public class AlertLogSpecification implements Specification<AlertLog> {
             predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
         }
 
-        if (filter.getMessage() != null) {
-            predicates.add(cb.like(root.get("message"), "%"+filter.getMessage()+"%"));
+        if (filter.getDescription() != null) {
+            predicates.add(cb.like(root.get("message"), "%"+filter.getDescription()+"%"));
         }
 
         if (filter.getStatus() != null) {

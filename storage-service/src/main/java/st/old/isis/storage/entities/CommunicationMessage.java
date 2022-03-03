@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -35,6 +36,8 @@ public class CommunicationMessage implements Serializable {
     private String sourceMessageId;
 
     private LocalDateTime timeSent;
+
+    private LocalDate importDate;
 
     private String sender;
 
