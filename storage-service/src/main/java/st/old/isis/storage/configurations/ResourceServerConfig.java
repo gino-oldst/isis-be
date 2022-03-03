@@ -1,4 +1,4 @@
-package st.old.isis.storage.config;
+package st.old.isis.storage.configurations;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
