@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class AlertPolicyService {
     private final AlertPolicyRepository repository;
     private final AlertPolicyValidator validator;
 
-    public AlertPolicyDto create(@NonNull final AlertPolicyDto dto) throws IsisException{
+    @Audited(event = "CREATE_ALERT_POLICY")
+    public AlertPolicyDto create(@NonNull @Audited final AlertPolicyDto dto) throws IsisException{
 
         validator.validate(dto);
 
@@ -34,7 +36,8 @@ public class AlertPolicyService {
         return mapToResource(createdEntity);
     }
 
-    public AlertPolicyDto update(@NonNull final AlertPolicyDto dto) throws IsisException{
+    @Audited(event = "UPDATE_ALERT_POLICY")
+    public AlertPolicyDto update(@NonNull @Audited final AlertPolicyDto dto) throws IsisException{
 
         final var oldEntity = findById(dto.getId());
 
@@ -47,35 +50,40 @@ public class AlertPolicyService {
         return mapToResource(updatedEntity);
     }
 
-    public AlertPolicyDto getById(@NonNull final String id) throws IsisException{
+    @Audited(event = "GET_ALERT_POLICY_BY_ID")
+    public AlertPolicyDto getById(@NonNull @Audited final String id) throws IsisException{
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public AlertPolicyDto getByName(@NonNull final String name) throws IsisException {
+    @Audited(event = "GET_ALERT_POLICY_BY_NAME")
+    public AlertPolicyDto getByName(@NonNull @Audited final String name) throws IsisException {
 
         final var template = findByName(name);
 
         return mapToResource(template);
     }
 
-    public AlertPolicyDto getByInternalCode(@NonNull final String internalCode) throws IsisException {
+    @Audited(event = "GET_ALERT_POLICY_BY_INTERNAL_CODE")
+    public AlertPolicyDto getByInternalCode(@NonNull @Audited final String internalCode) throws IsisException {
 
         final var template = findByInternalCode(internalCode);
 
         return mapToResource(template);
     }
 
-    public void delete(@NonNull final String id) throws IsisException{
+    @Audited(event = "DELETE_ALERT_POLICY")
+    public void delete(@NonNull @Audited final String id) throws IsisException{
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<AlertPolicyDto> search(@NonNull final AlertPolicyDto filter){
+    @Audited(event = "SEARCH_ALERT_POLICY")
+    public ListDto<AlertPolicyDto> search(@NonNull @Audited final AlertPolicyDto filter){
 
         final var spec =  new AlertPolicySpecification(filter);
 
@@ -95,7 +103,8 @@ public class AlertPolicyService {
                 .success();
     }
 
-    public ListDto<AlertPolicyDto> search(@NonNull final AlertPolicyDto filter, Pageable pageable){
+    @Audited(event = "SEARCH_ALERT_POLICY")
+    public ListDto<AlertPolicyDto> search(@NonNull @Audited final AlertPolicyDto filter, @Audited Pageable pageable){
 
         final var spec = new AlertPolicySpecification(filter);
 

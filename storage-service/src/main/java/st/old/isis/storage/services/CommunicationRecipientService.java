@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class CommunicationRecipientService {
     private final CommunicationRecipientRepository repository;
     private final CommunicationRecipientValidator validator;
 
-    public CommunicationRecipientDto create(@NonNull final CommunicationRecipientDto dto) {
+    @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")
+    public CommunicationRecipientDto create(@NonNull @Audited final CommunicationRecipientDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -32,7 +34,8 @@ public class CommunicationRecipientService {
         return mapToResource(createdEntity);
     }
 
-    public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto) throws IsisException {
+    @Audited(event = "UPDATE_COMMUNICATION_RECIPIENT")
+    public CommunicationRecipientDto update(@NonNull @Audited final CommunicationRecipientDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -45,21 +48,24 @@ public class CommunicationRecipientService {
         return mapToResource(updatedEntity);
     }
 
-    public CommunicationRecipientDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_COMMUNICATION_RECIPIENT_BY_ID")
+    public CommunicationRecipientDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_COMMUNICATION_RECIPIENT")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<CommunicationRecipientDto> search(@NonNull final CommunicationRecipientDto filter) {
+    @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
+    public ListDto<CommunicationRecipientDto> search(@NonNull @Audited final CommunicationRecipientDto filter) {
 
         final var spec = new CommunicationRecipientSpecification(filter);
 
@@ -79,7 +85,8 @@ public class CommunicationRecipientService {
                 .success();
     }
 
-    public ListDto<CommunicationRecipientDto> search(@NonNull final CommunicationRecipientDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
+    public ListDto<CommunicationRecipientDto> search(@NonNull @Audited final CommunicationRecipientDto filter, @Audited Pageable pageable) {
 
         final var spec = new CommunicationRecipientSpecification(filter);
 

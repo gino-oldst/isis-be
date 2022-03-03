@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.extraction.entity.DownloadVersionControl;
 import st.old.isis.extraction.repositories.DownloadVersionControlRepository;
 import st.old.isis.extraction.utils.DownloadUtils;
@@ -11,7 +12,6 @@ import st.old.isis.extraction.utils.DownloadUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Slf4j
@@ -21,7 +21,8 @@ public class DownloadVersionControlService {
 
   private final DownloadVersionControlRepository repository;
 
-  public void saveVersionControl(@NonNull final DownloadVersionControl version) {
+  @Audited(event = "RECORD_LAST_FILE_DOWNLOADED")
+  public void saveVersionControl(@NonNull @Audited final DownloadVersionControl version) {
 
     final var optVersion = getVersionControl(version.getSource());
 
@@ -50,22 +51,8 @@ public class DownloadVersionControlService {
     }
   }
 
-  public Optional<DownloadVersionControl> getVersionControl(@NonNull final String source) {
+  @Audited(event = "GET_LAST_DOWNLOADED_FILE")
+  public Optional<DownloadVersionControl> getVersionControl(@NonNull @Audited final String source) {
     return repository.findBySource(source);
-  }
-
-  public static void main(String args[]) {
-
-    final var date = DateTimeFormatter.ofPattern("yyyy-MM-dd'T0000+0000'");
-    //
-    //      System.out.println(date.format(LocalDateTime.now()));
-    //
-    //      System.out.println(LocalDate.parse("2022-01-18T0000+0000", date));
-
-    final var datePrefix = LocalDate.parse("2022-01-03T0000+0000", date);
-    final var formatter = DateTimeFormatter.ofPattern("yyyy-MM-");
-    final var dayPrefix = datePrefix.getDayOfMonth() / 10;
-
-    System.out.println(datePrefix.format(formatter) + dayPrefix);
   }
 }

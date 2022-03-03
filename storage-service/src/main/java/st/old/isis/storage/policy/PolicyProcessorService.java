@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.enums.AlertPolicyStatus;
@@ -27,6 +28,7 @@ public class PolicyProcessorService {
     
     private final DataImportRecordService dataImportRecordService;
 
+    @Audited(event = "PROCESS_ALL_PENDING_IMPORT_DATA")
     public void processAllPendingImportData() throws IsisException {
 
         final var listOfDataImportRecords = dataImportRecordService.findByStatus(ProcessedStatus.PENDING_PROCESS);

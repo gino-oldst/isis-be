@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import st.old.isis.annotations.Audited;
 import st.old.isis.constants.ReutersConstants;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
@@ -28,11 +29,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReutersXmlExtractionService {
 
+    @Audited(event = "PARSE_XML_STREAM")
     public ListDto<CommunicationChainDto> processXml(
           @NonNull final InputStream inputStream) throws JAXBException {
       return processXml(new InputStreamReader(inputStream), LocalDate.now());
     }
 
+    @Audited(event = "PARSE_XML_MULTIPART")
     public ListDto<CommunicationChainDto> processXml(
           MultipartFile multipartFile, LocalDate importDate) throws IOException, JAXBException {
       return processXml(new InputStreamReader(multipartFile.getInputStream()), importDate);

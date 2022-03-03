@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.extraction.entity.FileDownloadHistory;
 import st.old.isis.extraction.repositories.FileDownloadHistoryRepository;
 
@@ -14,11 +15,13 @@ public class FileDownloadHistoryService {
 
   private final FileDownloadHistoryRepository repository;
 
-  public void saveHistory(@NonNull final FileDownloadHistory history) {
+  @Audited(event = "RECORD_DOWNLOADED_FILES")
+  public void saveHistory(@NonNull @Audited final FileDownloadHistory history) {
     repository.save(history);
   }
 
-  public boolean isExisting(@NonNull final String sha1) {
+  @Audited(event = "CHECK_DOWNLOADED_FILES_SHA1")
+  public boolean isExisting(@NonNull @Audited final String sha1) {
     return repository.findById(sha1).isPresent();
   }
 }

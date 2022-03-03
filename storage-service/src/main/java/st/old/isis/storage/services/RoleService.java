@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.RoleDto;
 import st.old.isis.storage.entities.Role;
 import st.old.isis.storage.repositories.RoleRepository;
@@ -18,7 +19,8 @@ public class RoleService {
 
   private final RoleRepository repository;
 
-  public List<RoleDto> save(@NonNull final String userId, @NonNull final List<RoleDto> roles) {
+  @Audited(event = "SAVE_ROLE")
+  public List<RoleDto> save(@NonNull @Audited final String userId, @NonNull @Audited final List<RoleDto> roles) {
 
     deleteByUserId(userId);
 
@@ -33,7 +35,7 @@ public class RoleService {
         .collect(Collectors.toList());
   }
 
-  public void deleteByUserId(@NonNull final String userId) {
+  private void deleteByUserId(@NonNull final String userId) {
 
     final var list = repository.findAllByUserId(userId);
 

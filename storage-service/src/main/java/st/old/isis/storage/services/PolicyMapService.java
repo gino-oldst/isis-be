@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.PolicyMapDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class PolicyMapService {
     private final PolicyMapRepository repository;
     private final PolicyMapValidator validator;
 
-    public PolicyMapDto create(@NonNull final PolicyMapDto dto) throws IsisException {
+    @Audited(event = "CREATE_POLICY_MAP")
+    public PolicyMapDto create(@NonNull @Audited final PolicyMapDto dto) throws IsisException {
 
         validator.validate(dto);
 
@@ -34,7 +36,8 @@ public class PolicyMapService {
         return mapToResource(createdEntity);
     }
 
-    public PolicyMapDto update(@NonNull final PolicyMapDto dto) throws IsisException {
+    @Audited(event = "UPDATE_POLICY_MAP")
+    public PolicyMapDto update(@NonNull @Audited final PolicyMapDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -47,21 +50,24 @@ public class PolicyMapService {
         return mapToResource(updatedEntity);
     }
 
-    public PolicyMapDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_POLICY_MAP_BY_ID")
+    public PolicyMapDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_POLICY_MAP")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<PolicyMapDto> search(@NonNull final PolicyMapDto filter) {
+    @Audited(event = "SEARCH_POLICY_MAP")
+    public ListDto<PolicyMapDto> search(@NonNull @Audited final PolicyMapDto filter) {
 
         final var spec = new PolicyMapSpecification(filter);
 
@@ -81,7 +87,8 @@ public class PolicyMapService {
                 .success();
     }
 
-    public ListDto<PolicyMapDto> search(@NonNull final PolicyMapDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_POLICY_MAP")
+    public ListDto<PolicyMapDto> search(@NonNull @Audited final PolicyMapDto filter, @Audited Pageable pageable) {
 
         final var spec = new PolicyMapSpecification(filter);
 

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.exception.IsisException;
@@ -25,6 +26,7 @@ public class ExternalUserService {
 
     private final ExternalUserRepository repository;
 
+    @Audited(event = "BATCH_SAVE_EXTERNAL_USER")
     public ListDto<ExternalUserDto> batchedSave(@NonNull final List<ExternalUserDto> list) {
 
         final var existingUserMap = getExistingUserMap(list);
@@ -50,7 +52,8 @@ public class ExternalUserService {
                 .success();
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_EXTERNAL_USER")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var user = findById(id);
 
@@ -73,14 +76,16 @@ public class ExternalUserService {
                 .collect(Collectors.toMap(ExternalUser::getExternalId, Function.identity()));
     }
 
-    public ExternalUserDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_EXTERNAL_USER_BY_ID")
+    public ExternalUserDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public ListDto<ExternalUserDto> search(@NonNull final ExternalUserDto filter) {
+    @Audited(event = "SEARCH_EXTERNAL_USER")
+    public ListDto<ExternalUserDto> search(@NonNull @Audited final ExternalUserDto filter) {
 
         final var results = findAll(filter)
                 .stream()
@@ -98,7 +103,8 @@ public class ExternalUserService {
                 .success();
     }
 
-    public ListDto<ExternalUserDto> search(@NonNull final ExternalUserDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_EXTERNAL_USER")
+    public ListDto<ExternalUserDto> search(@NonNull @Audited final ExternalUserDto filter, @Audited Pageable pageable) {
 
         final var spec = new ExternalUserSpecification(filter);
 

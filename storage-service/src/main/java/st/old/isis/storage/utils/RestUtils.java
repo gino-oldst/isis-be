@@ -13,4 +13,13 @@ public class RestUtils {
 
   @Value("${isis.internal.authentication.api-secret}")
   private String apiSecret;
+
+  @Value("${isis.internal.authentication.client-id}")
+  private String clientId;
+
+  @Value("${isis.internal.authentication.client-secret}")
+  private String clientSecret;
+
+  @Value("${isis.internal.authentication.access-token-url}")
+  private String accessTokenUrl;
 }

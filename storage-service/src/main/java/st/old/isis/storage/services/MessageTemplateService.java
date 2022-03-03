@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.analysis.MessageTemplateDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.MessageTemplate;
@@ -18,7 +19,8 @@ public class MessageTemplateService {
   private final MessageTemplateRepository repository;
   private final MessageTemplateValidator validator;
 
-  public MessageTemplateDto create(@NonNull final MessageTemplateDto dto) throws IsisException {
+  @Audited(event = "CREATE_MESSAGE_TEMPLATE")
+  public MessageTemplateDto create(@NonNull @Audited final MessageTemplateDto dto) throws IsisException {
 
     validator.createValidate(dto);
 
@@ -29,7 +31,8 @@ public class MessageTemplateService {
     return mapToResource(createdTemplate);
   }
 
-  public MessageTemplateDto update(@NonNull final MessageTemplateDto dto) throws IsisException {
+  @Audited(event = "UPDATE_MESSAGE_TEMPLATE")
+  public MessageTemplateDto update(@NonNull @Audited final MessageTemplateDto dto) throws IsisException {
 
     final var oldEntity = findById(dto.getId());
 
@@ -42,21 +45,24 @@ public class MessageTemplateService {
     return mapToResource(updatedTemplate);
   }
 
-  public MessageTemplateDto getById(@NonNull final String id) throws IsisException {
+  @Audited(event = "GET_MESSAGE_TEMPLATE_BY_ID")
+  public MessageTemplateDto getById(@NonNull @Audited final String id) throws IsisException {
 
     final var template = findById(id);
 
     return mapToResource(template);
   }
 
-  public MessageTemplateDto getByName(@NonNull final String name) throws IsisException {
+  @Audited(event = "GET_MESSAGE_TEMPLATE_BY_NAME")
+  public MessageTemplateDto getByName(@NonNull @Audited final String name) throws IsisException {
 
     final var template = findByName(name);
 
     return mapToResource(template);
   }
 
-  public void delete(@NonNull final String id) throws IsisException {
+  @Audited(event = "DELETE_MESSAGE_TEMPLATE")
+  public void delete(@NonNull @Audited final String id) throws IsisException {
 
     final var template = findById(id);
 

@@ -3,6 +3,7 @@ package st.old.isis.utils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import st.old.isis.context.AuditContext;
 
 public class HttpEntityBuilder {
 
@@ -13,8 +14,21 @@ public class HttpEntityBuilder {
     this.headers = new HttpHeaders();
   }
 
+  //default builder for http entity
   public static HttpEntityBuilder builder() {
     return new HttpEntityBuilder();
+  }
+
+  //builder for audited transactional http entity
+  public static HttpEntityBuilder transactionalBuilder() {
+
+    final var httpEntityBuilder = new HttpEntityBuilder();
+    final var auditContext = AuditContext.getAuditContext();
+    final var txnId = (auditContext == null) ? "" : auditContext.getTxnId();
+
+    httpEntityBuilder.addHeader("txn-id", txnId);
+
+    return httpEntityBuilder;
   }
 
   public HttpEntityBuilder addHeader(String key, String value) {

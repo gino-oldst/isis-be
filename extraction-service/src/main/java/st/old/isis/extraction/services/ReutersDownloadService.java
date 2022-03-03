@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
@@ -13,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipInputStream;
 
 @Slf4j
@@ -26,6 +28,18 @@ public class ReutersDownloadService extends AzureDownloadService {
       @NonNull final ReutersXmlExtractionService extractionService) {
     super(reuters);
     this.extractionService = extractionService;
+  }
+
+  @Override
+  @Audited(event = "DOWNLOAD_REUTERS_RAW_DATA")
+  public void sync() {
+    super.sync();
+  }
+
+  @Override
+  @Audited(event = "DOWNLOAD_SPECIFIC_REUTERS_RAW_DATA")
+  public void sync(@NonNull @Audited final String prefix) {
+    super.sync(prefix);
   }
 
   @Override
@@ -69,8 +83,11 @@ public class ReutersDownloadService extends AzureDownloadService {
         if (unSkipFile) {
 
           final var clone = cloneInputStream(zis);
+          final var filename = zipEntry.getName();
 
-          log.info("Process unzipped file: {}", zipEntry.getName());
+          log.info("Process unzipped file: {}", filename);
+
+          auditUtil.audit("REUTERS_UNZIP_FILE", Map.of("filename", filename));
 
           processXml(clone);
 

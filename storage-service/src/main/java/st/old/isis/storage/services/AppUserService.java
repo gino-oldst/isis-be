@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.AppUserDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.utils.BCryptEncoderService;
@@ -21,7 +22,8 @@ public class AppUserService {
   private final BCryptEncoderService encoderService;
   private final RoleService roleService;
 
-  public AppUserDto create(@NonNull final AppUserDto dto) throws IsisException {
+  @Audited(event = "CREATE_APP_USER")
+  public AppUserDto create(@NonNull @Audited final AppUserDto dto) throws IsisException {
 
     validator.createValidate(dto);
 
@@ -41,7 +43,8 @@ public class AppUserService {
     return mapToResource(createdEntity);
   }
 
-  public AppUserDto update(@NonNull final AppUserDto dto) throws IsisException {
+  @Audited(event = "UPDATE_APP_USER")
+  public AppUserDto update(@NonNull @Audited final AppUserDto dto) throws IsisException {
 
     final var oldEntity = findById(dto.getId());
 
@@ -61,21 +64,24 @@ public class AppUserService {
     return mapToResource(updatedEntity);
   }
 
-  public AppUserDto getById(@NonNull final String id) throws IsisException {
+  @Audited(event = "GET_APP_USER_BY_ID")
+  public AppUserDto getById(@NonNull @Audited final String id) throws IsisException {
 
     final var entity = findById(id);
 
     return mapToResource(entity);
   }
 
-  public AppUserDto getByUsername(@NonNull final String username) throws IsisException {
+  @Audited(event = "GET_APP_USER_BY_USERNAME")
+  public AppUserDto getByUsername(@NonNull @Audited final String username) throws IsisException {
 
     final var entity = findByUsername(username);
 
     return mapToResource(entity);
   }
 
-  public void delete(@NonNull final String id) throws IsisException {
+  @Audited(event = "CREATE_APP_USER")
+  public void delete(@NonNull @Audited final String id) throws IsisException {
 
     final var entity = findById(id);
 

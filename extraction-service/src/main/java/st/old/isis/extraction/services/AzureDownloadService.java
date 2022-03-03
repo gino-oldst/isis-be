@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import st.old.isis.extraction.entity.DownloadVersionControl;
 import st.old.isis.extraction.entity.FileDownloadHistory;
 import st.old.isis.extraction.utils.DownloadUtils;
+import st.old.isis.utils.AuditUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,6 +34,7 @@ public abstract class AzureDownloadService {
   @Autowired private FileDownloadHistoryService historyService;
   @Autowired private DownloadVersionControlService versionControlService;
   @Autowired private DownloadUtils downloadUtils;
+  @Autowired protected AuditUtil auditUtil;
 
   protected abstract String source();
 

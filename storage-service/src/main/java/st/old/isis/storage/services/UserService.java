@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.UserDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class UserService {
     private final UserRepository repository;
     private final UserValidator validator;
 
-    public UserDto create(@NonNull final UserDto dto) {
+    @Audited(event = "CREATE_USER")
+    public UserDto create(@NonNull @Audited final UserDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -32,7 +34,8 @@ public class UserService {
         return mapToResource(createdEntity);
     }
 
-    public UserDto update(@NonNull final UserDto dto) throws IsisException {
+    @Audited(event = "UPDATE_USER")
+    public UserDto update(@NonNull @Audited final UserDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -45,21 +48,24 @@ public class UserService {
         return mapToResource(updatedEntity);
     }
 
-    public UserDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_USER_BY_ID")
+    public UserDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_USER")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<UserDto> search(@NonNull final UserDto filter) {
+    @Audited(event = "SEARCH_USER")
+    public ListDto<UserDto> search(@NonNull @Audited final UserDto filter) {
 
         final var spec = new UserSpecification(filter);
 
@@ -79,7 +85,8 @@ public class UserService {
                 .success();
     }
 
-    public ListDto<UserDto> search(@NonNull final UserDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_USER")
+    public ListDto<UserDto> search(@NonNull @Audited final UserDto filter, Pageable pageable) {
 
         final var spec = new UserSpecification(filter);
 

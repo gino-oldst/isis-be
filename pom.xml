@@ -13,6 +13,7 @@
         <module>extraction-service</module>
         <module>storage-service</module>
         <module>auth-service</module>
+        <module>audit-service</module>
     </modules>
     <packaging>pom</packaging>
 

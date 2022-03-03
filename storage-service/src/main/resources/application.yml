@@ -36,6 +36,12 @@ isis:
     authentication:
       api-key: ${API_KEY}
       api-secret: ${API_SECRET}
+      client-id: ${CLIENT_ID}
+      client-secret: ${CLIENT_SECRET}
+      access-token-url: ${ACCESS_TOKEN_URL}
+    services:
+      audit:
+        endpoint: ${AUDIT_SERVICE_ENDPOINT}
   scheduler:
     policy-processor:
       all-pending:

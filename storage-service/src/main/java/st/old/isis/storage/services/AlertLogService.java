@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class AlertLogService {
     private final AlertLogRepository repository;
     private final AlertLogValidator validator;
 
-    public AlertLogDto create(@NonNull final AlertLogDto dto) {
+    @Audited(event = "CREATE_ALERT_LOG")
+    public AlertLogDto create(@NonNull @Audited final AlertLogDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -32,7 +34,8 @@ public class AlertLogService {
         return mapToResource(createdEntity);
     }
 
-    public AlertLogDto update(@NonNull final AlertLogDto dto) throws IsisException {
+    @Audited(event = "UPDATE_ALERT_LOG")
+    public AlertLogDto update(@NonNull @Audited final AlertLogDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -45,21 +48,24 @@ public class AlertLogService {
         return mapToResource(updatedEntity);
     }
 
-    public AlertLogDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_ALERT_LOG_BY_ID")
+    public AlertLogDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_ALERT_LOG")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<AlertLogDto> search(@NonNull final AlertLogDto filter) {
+    @Audited(event = "SEARCH_ALERT_LOG")
+    public ListDto<AlertLogDto> search(@NonNull @Audited final AlertLogDto filter) {
 
         final var spec = new AlertLogSpecification(filter);
 
@@ -79,7 +85,8 @@ public class AlertLogService {
                 .success();
     }
 
-    public ListDto<AlertLogDto> search(@NonNull final AlertLogDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_ALERT_LOG")
+    public ListDto<AlertLogDto> search(@NonNull @Audited final AlertLogDto filter, @Audited Pageable pageable) {
 
         final var spec = new AlertLogSpecification(filter);
 

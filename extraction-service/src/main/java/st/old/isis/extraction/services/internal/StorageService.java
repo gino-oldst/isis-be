@@ -25,7 +25,10 @@ public class StorageService {
     final var url = storageUrl.communication().search();
 
     final var entity =
-        HttpEntityBuilder.builder().jsonContent().body(objectUtils.toString(filter)).build();
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(filter))
+            .build();
 
     final var typeReference = new ParameterizedTypeReference<ListDto<CommunicationChainDto>>() {};
 

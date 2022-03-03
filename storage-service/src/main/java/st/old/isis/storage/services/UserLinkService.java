@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class UserLinkService {
     private final UserLinkRepository repository;
     private final UserLinkValidator validator;
 
-    public UserLinkDto create(@NonNull final UserLinkDto dto) throws IsisException {
+    @Audited(event = "CREATE_USER_LINK")
+    public UserLinkDto create(@NonNull @Audited final UserLinkDto dto) throws IsisException {
 
         validator.createValidate(dto);
 
@@ -34,7 +36,8 @@ public class UserLinkService {
         return mapToResource(createdEntity);
     }
 
-    public UserLinkDto update(@NonNull final UserLinkDto dto) throws IsisException {
+    @Audited(event = "UPDATE_USER_LINK")
+    public UserLinkDto update(@NonNull @Audited final UserLinkDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -47,21 +50,24 @@ public class UserLinkService {
         return mapToResource(updatedEntity);
     }
 
-    public UserLinkDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_USER_LINK_BY_ID")
+    public UserLinkDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_USER_LINK")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<UserLinkDto> search(@NonNull final UserLinkDto filter) {
+    @Audited(event = "SEARCH_USER_LINK")
+    public ListDto<UserLinkDto> search(@NonNull @Audited final UserLinkDto filter) {
 
         final var spec = new UserLinkSpecification(filter);
 
@@ -81,7 +87,8 @@ public class UserLinkService {
                 .success();
     }
 
-    public ListDto<UserLinkDto> search(@NonNull final UserLinkDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_USER_LINK")
+    public ListDto<UserLinkDto> search(@NonNull @Audited final UserLinkDto filter, @Audited Pageable pageable) {
 
         final var spec = new UserLinkSpecification(filter);
 

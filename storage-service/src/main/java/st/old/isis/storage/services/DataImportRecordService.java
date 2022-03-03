@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.enums.ProcessedStatus;
@@ -20,7 +21,8 @@ public class DataImportRecordService {
 
     private final DataImportRecordRepository repository;
 
-    public DataImportRecordDto create(@NonNull final DataImportRecordDto dto) throws IsisException{
+    @Audited(event = "CREATE_DATA_IMPORT_RECORD")
+    public DataImportRecordDto create(@NonNull @Audited final DataImportRecordDto dto) throws IsisException{
 
         log.info("Creating data import record {}", dto);
 
@@ -31,7 +33,8 @@ public class DataImportRecordService {
         return mapToResource(createdEntity);
     }
 
-    public DataImportRecordDto update(@NonNull final DataImportRecordDto dto) throws IsisException{
+    @Audited(event = "UPDATE_DATA_IMPORT_RECORD")
+    public DataImportRecordDto update(@NonNull @Audited final DataImportRecordDto dto) throws IsisException{
 
         log.info("Updating data import record {}", dto);
 
@@ -44,14 +47,16 @@ public class DataImportRecordService {
         return mapToResource(updatedEntity);
     }
 
-    public DataImportRecordDto getById(@NonNull final String id) throws IsisException{
+    @Audited(event = "GET_DATA_IMPORT_RECORD_BY_ID")
+    public DataImportRecordDto getById(@NonNull @Audited final String id) throws IsisException{
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException{
+    @Audited(event = "DELETE_DATA_IMPORT_RECORD")
+    public void delete(@NonNull @Audited final String id) throws IsisException{
 
         log.info("Deleting data import record id: {}", id);
 
@@ -67,7 +72,8 @@ public class DataImportRecordService {
                        "NotFoundException"));
     }
 
-    public ListDto<DataImportRecordDto> findByStatus(ProcessedStatus status){
+    @Audited(event = "GET_DATA_IMPORT_RECORD_BY_STATUS")
+    public ListDto<DataImportRecordDto> findByStatus(@Audited ProcessedStatus status){
         final var records = repository.findByProcessedStatusOrderByImportDateAsc(status);
         ListDto<DataImportRecordDto> results = new ListDto<>();
         results.setData(new ArrayList<>());

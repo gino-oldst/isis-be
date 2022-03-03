@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
@@ -23,7 +24,8 @@ public class KeywordService {
     private final KeywordRepository repository;
     private final KeywordValidator validator;
 
-    public KeywordDto create(@NonNull final KeywordDto dto) throws IsisException {
+    @Audited(event = "CREATE_KEYWORD")
+    public KeywordDto create(@NonNull @Audited final KeywordDto dto) throws IsisException {
 
         validator.validate(dto);
         
@@ -34,7 +36,8 @@ public class KeywordService {
         return mapToResource(createdEntity);
     }
 
-    public KeywordDto update(@NonNull final KeywordDto dto) throws IsisException {
+    @Audited(event = "UPDATE_KEYWORD")
+    public KeywordDto update(@NonNull @Audited final KeywordDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -47,21 +50,24 @@ public class KeywordService {
         return mapToResource(updatedEntity);
     }
 
-    public KeywordDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_KEYWORD_BY_ID")
+    public KeywordDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_KEYWORD")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<KeywordDto> search(@NonNull final KeywordDto filter) {
+    @Audited(event = "SEARCH_KEYWORD")
+    public ListDto<KeywordDto> search(@NonNull @Audited final KeywordDto filter) {
 
         final var spec = new KeywordSpecification(filter);
 
@@ -81,7 +87,8 @@ public class KeywordService {
                 .success();
     }
 
-    public ListDto<KeywordDto> search(@NonNull final KeywordDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_KEYWORD")
+    public ListDto<KeywordDto> search(@NonNull @Audited final KeywordDto filter, @Audited Pageable pageable) {
 
         final var spec = new KeywordSpecification(filter);
 

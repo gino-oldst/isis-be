@@ -31,11 +31,6 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
   private String publicKey;
 
   @Bean
-  public OAuth2ClientContext oauth2ClientContext() {
-    return new DefaultOAuth2ClientContext();
-  }
-
-  @Bean
   public JwtAccessTokenConverter accessTokenConverter() {
 
     JwtAccessTokenConverter converter = new JwtAccessTokenConverter();

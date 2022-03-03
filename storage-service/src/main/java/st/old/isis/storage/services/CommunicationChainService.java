@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
@@ -33,6 +34,7 @@ public class CommunicationChainService {
 
     private final DataImportRecordService dataImportRecordService;
 
+    @Audited(event = "IMPORT_COMMUNICATION_CHAIN_DATA")
     public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) throws IsisException {
 
         List<CommunicationChainDto> results = new ArrayList<>();
@@ -83,21 +85,24 @@ public class CommunicationChainService {
                 .build().success();
     }
 
-    public CommunicationChainDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_COMMUNICATION_CHAIN_BY_ID")
+    public CommunicationChainDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_COMMUNICATION_CHAIN")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter) {
+    @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
+    public ListDto<CommunicationChainDto> search(@NonNull @Audited final CommunicationChainDto filter) {
 
         final var spec = new CommunicationChainSpecification(filter);
 
@@ -117,7 +122,8 @@ public class CommunicationChainService {
                 .success();
     }
 
-    public ListDto<CommunicationChainDto> search(@NonNull final CommunicationChainDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
+    public ListDto<CommunicationChainDto> search(@NonNull @Audited final CommunicationChainDto filter,@Audited Pageable pageable) {
 
         final var spec = new CommunicationChainSpecification(filter);
 

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.exception.IsisException;
@@ -21,7 +22,8 @@ public class CommunicationMessageService {
 
     private final CommunicationMessageRepository repository;
 
-    public CommunicationMessageDto create(@NonNull final CommunicationMessageDto dto) {
+    @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
+    public CommunicationMessageDto create(@NonNull @Audited final CommunicationMessageDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -30,7 +32,8 @@ public class CommunicationMessageService {
         return mapToResource(createdEntity);
     }
 
-    public CommunicationMessageDto update(@NonNull final CommunicationMessageDto dto) throws IsisException {
+    @Audited(event = "UPDATE_COMMUNICATION_MESSAGE")
+    public CommunicationMessageDto update(@NonNull @Audited final CommunicationMessageDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -41,21 +44,24 @@ public class CommunicationMessageService {
         return mapToResource(updatedEntity);
     }
 
-    public CommunicationMessageDto getById(@NonNull final String id) throws IsisException {
+    @Audited(event = "GET_COMMUNICATION_MESSAGE_BY_ID")
+    public CommunicationMessageDto getById(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         return mapToResource(entity);
     }
 
-    public void delete(@NonNull final String id) throws IsisException {
+    @Audited(event = "DELETE_COMMUNICATION_MESSAGE")
+    public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
 
         repository.delete(entity);
     }
 
-    public ListDto<CommunicationMessageDto> search(@NonNull final CommunicationMessageDto filter) {
+    @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
+    public ListDto<CommunicationMessageDto> search(@NonNull @Audited final CommunicationMessageDto filter) {
 
         final var spec = new CommunicationMessageSpecification(filter);
 
@@ -75,7 +81,8 @@ public class CommunicationMessageService {
                 .success();
     }
 
-    public ListDto<CommunicationMessageDto> search(@NonNull final CommunicationMessageDto filter, Pageable pageable) {
+    @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
+    public ListDto<CommunicationMessageDto> search(@NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
 
         final var spec = new CommunicationMessageSpecification(filter);
 

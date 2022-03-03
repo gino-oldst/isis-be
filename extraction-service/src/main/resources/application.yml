@@ -29,6 +29,8 @@ spring:
       max-file-size: 20MB
       max-request-size: 20MB
 isis:
+  audit:
+    enabled: ${AUDIT_ENABLED}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:
@@ -39,6 +41,8 @@ isis:
     services:
       storage:
         endpoint: ${STORAGE_SERVICE_ENDPOINT}
+      audit:
+        endpoint: ${AUDIT_SERVICE_ENDPOINT}
   download:
     timeout: ${AZURE_DOWNLOAD_TIMEOUT}
     scheduler:
