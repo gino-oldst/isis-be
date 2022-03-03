@@ -13,6 +13,7 @@
         <module>analysis-service</module>
         <module>extraction-service</module>
         <module>storage-service</module>
+        <module>auth-service</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -20,5 +21,5 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
-    
+
 </project>

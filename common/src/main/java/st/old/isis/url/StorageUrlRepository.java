@@ -1,0 +1,14 @@
+package st.old.isis.url;
+
+public abstract class StorageUrlRepository {
+
+  protected abstract String endpointUrl();
+
+  public AuthUrl auth() {
+    return new AuthUrl(this);
+  }
+
+  public CommunicationUrl communication() {
+    return new CommunicationUrl(this);
+  }
+}

@@ -1,8 +1,8 @@
 package st.old.isis.extraction.services;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.constants.ReutersConstants;
@@ -16,9 +16,7 @@ import st.old.isis.enums.SourceType;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,18 +28,25 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReutersXmlExtractionService {
 
-    public ListDto<CommunicationChainDto> processXml(MultipartFile multipartFile, LocalDate importDate) throws JAXBException, IOException {
+    public ListDto<CommunicationChainDto> processXml(
+          @NonNull final InputStream inputStream) throws JAXBException {
+      return processXml(new InputStreamReader(inputStream), LocalDate.now());
+    }
+
+    public ListDto<CommunicationChainDto> processXml(
+          MultipartFile multipartFile, LocalDate importDate) throws IOException, JAXBException {
+      return processXml(new InputStreamReader(multipartFile.getInputStream()), importDate);
+    }
+
+    public ListDto<CommunicationChainDto> processXml(Reader reader, LocalDate importDate)
+          throws JAXBException {
 
         log.info("START - Processing Reuters XML File for date {}", importDate);
-
-        var temp = File.createTempFile(multipartFile.getOriginalFilename(), ".xml");
-        temp.deleteOnExit();
-        multipartFile.transferTo(temp);
 
         //TODO In the future, possible to change to annotation based configuration
         JAXBContext context = JAXBContext.newInstance(ComplianceActivity.class);
         final var activity= (ComplianceActivity) context.createUnmarshaller()
-                .unmarshal(new FileReader(temp));
+                .unmarshal(new BufferedReader(reader));
 
         //Process userLink entries
         final var communicationRecipients= parseCommunicationRecipients(activity);
@@ -53,10 +58,7 @@ public class ReutersXmlExtractionService {
 
 
         //TODO call communication logs service here
-
-        temp.delete();
-
-        //TODO add database logging for extraction activity
+       //TODO add database logging for extraction activity
 
         log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 

@@ -28,3 +28,22 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 20MB
+isis:
+  security:
+    jwt-public-key: ${JWT_PUBLIC_KEY}
+  internal:
+    authentication:
+      client-id: ${CLIENT_ID}
+      client-secret: ${CLIENT_SECRET}
+      access-token-url: ${ACCESS_TOKEN_URL}
+    services:
+      storage:
+        endpoint: ${STORAGE_SERVICE_ENDPOINT}
+  download:
+    timeout: ${AZURE_DOWNLOAD_TIMEOUT}
+    scheduler:
+      cron: ${DOWNLOAD_SCHEDULER_CRON}
+      lock-time: ${DOWNLOAD_SCHEDULER_LOCK_TIME}
+  azure:
+    connection-string: ${AZURE_CONNECTION_STRING}
+    share-name: ${AZURE_SHARE_NAME}

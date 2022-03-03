@@ -1,0 +1,42 @@
+server:
+  port: ${APP_SERVER_PORT}
+  servlet:
+    contextPath: /auth-service
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    tomcat:
+      test-while-idle: true
+      validation-query: SELECT 1
+    initialization-mode: never
+    platform: mysql
+  jpa:
+    database: SQL_SERVER
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServer2008Dialect
+        jdbc:
+          time_zone: UTC
+    hibernate:
+      naming:
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+      ddl-auto: update
+  flyway:
+    locations:
+      - classpath:db/migration
+    table: flyway_auth_schema_history
+    baseline-on-migrate: true
+isis:
+  security:
+    jks: ${JWT_JKS}
+    jwt-password: ${JWT_PASSWORD}
+  internal:
+    authentication:
+      api-key: ${API_KEY}
+      api-secret: ${API_SECRET}
+    services:
+      storage:
+        endpoint: ${STORAGE_SERVICE_ENDPOINT}
