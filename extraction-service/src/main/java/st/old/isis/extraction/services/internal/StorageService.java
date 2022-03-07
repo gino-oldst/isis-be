@@ -34,4 +34,22 @@ public class StorageService {
 
     return restService.post(url, entity, typeReference);
   }
+
+  public ListDto<CommunicationChainDto> importChain(@NonNull final ListDto<CommunicationChainDto> request)
+          throws IsisException {
+
+    final var url = storageUrl.chain().importChain();
+
+    final var entity =
+            HttpEntityBuilder.transactionalBuilder()
+                    .jsonContent()
+                    .body(objectUtils.toString(request))
+                    .build();
+
+    final var typeReference = new ParameterizedTypeReference<ListDto<CommunicationChainDto>>() {};
+
+    return restService.post(url, entity, typeReference);
+  }
+
+
 }

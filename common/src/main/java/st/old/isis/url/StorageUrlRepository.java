@@ -11,4 +11,9 @@ public abstract class StorageUrlRepository {
   public CommunicationUrl communication() {
     return new CommunicationUrl(this);
   }
+
+  public ChainUrl chain() {
+    return new ChainUrl(this);
+  }
+
 }

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.exception.IsisException;
 
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
@@ -113,7 +114,7 @@ public class ReutersDownloadService extends AzureDownloadService {
   private void processXml(@NonNull final InputStream inputStream) {
     try {
       extractionService.processXml(inputStream);
-    } catch (JAXBException e) {
+    } catch (JAXBException | IsisException e) {
       log.error("Error processing xml file: {}", e.getMessage());
       e.printStackTrace();
     }
