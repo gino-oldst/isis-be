@@ -17,7 +17,8 @@ public class DownloadScheduler {
   private final List<AzureDownloadService> service;
 
   @Scheduled(cron = "${isis.download.scheduler.cron}")
-  @SchedulerLock(name = "downloadRawFiles", lockAtMostFor = "${isis.download.scheduler.lock-time}")
+  @SchedulerLock(name = "downloadRawFiles",
+          lockAtLeastFor = "${isis.download.scheduler.lock-time}")
   public void downloadRawFiles() {
 
     log.info("Downloading raw files from azure...");
