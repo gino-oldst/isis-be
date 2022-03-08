@@ -12,4 +12,7 @@ public interface PolicyMapRepository extends JpaRepository<PolicyMap, String>,
 
     Optional<PolicyMap> findByKeywordIdAndPolicyId(@NonNull final String keywordId,
                                                    @NonNull final String policyId);
+
+    Optional<PolicyMap> findByPolicyId(@NonNull final String policyId);
+
 }

@@ -19,7 +19,7 @@ public class PolicyProcessorController {
     private final PolicyProcessorService service;
 
     @PostMapping("/policy/range")
-    public void processAllPendingImportData(@RequestBody PolicyProcessorDto dto) throws IsisException {
+    public void processPolicyByDateRange(@RequestBody PolicyProcessorDto dto) throws IsisException {
         service.processPolicyByDateRange(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo());
     }
 

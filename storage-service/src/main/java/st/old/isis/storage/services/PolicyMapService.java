@@ -58,6 +58,14 @@ public class PolicyMapService {
         return mapToResource(entity);
     }
 
+    @Audited(event = "GET_POLICY_MAP_BY_POLICY_ID")
+    public PolicyMapDto getByPolicyId(@NonNull @Audited final String policyId) throws IsisException {
+
+        final var entity = findByPolicyId(policyId);
+
+        return mapToResource(entity);
+    }
+
     @Audited(event = "DELETE_POLICY_MAP")
     public void delete(@NonNull @Audited final String id) throws IsisException {
 
@@ -111,6 +119,13 @@ public class PolicyMapService {
         return repository.findById(id)
                 .orElseThrow(() -> IsisException.notFound(
                         String.format("Cannot find policy map with id: [%s]", id),
+                        "NotFoundException"));
+    }
+
+    private PolicyMap findByPolicyId(@NonNull final String policyId) throws IsisException {
+        return repository.findByPolicyId(policyId)
+                .orElseThrow(() -> IsisException.notFound(
+                        String.format("Cannot find policy map with policy id: [%s]", policyId),
                         "NotFoundException"));
     }
 
