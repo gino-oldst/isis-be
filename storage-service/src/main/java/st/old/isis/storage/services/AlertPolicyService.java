@@ -3,18 +3,29 @@ package st.old.isis.storage.services;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertPolicyDto;
+import st.old.isis.enums.AlertPolicyStatus;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertPolicy;
 import st.old.isis.storage.repositories.AlertPolicyRepository;
 import st.old.isis.storage.specifications.AlertPolicySpecification;
 import st.old.isis.storage.validators.AlertPolicyValidator;
 
+import java.io.File;
+import java.io.FileReader;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -121,6 +132,19 @@ public class AlertPolicyService {
                 .totalCurrentElements(searchResults.getNumberOfElements())
                 .build()
                 .success();
+    }
+
+    @Audited(event = "GET_ACTIVE_ALERT_POLICY_BY_ID")
+    public AlertPolicyDto getActiveById(@NonNull @Audited final String id) throws IsisException {
+
+        final var template = findById(id);
+
+        if (template.getStatus() != AlertPolicyStatus.ACTIVE){
+            log.warn("Policy Record status is currently {} ", template.getStatus());
+            throw IsisException.conflict("Policy Record status is currently " + template.getStatus(), "StatusException");
+        }
+
+        return mapToResource(template);
     }
 
     private AlertPolicy findById(@NonNull final String id) throws IsisException{

@@ -38,7 +38,7 @@ public class AlertLogDto implements Dto {
 
     private AlertStatusType status;
 
-    private LocalDate alertDate;
+    private LocalDate importDate;
 
     private LocalDateTime dateCreated;
 

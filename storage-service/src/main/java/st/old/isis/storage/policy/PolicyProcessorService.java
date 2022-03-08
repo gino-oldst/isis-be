@@ -5,17 +5,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertPolicyDto;
+import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.enums.AlertPolicyStatus;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.policy.policies.InappropriateLanguagePolicy;
+import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
 import st.old.isis.storage.services.AlertPolicyService;
+import st.old.isis.storage.services.CommunicationMessageService;
 import st.old.isis.storage.services.DataImportRecordService;
 import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,9 +29,11 @@ public class PolicyProcessorService {
 
     private final AlertPolicyService alertPolicyService;
 
-    private final InappropriateLanguagePolicy inappropriateLanguagePolicy;
+    private final InappropriateLanguageAlgorithm inappropriateLanguagePolicy;
     
     private final DataImportRecordService dataImportRecordService;
+
+    private final CommunicationMessageService communicationMessageService;
 
     @Audited(event = "PROCESS_ALL_PENDING_IMPORT_DATA")
     public void processAllPendingImportData() throws IsisException {
@@ -49,6 +56,23 @@ public class PolicyProcessorService {
 
     }
 
+    public void processPolicyByDateRange(@NonNull String policyId,
+                                         @NonNull LocalDate dateFrom,
+                                         @NonNull LocalDate dateTo) throws IsisException {
+
+        final var policyDto = alertPolicyService.getActiveById(policyId);
+
+        log.info("START - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);
+
+        final var listOfDates= dateFrom.datesUntil(dateTo.plusDays(1)).collect(Collectors.toList());
+
+        for(LocalDate targetDate: listOfDates){
+            processPolicy(policyDto, targetDate);
+        }
+
+        log.info("COMPLETED - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);
+    }
+
     public void processAllPoliciesByImportDate(LocalDate importDate) throws IsisException {
 
         log.info("START - Processing All Policies by Import Date: {}", importDate);
@@ -69,29 +93,22 @@ public class PolicyProcessorService {
 
     public void processPolicy(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
 
-        final var policyRecord = alertPolicyService.getById(filter.getId());
+        final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
-        if (policyRecord == null) {
-            log.warn("Alert Policy Record with Internal Code {}  does not exist", filter.getInternalCode());
-            throw IsisException.notFound("No policy record found.", "NotFoundException");
+        final var commMessages= communicationMessageService.search(
+                CommunicationMessageDto.builder().importDate(importDate).build());
+
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
+            log.warn("No communication messages found for date: {}.", importDate);
+        } else {
+            switch (policyRecord.getInternalCode()) {
+                case "INAPPROPRIATE_LANGUAGE":
+                    inappropriateLanguagePolicy.process(commMessages.getData(), policyRecord, importDate);
+                    break;
+                default:
+                    break;
+            }
         }
-
-        if (policyRecord.getStatus() != AlertPolicyStatus.ACTIVE){
-            log.warn("Behavior Record is currently IN-ACTIVE");
-            throw IsisException.conflict("Behavior Record is currently IN-ACTIVE.", "StatusException");
-        }
-
-        switch (policyRecord.getInternalCode()) {
-            case "INAPPROPRIATE_LANGUAGE":
-                inappropriateLanguagePolicy.process(policyRecord, importDate);
-                break;
-            default:
-                break;
-        }
-
-
     }
-
-
 
 }

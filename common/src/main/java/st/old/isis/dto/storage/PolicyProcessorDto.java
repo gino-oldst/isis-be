@@ -16,6 +16,12 @@ public class PolicyProcessorDto implements Dto {
 
     private static final long serialVersionUID = 8822258613259030740L;
 
+    private String policyId;
+
     private LocalDate importDate;
+
+    private LocalDate dateFrom;
+
+    private LocalDate dateTo;
 
 }

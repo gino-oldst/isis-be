@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class InappropriateLanguagePolicy {
+public class InappropriateLanguageAlgorithm {
 
     private final AlertLogService alertLogService;
 
@@ -31,6 +31,74 @@ public class InappropriateLanguagePolicy {
     private final KeywordService keywordService;
 
     private final CommunicationMessageService communicationMessageService;
+
+    public void process(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
+
+        log.info("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+
+        final var policyId= policy.getId();
+
+        final var listPolicyMap = policyMapService.search(PolicyMapDto.builder().policyId(policyId).build());
+
+        if(listPolicyMap == null || ListUtils.isNullOrEmpty(listPolicyMap.getData())){
+            log.warn("No policy map keywords found for policy {}", policyId);
+            throw IsisException.notFound(
+                    String.format("No policy map keywords found for policy [%s]", policyId),
+                    "NotFoundException");
+        }
+
+        final var keywordsMap = generateKeywordMap(listPolicyMap.getData());
+
+        // Generate keyword set for trie
+        final var keywords = keywordsMap.entrySet().stream()
+                .map(k -> k.getValue().getWord())
+                .collect(Collectors.toSet());
+
+        Trie trie = Trie.builder().onlyWholeWords().ignoreCase().addKeywords(keywords).build();
+
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
+            log.warn("No communication messages found.");
+            throw IsisException.notFound(
+                    String.format("No communication messages found."),
+                    "NotFoundException");
+        }
+
+        for(CommunicationMessageDto message: commMessages){
+
+            final var emits= trie.parseText(message.getMessage());
+
+            if(!emits.isEmpty()) {
+                emits.stream()
+                        .forEach( emit -> {
+
+                            final var keywordDto= keywordsMap.get(emit.getKeyword());
+
+                            if(keywordDto == null){
+                                log.warn("No keywords found in keywords map for {}", emit.getKeyword());
+                                return;
+                            }
+
+                            final var alert= AlertLogDto.builder()
+                                    .commChainLinkId(message.getChainLinkId())
+                                    .commMessageId(message.getId())
+                                    .policyId(policyId)
+                                    .description(null) // TODO Generated alert description
+                                    .status(AlertStatusType.OPEN)
+                                    .keyword(emit.getKeyword())
+                                    .keywordId(keywordDto.getId())
+                                    .importDate(importDate)  // For internal use only
+                                    .build();
+
+                            log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
+                            alertLogService.create(alert);
+                        });
+            }
+        }
+
+
+        log.info("COMPLETED - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+
+    }
 
     public void process(AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 

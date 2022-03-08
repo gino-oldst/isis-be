@@ -11,6 +11,7 @@ import st.old.isis.enums.AlertStatusType;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -43,6 +44,8 @@ public class AlertLog implements Serializable {
     private String keyword;
 
     private String keywordId;
+
+    private LocalDate importDate;
 
     @Enumerated(EnumType.STRING)
     private AlertStatusType status;
