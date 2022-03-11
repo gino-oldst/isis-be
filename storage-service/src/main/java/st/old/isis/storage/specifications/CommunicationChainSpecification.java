@@ -27,6 +27,10 @@ public class CommunicationChainSpecification implements Specification<Communicat
 
         final List<Predicate> predicates = new ArrayList<>();
 
+        if(filter.getSubject() != null) {
+            predicates.add(cb.like(cb.upper(root.get("subject")), "%" + filter.getSubject().toUpperCase() + "%"));
+        }
+
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
         return cb.and(predicates.toArray(Predicate[]::new));
