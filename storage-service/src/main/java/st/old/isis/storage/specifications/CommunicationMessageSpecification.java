@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.storage.entities.CommunicationMessage;
+import st.old.isis.utils.ListUtils;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -29,8 +30,20 @@ public class CommunicationMessageSpecification implements Specification<Communic
             predicates.add(cb.equal(root.get("chainLinkId"), filter.getChainLinkId()));
         }
 
+        if(!ListUtils.isNullOrEmpty(filter.getChains())) {
+            predicates.add(root.get("id").in(filter.getChains()));
+        }
+
+        if(filter.getDateFrom() != null && filter.getDateTo() != null) {
+            predicates.add(cb.between(root.get("importDate"), filter.getDateFrom(), filter.getDateTo()));
+        }
+
         if(filter.getSender() != null){
             predicates.add(cb.equal(root.get("sender"), filter.getSender()));
+        }
+
+        if(!ListUtils.isNullOrEmpty(filter.getSenders())){
+            predicates.add(root.get("sender").in(filter.getSenders()));
         }
 
         if(filter.getMessage() != null){
@@ -40,6 +53,7 @@ public class CommunicationMessageSpecification implements Specification<Communic
         if(filter.getImportDate() != null){
             predicates.add(cb.equal(root.get("importDate"), filter.getImportDate()));
         }
+
 
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 

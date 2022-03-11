@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.storage.entities.CommunicationRecipient;
+import st.old.isis.utils.ListUtils;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -29,6 +30,14 @@ public class CommunicationRecipientSpecification implements Specification<Commun
 
         if(filter.getRecipient() != null) {
             predicates.add(cb.equal(root.get("recipient"), filter.getRecipient()));
+        }
+
+        if(!ListUtils.isNullOrEmpty(filter.getRecipients())) {
+            predicates.add(root.get("recipient").in(filter.getRecipients()));
+        }
+
+        if(filter.getDateFrom() != null && filter.getDateTo() != null) {
+            predicates.add(cb.between(root.get("dateImported"), filter.getDateFrom(), filter.getDateTo()));
         }
 
         return cb.and(predicates.toArray(Predicate[]::new));

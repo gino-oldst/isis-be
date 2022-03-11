@@ -43,4 +43,11 @@ public class CommunicationChainDto implements Dto {
     private List<CommunicationMessageDto> messages;
 
     private List<CommunicationRecipientDto> recipients;
+
+    // Used for search function
+    private List<String> chains;
+
+    private LocalDate filterDateFrom;
+
+    private LocalDate filterDateTo;
 }

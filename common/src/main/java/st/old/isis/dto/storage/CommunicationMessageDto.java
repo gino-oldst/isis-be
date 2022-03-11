@@ -8,6 +8,7 @@ import st.old.isis.dto.Dto;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -36,5 +37,14 @@ public class CommunicationMessageDto implements Dto {
     private LocalDateTime dateModified;
 
     private boolean deleted;
+
+    // Used for search function
+    private List<String> chains;
+
+    private List<String> senders;
+
+    private LocalDate dateFrom;
+
+    private LocalDate dateTo;
 
 }

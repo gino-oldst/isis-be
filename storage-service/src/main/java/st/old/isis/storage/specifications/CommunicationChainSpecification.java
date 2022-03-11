@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.storage.entities.CommunicationChain;
+import st.old.isis.utils.ListUtils;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -29,6 +30,14 @@ public class CommunicationChainSpecification implements Specification<Communicat
 
         if(filter.getSubject() != null) {
             predicates.add(cb.like(cb.upper(root.get("subject")), "%" + filter.getSubject().toUpperCase() + "%"));
+        }
+
+        if(!ListUtils.isNullOrEmpty(filter.getChains())) {
+            predicates.add(root.get("id").in(filter.getChains()));
+        }
+
+        if(filter.getFilterDateFrom() != null && filter.getFilterDateTo() != null) {
+            predicates.add(cb.between(root.get("dateImported"), filter.getFilterDateFrom(), filter.getFilterDateTo()));
         }
 
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));

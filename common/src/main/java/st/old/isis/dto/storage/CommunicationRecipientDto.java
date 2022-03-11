@@ -26,4 +26,9 @@ public class CommunicationRecipientDto implements Dto {
     private List<String> recipients;
 
     private LocalDate dateImported;
+
+    // Used for search function
+    private LocalDate dateFrom;
+
+    private LocalDate dateTo;
 }

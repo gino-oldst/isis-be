@@ -30,7 +30,7 @@ public class CommunicationMessage implements Serializable {
 
     private String chainLinkId;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
     private String message;
 
     private String sourceMessageId;
