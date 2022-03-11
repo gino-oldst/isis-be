@@ -56,6 +56,7 @@ public class CommunicationChainService {
             final var recipients = chain.getRecipients().stream()
                     .map(recipient -> {
                         recipient.setChainLinkId(chainLinkId);
+                        recipient.setDateImported(importDate);
                         return recipientService.create(recipient);
                     })
                     .collect(Collectors.toList());

@@ -8,6 +8,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Data
 @Table
@@ -27,4 +28,6 @@ public class CommunicationRecipient implements Serializable {
     private String chainLinkId;
 
     private String recipient;
+
+    private LocalDate dateImported;
 }

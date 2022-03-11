@@ -117,6 +117,7 @@ public class CommunicationRecipientService {
                 .id(dto.getId())
                 .chainLinkId(dto.getChainLinkId())
                 .recipient(dto.getRecipient())
+                .dateImported(dto.getDateImported())
                 .build();
     }
 
@@ -125,6 +126,7 @@ public class CommunicationRecipientService {
                 .id(entity.getId())
                 .chainLinkId(entity.getChainLinkId())
                 .recipient(entity.getRecipient())
+                .dateImported(entity.getDateImported())
                 .build();
     }
 }

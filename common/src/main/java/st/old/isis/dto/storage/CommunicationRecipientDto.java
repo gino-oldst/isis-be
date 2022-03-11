@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -23,4 +24,6 @@ public class CommunicationRecipientDto implements Dto {
     private String recipient;
 
     private List<String> recipients;
+
+    private LocalDate dateImported;
 }
