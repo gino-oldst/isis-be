@@ -85,7 +85,7 @@ public class AlertLogService {
                 .success();
     }
 
-    @Audited(event = "SEARCH_ALERT_LOG")
+    @Audited(event = "SEARCH_PAGED_ALERT_LOG")
     public ListDto<AlertLogDto> search(@NonNull @Audited final AlertLogDto filter, @Audited Pageable pageable) {
 
         final var spec = new AlertLogSpecification(filter);
