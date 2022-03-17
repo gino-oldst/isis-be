@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -273,6 +274,6 @@ public abstract class AzureDownloadService {
             // .recipients() todo: recipients
             .build();
 
-    notificationService.sendNotification(request);
+    notificationService.sendNotification(List.of(request));
   }
 }

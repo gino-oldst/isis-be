@@ -12,6 +12,8 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationChainService;
 import st.old.isis.storage.services.internal.NotificationService;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -55,7 +57,7 @@ public class CommunicationChainController {
                             // .recipients() todo: recipients
                             .build();
 
-            notificationService.sendNotification(notification);
+            notificationService.sendNotification(List.of(notification));
 
             throw err;
         }

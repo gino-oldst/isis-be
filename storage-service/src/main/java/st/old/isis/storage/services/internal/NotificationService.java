@@ -10,6 +10,8 @@ import st.old.isis.storage.builder.NotificationUrl;
 import st.old.isis.utils.HttpEntityBuilder;
 import st.old.isis.utils.ObjectUtils;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class NotificationService {
   private final ObjectUtils objectUtils;
 
   @Async
-  public void sendNotification(@NonNull final NotificationRequestDto request) {
+  public void sendNotification(@NonNull final List<NotificationRequestDto> request) {
 
     try {
 

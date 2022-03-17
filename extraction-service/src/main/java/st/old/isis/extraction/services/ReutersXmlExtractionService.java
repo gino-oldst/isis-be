@@ -233,6 +233,6 @@ public class ReutersXmlExtractionService {
                         //.recipients() todo: recipients
                         .build();
 
-        notificationService.sendNotification(request);
+        notificationService.sendNotification(List.of(request));
     }
 }
