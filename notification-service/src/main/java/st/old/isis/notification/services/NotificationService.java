@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import st.old.isis.dto.notification.*;
 import st.old.isis.enums.NotificationType;
 import st.old.isis.exception.IsisException;
+import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,8 +27,12 @@ public class NotificationService {
         req -> {
           try {
 
+            if (ListUtils.isNullOrEmpty(req.getRecipients())) {
+              throw IsisException.badRequest("Recipients field is empty","Invalid Request");
+            }
+
             final var isTemplate =
-                req.getTemplateName() != null || !req.getTemplateName().isEmpty();
+                    !(req.getTemplateName() == null || req.getTemplateName().isEmpty());
 
             if (isTemplate) {
               sendTemplatedMessage(req);

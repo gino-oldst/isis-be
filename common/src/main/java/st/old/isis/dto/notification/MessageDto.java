@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -20,5 +21,5 @@ public class MessageDto implements Dto {
 
   private String body;
 
-  private Map<String, String> data;
+  private Map<String, String> data = new HashMap<>();
 }

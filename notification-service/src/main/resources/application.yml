@@ -1,7 +1,7 @@
 server:
   port: ${APP_SERVER_PORT}
   servlet:
-    contextPath: /storage-service
+    contextPath: /notification-service
 spring:
   datasource:
     url: ${DATABASE_URL}

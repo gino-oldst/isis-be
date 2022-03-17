@@ -27,7 +27,7 @@ WHERE s.name = 'dbo'
 AND t.name = 'notification_history')
 CREATE TABLE dbo.notification_history
 (
-    id                      VARCHAR(255)    NOT NULL PRIMARY KEY,
+    id                      BIGINT          NOT NULL PRIMARY KEY IDENTITY(1,1),
     subject                 VARCHAR(255)    NOT NULL,
     message                 TEXT            NOT NULL,
     recipient               VARCHAR(255)    NOT NULL,
