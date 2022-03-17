@@ -1,0 +1,44 @@
+server:
+  port: ${APP_SERVER_PORT}
+  servlet:
+    contextPath: /storage-service
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    tomcat:
+      test-while-idle: true
+      validation-query: SELECT 1
+    initialization-mode: never
+    platform: mysql
+  jpa:
+    database: SQL_SERVER
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServer2008Dialect
+        jdbc:
+          time_zone: UTC
+    hibernate:
+      naming:
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+      ddl-auto: none
+  flyway:
+    locations:
+      - classpath:db/migration
+    table: flyway_notification_schema_history
+    baseline-on-migrate: true
+isis:
+  security:
+    jwt-public-key: ${JWT_PUBLIC_KEY}
+  internal:
+    authentication:
+      client-id: ${CLIENT_ID}
+      client-secret: ${CLIENT_SECRET}
+      access-token-url: ${ACCESS_TOKEN_URL}
+    services:
+      audit:
+        endpoint: ${AUDIT_SERVICE_ENDPOINT}
+      notification:
+        fcm-key: ${FCM_KEY}

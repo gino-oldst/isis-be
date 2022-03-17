@@ -1,15 +1,15 @@
-package st.old.isis.storage.services;
+package st.old.isis.notification.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
-import st.old.isis.dto.analysis.MessageTemplateDto;
+import st.old.isis.dto.notification.MessageTemplateDto;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.entities.MessageTemplate;
-import st.old.isis.storage.repositories.MessageTemplateRepository;
-import st.old.isis.storage.validators.MessageTemplateValidator;
+import st.old.isis.notification.entities.MessageTemplate;
+import st.old.isis.notification.repositories.MessageTemplateRepository;
+import st.old.isis.notification.validators.MessageTemplateValidator;
 
 @Slf4j
 @Service
@@ -20,7 +20,8 @@ public class MessageTemplateService {
   private final MessageTemplateValidator validator;
 
   @Audited(event = "CREATE_MESSAGE_TEMPLATE")
-  public MessageTemplateDto create(@NonNull @Audited final MessageTemplateDto dto) throws IsisException {
+  public MessageTemplateDto create(@NonNull @Audited final MessageTemplateDto dto)
+      throws IsisException {
 
     validator.createValidate(dto);
 
@@ -32,7 +33,8 @@ public class MessageTemplateService {
   }
 
   @Audited(event = "UPDATE_MESSAGE_TEMPLATE")
-  public MessageTemplateDto update(@NonNull @Audited final MessageTemplateDto dto) throws IsisException {
+  public MessageTemplateDto update(@NonNull @Audited final MessageTemplateDto dto)
+      throws IsisException {
 
     final var oldEntity = findById(dto.getId());
 
@@ -92,9 +94,9 @@ public class MessageTemplateService {
     return MessageTemplate.builder()
         .id(dto.getId())
         .name(dto.getName())
+        .subject(dto.getSubject())
         .textTemplate(dto.getTextTemplate())
         .emailTemplate(dto.getEmailTemplate())
-        .type(dto.getType())
         .dateCreated(dto.getDateCreated())
         .dateModified(dto.getDateModified())
         .deleted(dto.isDeleted())
@@ -105,9 +107,9 @@ public class MessageTemplateService {
     return MessageTemplateDto.builder()
         .id(entity.getId())
         .name(entity.getName())
+        .subject(entity.getSubject())
         .textTemplate(entity.getTextTemplate())
         .emailTemplate(entity.getEmailTemplate())
-        .type(entity.getType())
         .dateCreated(entity.getDateCreated())
         .dateModified(entity.getDateModified())
         .deleted(entity.isDeleted())

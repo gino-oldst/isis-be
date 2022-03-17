@@ -8,6 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
 import st.old.isis.constants.ReutersConstants;
 import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.notification.MessageDto;
+import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
@@ -15,6 +17,7 @@ import st.old.isis.dto.storage.UserDto;
 import st.old.isis.entities.generated.ComplianceActivity;
 import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
 
 import javax.xml.bind.JAXBContext;
@@ -32,17 +35,28 @@ import java.util.stream.Collectors;
 public class ReutersXmlExtractionService {
 
     private final StorageService storageService;
+    private final NotificationService notificationService;
 
     @Audited(event = "PARSE_XML_STREAM")
     public ListDto<CommunicationChainDto> processXml(
             @NonNull final InputStream inputStream) throws JAXBException, IsisException {
-        return processXml(new InputStreamReader(inputStream), LocalDate.now());
+        try {
+            return processXml(new InputStreamReader(inputStream), LocalDate.now());
+        } catch (Throwable err) {
+            sendParsingError(err);
+            throw err;
+        }
     }
 
     @Audited(event = "PARSE_XML_MULTIPART")
     public ListDto<CommunicationChainDto> processXml(
             MultipartFile multipartFile, LocalDate importDate) throws IOException, JAXBException, IsisException {
-        return processXml(new InputStreamReader(multipartFile.getInputStream()), importDate);
+        try {
+            return processXml(new InputStreamReader(multipartFile.getInputStream()), importDate);
+        } catch (Throwable err) {
+            sendParsingError(err);
+            throw err;
+        }
     }
 
     public ListDto<CommunicationChainDto> processXml(Reader reader, LocalDate importDate)
@@ -203,5 +217,22 @@ public class ReutersXmlExtractionService {
 
     }
 
+    private void sendParsingError(Throwable e) {
+        log.error("An error occurred when parsing Reuters raw file", e);
 
+        final var request =
+                NotificationRequestDto.builder()
+                        .customMessage(
+                                MessageDto.builder()
+                                        .subject("Download Failed")
+                                        .body(
+                                                String.format(
+                                                        "Error parsing Reuters raw data file failed: %s",
+                                                        e.getMessage()))
+                                        .build())
+                        //.recipients() todo: recipients
+                        .build();
+
+        notificationService.sendNotification(request);
+    }
 }

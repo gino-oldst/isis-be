@@ -43,6 +43,8 @@ isis:
         endpoint: ${STORAGE_SERVICE_ENDPOINT}
       audit:
         endpoint: ${AUDIT_SERVICE_ENDPOINT}
+      notification:
+        endpoint: ${NOTIFICATION_SERVICE_ENDPOINT}
   download:
     timeout: ${AZURE_DOWNLOAD_TIMEOUT}
     scheduler:

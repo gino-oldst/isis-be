@@ -1,11 +1,11 @@
-package st.old.isis.storage.controllers;
+package st.old.isis.notification.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import st.old.isis.dto.analysis.MessageTemplateDto;
+import st.old.isis.dto.notification.MessageTemplateDto;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.services.MessageTemplateService;
+import st.old.isis.notification.services.MessageTemplateService;
 
 @Slf4j
 @RestController

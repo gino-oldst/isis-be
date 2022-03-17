@@ -1,9 +1,9 @@
-package st.old.isis.storage.repositories;
+package st.old.isis.notification.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.lang.NonNull;
-import st.old.isis.storage.entities.MessageTemplate;
+import st.old.isis.notification.entities.MessageTemplate;
 
 import java.util.Optional;
 

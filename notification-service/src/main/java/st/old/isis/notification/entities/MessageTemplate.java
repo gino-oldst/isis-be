@@ -1,4 +1,4 @@
-package st.old.isis.storage.entities;
+package st.old.isis.notification.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
-import st.old.isis.enums.NotificationType;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -30,12 +29,13 @@ public class MessageTemplate implements Serializable {
 
   private String name;
 
+  private String subject;
+
+  @Column(columnDefinition = "TEXT")
   private String textTemplate;
 
+  @Column(columnDefinition = "TEXT")
   private String emailTemplate;
-
-  @Enumerated(EnumType.STRING)
-  private NotificationType type;
 
   @CreationTimestamp private LocalDateTime dateCreated;
 

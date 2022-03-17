@@ -5,9 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.notification.MessageDto;
+import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationChainService;
+import st.old.isis.storage.services.internal.NotificationService;
 
 @Slf4j
 @RestController
@@ -16,6 +19,7 @@ import st.old.isis.storage.services.CommunicationChainService;
 public class CommunicationChainController {
 
     private final CommunicationChainService service;
+    private final NotificationService notificationService;
 
     @GetMapping("/{id}")
     public CommunicationChainDto getById(@PathVariable final String id) throws IsisException {
@@ -33,8 +37,28 @@ public class CommunicationChainController {
     }
 
     @PostMapping("/import")
-    public ListDto<CommunicationChainDto> importData(@RequestBody final ListDto<CommunicationChainDto> request) throws IsisException {
-        return service.importData(request);
+    public ListDto<CommunicationChainDto> importData(
+            @RequestBody final ListDto<CommunicationChainDto> request) throws IsisException {
+        try {
+            return service.importData(request);
+        } catch (Throwable err) {
+
+            log.error("Error importing parsed data", err);
+
+            final var notification =
+                    NotificationRequestDto.builder()
+                            .customMessage(
+                                    MessageDto.builder()
+                                            .subject("Saving Parsed Data Failed")
+                                            .body(String.format("Saving parsed data failed: %s", err.getMessage()))
+                                            .build())
+                            // .recipients() todo: recipients
+                            .build();
+
+            notificationService.sendNotification(notification);
+
+            throw err;
+        }
     }
 
     @DeleteMapping("/{id}")

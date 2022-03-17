@@ -42,8 +42,10 @@ isis:
     services:
       audit:
         endpoint: ${AUDIT_SERVICE_ENDPOINT}
+      notification:
+        endpoint: ${NOTIFICATION_SERVICE_ENDPOINT}
   scheduler:
     policy-processor:
       all-pending:
-        cron:  ${SCHEDULER_PROCESSOR_ALL_PENDING_CRON}
+        cron: ${SCHEDULER_PROCESSOR_ALL_PENDING_CRON}
         lock-time: ${SCHEDULER_PROCESSOR_ALL_PENDING_LOCK_TIME}

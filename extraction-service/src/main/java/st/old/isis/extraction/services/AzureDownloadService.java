@@ -12,8 +12,11 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import st.old.isis.dto.notification.MessageDto;
+import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.extraction.entity.DownloadVersionControl;
 import st.old.isis.extraction.entity.FileDownloadHistory;
+import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.utils.DownloadUtils;
 import st.old.isis.utils.AuditUtil;
 
@@ -34,6 +37,7 @@ public abstract class AzureDownloadService {
   @Autowired private FileDownloadHistoryService historyService;
   @Autowired private DownloadVersionControlService versionControlService;
   @Autowired private DownloadUtils downloadUtils;
+  @Autowired private NotificationService notificationService;
   @Autowired protected AuditUtil auditUtil;
 
   protected abstract String source();
@@ -44,21 +48,55 @@ public abstract class AzureDownloadService {
 
   public void sync() {
 
-    final var source = source();
+    try {
 
-    log.info("Checking [{}] directory", source);
+      final var source = source();
 
-    final var optVersion = versionControlService.getVersionControl(source);
+      log.info("Checking [{}] directory", source);
 
-    final PagedIterable<ShareFileItem> items;
+      final var optVersion = versionControlService.getVersionControl(source);
 
-    if (optVersion.isPresent()) {
+      final PagedIterable<ShareFileItem> items;
 
-      final var version = optVersion.get();
-      final var prefix = getPrefix(version.getLastFileName());
+      if (optVersion.isPresent()) {
 
-      log.info("Getting files with prefix: {}", prefix);
+        final var version = optVersion.get();
+        final var prefix = getPrefix(version.getLastFileName());
 
+        log.info("Getting files with prefix: {}", prefix);
+
+        final var options = new ShareListFilesAndDirectoriesOptions();
+
+        options.setPrefix(prefix);
+        options.setMaxResultsPerPage(10);
+
+        final var timeout = Duration.ofSeconds(downloadUtils.getTimeout());
+
+        items =
+            rootDirectory.listFilesAndDirectories(options, timeout, new Context(source, source));
+
+      } else {
+
+        items = rootDirectory.listFilesAndDirectories();
+      }
+
+      if (items.stream().findAny().isEmpty()) {
+        log.info("Cannot find any items on directory: {}", source);
+      }
+
+      items.forEach(item -> inspectItem(rootDirectory, item, source));
+
+    } catch (Throwable err) {
+      sendDownloadingError(err);
+      throw err;
+    }
+  }
+
+  public void sync(@NonNull final String prefix) {
+
+    try {
+
+      final var source = source();
       final var options = new ShareListFilesAndDirectoriesOptions();
 
       options.setPrefix(prefix);
@@ -66,38 +104,19 @@ public abstract class AzureDownloadService {
 
       final var timeout = Duration.ofSeconds(downloadUtils.getTimeout());
 
-      items = rootDirectory.listFilesAndDirectories(options, timeout, new Context(source, source));
+      final var items =
+          rootDirectory.listFilesAndDirectories(options, timeout, new Context(source, source));
 
-    } else {
+      if (items.stream().findAny().isEmpty()) {
+        log.info("Cannot find any items on directory: {}", source);
+      }
 
-      items = rootDirectory.listFilesAndDirectories();
+      items.forEach(item -> inspectItem(rootDirectory, item, source));
+
+    } catch (Throwable err) {
+      sendDownloadingError(err);
+      throw err;
     }
-
-    if (items.stream().findAny().isEmpty()) {
-      log.info("Cannot find any items on directory: {}", source);
-    }
-
-    items.forEach(item -> inspectItem(rootDirectory, item, source));
-  }
-
-  public void sync(@NonNull final String prefix) {
-
-    final var source = source();
-    final var options = new ShareListFilesAndDirectoriesOptions();
-
-    options.setPrefix(prefix);
-    options.setMaxResultsPerPage(10);
-
-    final var timeout = Duration.ofSeconds(downloadUtils.getTimeout());
-
-    final var items =
-        rootDirectory.listFilesAndDirectories(options, timeout, new Context(source, source));
-
-    if (items.stream().findAny().isEmpty()) {
-      log.info("Cannot find any items on directory: {}", source);
-    }
-
-    items.forEach(item -> inspectItem(rootDirectory, item, source));
   }
 
   private String getPrefix(@NonNull final String date) {
@@ -237,5 +256,23 @@ public abstract class AzureDownloadService {
         DownloadVersionControl.builder().source(source()).lastFileName(filename).build();
 
     versionControlService.saveVersionControl(version);
+  }
+
+  private void sendDownloadingError(Throwable err) {
+    log.error(String.format("An error occurred when downloading %s raw file", source()), err);
+
+    final var request =
+        NotificationRequestDto.builder()
+            .customMessage(
+                MessageDto.builder()
+                    .subject("Download Failed")
+                    .body(
+                        String.format(
+                            "Download %s raw date file failed: %s", source(), err.getMessage()))
+                    .build())
+            // .recipients() todo: recipients
+            .build();
+
+    notificationService.sendNotification(request);
   }
 }
