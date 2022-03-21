@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -42,6 +40,8 @@ public abstract class AzureDownloadService {
   @Autowired protected AuditUtil auditUtil;
 
   protected abstract String source();
+
+  protected abstract String getPrefix(@NonNull final String prefix);
 
   protected abstract boolean skipFile(@NonNull final String filename);
 
@@ -120,28 +120,6 @@ public abstract class AzureDownloadService {
     }
   }
 
-  private String getPrefix(@NonNull final String date) {
-
-    final var prefixFormatter = DateTimeFormatter.ofPattern("yyyy-MM-");
-
-    final var now = LocalDate.now();
-
-    if (now.lengthOfMonth() == now.getDayOfMonth()) {
-      return now.format(prefixFormatter);
-    }
-
-    final var lastFileDate = LocalDate.parse(date, DownloadUtils.FILENAME_FORMAT);
-
-    final var lastDateSuffix = lastFileDate.getDayOfMonth() / 10;
-    final var currentDateSuffix = now.getDayOfMonth() / 10;
-
-    if (lastDateSuffix == currentDateSuffix) {
-      return lastFileDate.format(prefixFormatter) + currentDateSuffix;
-    } else {
-      return now.format(prefixFormatter);
-    }
-  }
-
   private void inspectItem(
       @NonNull final ShareDirectoryClient directory,
       @NonNull final ShareFileItem item,
@@ -182,12 +160,14 @@ public abstract class AzureDownloadService {
       return;
     }
 
-    final var sha1 = getSha1String(client, filename);
+    final var fileId = getFileId(client, filename);
 
-    if (skipFileBasedOnSha1(sha1, filename)) {
+    if (skipFileBasedOnFileId(fileId, filename)) {
       log.info("File ignored, already processed: {}", filename);
       return;
     }
+
+    final long start = System.currentTimeMillis();
 
     log.info("Processing file: {}", filename);
 
@@ -195,31 +175,40 @@ public abstract class AzureDownloadService {
 
     processFile(fileClient);
 
-    saveToHistory(sha1, fileClient.getFilePath());
+    saveToHistory(fileId, fileClient.getFilePath());
     saveToVersionControl(directoryName);
+
+    log.info("Elapsed " + (System.currentTimeMillis() - start) + " ms");
   }
 
-  private String getSha1String(
+  private String getFileId(
       @NonNull final ShareDirectoryClient client, @NonNull final String filename) {
 
-    final var sha1File = filename + ".sha1";
+    final var sha1File = client.getFileClient(filename + ".sha1");
 
-    final var sha1InputStream = client.getFileClient(sha1File).openInputStream();
+    final var sha1Exists = sha1File.exists();
+
+    if (!sha1Exists) {
+      return filename;
+    }
+
+    final var sha1InputStream = sha1File.openInputStream();
 
     return readSha1(sha1InputStream).trim();
   }
 
-  private boolean skipFileBasedOnSha1(@NonNull final String sha1, @NonNull final String filename) {
+  private boolean skipFileBasedOnFileId(
+      @NonNull final String fileId, @NonNull final String filename) {
 
-    if (Strings.isEmpty(sha1)) {
-      log.info("Skipping file Sha1 is empty for file name: [{}]", filename);
+    if (Strings.isEmpty(fileId)) {
+      log.info("Skipping file id is empty for file name: [{}]", filename);
       return true;
     }
 
-    final var isSha1Existing = historyService.isExisting(sha1);
+    final var isFileIdExisting = historyService.isExisting(fileId);
 
-    if (isSha1Existing) {
-      log.info("Skipping file Sha1 is existing: [{}]", sha1);
+    if (isFileIdExisting) {
+      log.info("Skipping file id is existing: [{}]", fileId);
       return true;
     }
 

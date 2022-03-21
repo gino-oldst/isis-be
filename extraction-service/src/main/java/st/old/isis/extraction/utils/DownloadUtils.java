@@ -10,7 +10,10 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class DownloadUtils {
 
-  public static final DateTimeFormatter FILENAME_FORMAT =
+  public static final DateTimeFormatter BLOOMBERG_FILENAME_FORMAT =
+      DateTimeFormatter.ofPattern("yyMMdd");
+
+  public static final DateTimeFormatter REUTERS_FILENAME_FORMAT =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T0000+0000'");
 
   @Value("${isis.azure.connection-string}")
@@ -21,4 +24,19 @@ public class DownloadUtils {
 
   @Value("${isis.download.timeout}")
   private int timeout;
+
+  @Value("${isis.download.directory.bloomberg}")
+  private String bloombergDirectory;
+
+  @Value("${isis.download.directory.ice-chat}")
+  private String iceChatDirectory;
+
+  @Value("${isis.download.directory.reuters}")
+  private String reutersDirectory;
+
+  @Value("${isis.download.directory.symphony}")
+  private String symphonyDirectory;
+
+  @Value("${isis.download.directory.whatsapp}")
+  private String whatsappDirectory;
 }

@@ -38,34 +38,34 @@ public class AzureConfiguration {
   @Qualifier("Bloomberg")
   public ShareDirectoryClient bloombergDirectory(
       @NonNull @Qualifier("RootDirectory") final ShareDirectoryClient rootDirectory) {
-    return rootDirectory.getSubdirectoryClient("Bloomberg");
+    return rootDirectory.getSubdirectoryClient(downloadUtils.getBloombergDirectory());
   }
 
   @Bean
   @Qualifier("IceChat")
   public ShareDirectoryClient iceChatDirectory(
       @NonNull @Qualifier("RootDirectory") final ShareDirectoryClient rootDirectory) {
-    return rootDirectory.getSubdirectoryClient("ICE Chat");
+    return rootDirectory.getSubdirectoryClient(downloadUtils.getIceChatDirectory());
   }
 
   @Bean
   @Qualifier("Reuters")
   public ShareDirectoryClient reutersDirectory(
       @NonNull @Qualifier("RootDirectory") final ShareDirectoryClient rootDirectory) {
-    return rootDirectory.getSubdirectoryClient("Refinitiv");
+    return rootDirectory.getSubdirectoryClient(downloadUtils.getReutersDirectory());
   }
 
   @Bean
   @Qualifier("Symphony")
   public ShareDirectoryClient symphonyDirectory(
       @NonNull @Qualifier("RootDirectory") final ShareDirectoryClient rootDirectory) {
-    return rootDirectory.getSubdirectoryClient("Symphony");
+    return rootDirectory.getSubdirectoryClient(downloadUtils.getSymphonyDirectory());
   }
 
   @Bean
   @Qualifier("Whatsapp")
   public ShareDirectoryClient whatsappDirectory(
       @NonNull @Qualifier("RootDirectory") final ShareDirectoryClient rootDirectory) {
-    return rootDirectory.getSubdirectoryClient("Whatsapp");
+    return rootDirectory.getSubdirectoryClient(downloadUtils.getWhatsappDirectory());
   }
 }

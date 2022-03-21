@@ -26,6 +26,11 @@ public class DownloadController {
     bloombergDownloadService.sync();
   }
 
+  @GetMapping("/bloomberg/search")
+  public void downloadBloomberg(@RequestParam @NonNull final String prefix) {
+    bloombergDownloadService.sync(prefix);
+  }
+
   @GetMapping("/icechat")
   public void downloadIceChat() {
     iceChatDownloadService.sync();

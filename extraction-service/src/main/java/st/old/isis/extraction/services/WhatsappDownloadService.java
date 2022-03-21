@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.enums.Source;
 
 @Slf4j
 @Service
@@ -33,7 +34,12 @@ public class WhatsappDownloadService extends AzureDownloadService {
 
   @Override
   protected String source() {
-    return "Whatsapp";
+    return Source.WHATSAPP.name();
+  }
+
+  @Override
+  protected String getPrefix(@NonNull final String prefix) {
+    return null;
   }
 
   @Override

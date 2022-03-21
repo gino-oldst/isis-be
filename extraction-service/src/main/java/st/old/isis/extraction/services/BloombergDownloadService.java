@@ -7,16 +7,24 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.enums.Source;
+import st.old.isis.extraction.utils.DownloadUtils;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 public class BloombergDownloadService extends AzureDownloadService {
 
-  // todo: Bloomberg extraction service
+  //  private final BloombergChatExtractionService extractionService;
 
   public BloombergDownloadService(
       @NonNull @Qualifier("Bloomberg") final ShareDirectoryClient bloomberg) {
     super(bloomberg);
+    //    this.extractionService = extractionService;
   }
 
   @Override
@@ -33,17 +41,47 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   @Override
   protected String source() {
-    return "Bloomberg";
+    return Source.BLOOMBERG.name();
+  }
+
+  @Override
+  protected String getPrefix(@NonNull final String prefix) {
+
+    final var prefixFormatter = DateTimeFormatter.ofPattern("yy-MM-");
+
+    final var now = LocalDate.now();
+
+    if (now.lengthOfMonth() == now.getDayOfMonth()) {
+      return now.format(prefixFormatter);
+    }
+
+    final var lastFileDate = LocalDate.parse(prefix, DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
+
+    final var lastDateSuffix = lastFileDate.getDayOfMonth() / 10;
+    final var currentDateSuffix = now.getDayOfMonth() / 10;
+
+    if (lastDateSuffix == currentDateSuffix) {
+      return lastFileDate.format(prefixFormatter) + currentDateSuffix;
+    } else {
+      return now.format(prefixFormatter);
+    }
   }
 
   @Override
   protected boolean skipFile(@NonNull final String filename) {
-    // todo: implement skip file logic based on filename
-    return false;
+    return filenamePatterns().stream().noneMatch(pattern -> pattern.matcher(filename).find());
+  }
+
+  private List<Pattern> filenamePatterns() {
+    return List.of(
+        Pattern.compile("^f840690.ib19.*\\.xml$"),
+        Pattern.compile("^f840690.ib19.att.*\\.tar.gz$"),
+        Pattern.compile("^f840690.msg.*\\.xml$"),
+        Pattern.compile("^f840690.msg.att.*\\.tar.gz$"));
   }
 
   @Override
   protected void processFile(@NonNull final ShareFileClient client) {
-    // todo: implement bloomberg file processing
+    // todo: send input stream to parser
   }
 }

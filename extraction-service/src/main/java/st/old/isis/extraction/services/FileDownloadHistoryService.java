@@ -20,8 +20,8 @@ public class FileDownloadHistoryService {
     repository.save(history);
   }
 
-  @Audited(event = "CHECK_DOWNLOADED_FILES_SHA1")
-  public boolean isExisting(@NonNull @Audited final String sha1) {
-    return repository.findById(sha1).isPresent();
+  @Audited(event = "CHECK_DOWNLOADED_FILES_ID")
+  public boolean isExisting(@NonNull @Audited final String id) {
+    return repository.findById(id).isPresent();
   }
 }
