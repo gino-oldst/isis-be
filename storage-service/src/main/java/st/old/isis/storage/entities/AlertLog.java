@@ -33,6 +33,9 @@ public class AlertLog implements Serializable {
 
     private String commMessageId;
 
+    @Lob
+    private String message;
+
     private String policyId;
 
     @Column(columnDefinition = "TEXT")

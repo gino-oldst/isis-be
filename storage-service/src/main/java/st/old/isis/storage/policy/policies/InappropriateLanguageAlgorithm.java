@@ -81,6 +81,7 @@ public class InappropriateLanguageAlgorithm {
                             final var alert= AlertLogDto.builder()
                                     .commChainLinkId(message.getChainLinkId())
                                     .commMessageId(message.getId())
+                                    .message(message.getMessage())
                                     .policyId(policyId)
                                     .description(null) // TODO Generated alert description
                                     .status(AlertStatusType.OPEN)

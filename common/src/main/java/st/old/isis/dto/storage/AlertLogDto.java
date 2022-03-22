@@ -24,6 +24,8 @@ public class AlertLogDto implements Dto {
 
     private String commMessageId;
 
+    private String message;
+
     private String policyId;
 
     private String description;
