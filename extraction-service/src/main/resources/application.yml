@@ -57,6 +57,7 @@ isis:
       reuters: ${REUTERS_DIRECTORY_NAME}
       symphony: ${SYMPHONY_DIRECTORY_NAME}
       whatsapp: ${WHATSAPP_DIRECTORY_NAME}
+    batch-size: ${BATCH_SIZE}
   azure:
     connection-string: ${AZURE_CONNECTION_STRING}
     share-name: ${AZURE_SHARE_NAME}

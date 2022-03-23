@@ -16,4 +16,7 @@ public abstract class StorageUrlRepository {
     return new ChainUrl(this);
   }
 
+  public ExternalUserUrl externalUser() {
+    return new ExternalUserUrl(this);
+  }
 }

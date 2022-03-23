@@ -10,6 +10,8 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.enums.Source;
 import st.old.isis.extraction.utils.DownloadUtils;
 
+import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLStreamException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -19,12 +21,13 @@ import java.util.regex.Pattern;
 @Service
 public class BloombergDownloadService extends AzureDownloadService {
 
-  //  private final BloombergChatExtractionService extractionService;
+  private final BloombergChatExtractionService extractionService;
 
   public BloombergDownloadService(
-      @NonNull @Qualifier("Bloomberg") final ShareDirectoryClient bloomberg) {
+      @NonNull @Qualifier("Bloomberg") final ShareDirectoryClient bloomberg,
+      @NonNull final BloombergChatExtractionService extractionService) {
     super(bloomberg);
-    //    this.extractionService = extractionService;
+    this.extractionService = extractionService;
   }
 
   @Override
@@ -82,6 +85,13 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   @Override
   protected void processFile(@NonNull final ShareFileClient client) {
-    // todo: send input stream to parser
+    try {
+
+      extractionService.parse(client.openInputStream(), LocalDate.now());
+
+    } catch (JAXBException | XMLStreamException e) {
+      log.error("Error processing xml file: {}", e.getMessage());
+      e.printStackTrace();
+    }
   }
 }

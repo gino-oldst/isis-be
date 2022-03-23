@@ -1,0 +1,94 @@
+package st.old.isis.extraction.events.listener;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationListener;
+import org.springframework.lang.NonNull;
+import st.old.isis.dto.Dto;
+import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.notification.MessageDto;
+import st.old.isis.dto.notification.NotificationRequestDto;
+import st.old.isis.extraction.configurations.BatchConfiguration;
+import st.old.isis.extraction.events.BatchEvent;
+import st.old.isis.extraction.services.internal.NotificationService;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+@Slf4j
+@RequiredArgsConstructor
+public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
+    implements ApplicationListener<B> {
+
+  private final BatchConfiguration batchConfiguration;
+  private final NotificationService notificationService;
+  private final ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<>();
+
+  protected abstract boolean isOnQueue(T obj, T newObj);
+
+  protected abstract void persist(ListDto<T> list) throws Throwable;
+
+  @Override
+  public void onApplicationEvent(@NonNull B event) {
+
+    try {
+
+      if (event.shouldFinalize() && !queue.isEmpty()) {
+        log.info("Finalize batch persist [{}] remaining objects", queue.size());
+        processBatch(queue.size());
+        return;
+      }
+
+      final var dto = event.getDto();
+      final var notExisting = queue.stream().noneMatch(obj -> isOnQueue(obj, dto));
+
+      if (notExisting) {
+        queue.offer(event.getDto());
+      }
+
+      if (queue.size() >= batchConfiguration.getBatchSize()) {
+        log.info("Batch persist [{}] objects", batchConfiguration.getBatchSize());
+        processBatch(batchConfiguration.getBatchSize());
+      }
+
+    } catch (Throwable err) {
+      sendBatchPersistingError(err);
+    }
+  }
+
+  private void processBatch(final int size) throws Throwable {
+    final var batch = new ArrayList<T>();
+
+    for (int x = 0; x < size; x++) {
+      Optional.ofNullable(queue.poll()).ifPresent(batch::add);
+    }
+
+    final var list =
+        ListDto.<T>builder()
+            .data(batch)
+            .totalPages(1)
+            .totalNoOfRecords(batch.size())
+            .totalCurrentElements(batch.size())
+            .build();
+
+    persist(list);
+  }
+
+  private void sendBatchPersistingError(Throwable e) {
+    log.error("An error occurred when persisting batched objects", e);
+
+    final var request =
+        NotificationRequestDto.builder()
+            .customMessage(
+                MessageDto.builder()
+                    .subject("Persisting Failed")
+                    .body(String.format("Persisting batched objects failed: %s", e.getMessage()))
+                    .build())
+            // .recipients() todo: recipients
+            .build();
+
+    notificationService.sendNotification(List.of(request));
+  }
+}

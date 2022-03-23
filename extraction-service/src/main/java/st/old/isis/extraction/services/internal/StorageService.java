@@ -6,10 +6,13 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
+import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.builder.StorageUrl;
 import st.old.isis.utils.HttpEntityBuilder;
 import st.old.isis.utils.ObjectUtils;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -35,21 +38,35 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  public ListDto<CommunicationChainDto> importChain(@NonNull final ListDto<CommunicationChainDto> request)
-          throws IsisException {
+  public ListDto<CommunicationChainDto> importChain(
+      @NonNull final ListDto<CommunicationChainDto> request) throws IsisException {
 
     final var url = storageUrl.chain().importChain();
 
     final var entity =
-            HttpEntityBuilder.transactionalBuilder()
-                    .jsonContent()
-                    .body(objectUtils.toString(request))
-                    .build();
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
 
     final var typeReference = new ParameterizedTypeReference<ListDto<CommunicationChainDto>>() {};
 
     return restService.post(url, entity, typeReference);
   }
 
+  public ListDto<ExternalUserDto> saveExternalUsers(@NonNull final List<ExternalUserDto> request)
+      throws IsisException {
 
+    final var url = storageUrl.externalUser().batch();
+
+    final var entity =
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
+
+    final var typeReference = new ParameterizedTypeReference<ListDto<ExternalUserDto>>() {};
+
+    return restService.post(url, entity, typeReference);
+  }
 }

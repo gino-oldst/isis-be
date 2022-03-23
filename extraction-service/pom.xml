@@ -147,6 +147,7 @@
                     <sources>
                         <source>src/main/resources/schemas/dummy.xsd</source>
                         <source>src/main/resources/schemas/reuters_compliance_activity.xsd</source>
+                        <source>src/main/resources/schemas/bloomberg_chat.xsd</source>
                     </sources>
                     <packageName>st.old.isis.entities.generated</packageName>
                 </configuration>
