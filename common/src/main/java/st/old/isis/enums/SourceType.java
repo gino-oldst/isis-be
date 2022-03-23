@@ -1,5 +1,8 @@
 package st.old.isis.enums;
 
 public enum SourceType {
-    REUTERS, WHATSAPP, EMAIL
+  BLOOMBERG,
+  REUTERS,
+  WHATSAPP,
+  EMAIL
 }
