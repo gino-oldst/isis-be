@@ -77,10 +77,7 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   private List<Pattern> filenamePatterns() {
     return List.of(
-        Pattern.compile("^f840690.ib19.*\\.xml$"),
-        Pattern.compile("^f840690.ib19.att.*\\.tar.gz$"),
-        Pattern.compile("^f840690.msg.*\\.xml$"),
-        Pattern.compile("^f840690.msg.att.*\\.tar.gz$"));
+        Pattern.compile("^f840690.ib19.*\\.xml$"), Pattern.compile("^f840690.msg.*\\.xml$"));
   }
 
   @Override

@@ -13,6 +13,7 @@ import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.entities.generated.Conversation;
 import st.old.isis.entities.generated.FileDump;
 import st.old.isis.entities.generated.Message;
+import st.old.isis.entities.generated.ParticipantEntered;
 import st.old.isis.enums.SourceOrigin;
 import st.old.isis.enums.SourceType;
 import st.old.isis.extraction.events.publisher.EventPublisher;
@@ -25,13 +26,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -104,9 +109,14 @@ public class BloombergChatExtractionService extends XmlExtractionService {
             .map(message -> (CommunicationMessageDto) message)
             .collect(Collectors.toList());
 
+    final var mappedEntryEvents = parseEntryEvents(conversation.getParticipantEntered());
+
+    final var mappedMessagesRecipients = mappedMessages.get("recipient");
+    final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
+
     final var recipients =
         new ArrayList<>(
-            mappedMessages.get("recipient").stream()
+            Stream.concat(mappedMessagesRecipients.stream(), mappedEntryEventsRecipients.stream())
                 .map(recipient -> (CommunicationRecipientDto) recipient)
                 .collect(
                     Collectors.toMap(
@@ -115,8 +125,11 @@ public class BloombergChatExtractionService extends XmlExtractionService {
                         (v1, v2) -> v1))
                 .values());
 
+    final var mappedMessagesUsers = mappedMessages.get("user");
+    final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
+
     final var users =
-        mappedMessages.get("user").stream()
+        Stream.concat(mappedMessagesUsers.stream(), mappedEntryEventsUsers.stream())
             .map(user -> (ExternalUserDto) user)
             .collect(Collectors.toList());
 
@@ -124,14 +137,11 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
     final var timeStarted =
         LocalDateTime.ofInstant(
-                Instant.ofEpochSecond(conversation.getStartTimeUTC()), ZoneOffset.UTC)
-            .atZone(Clock.systemDefaultZone().getZone())
-            .toLocalDateTime();
+            Instant.ofEpochSecond(conversation.getStartTimeUTC()), ZoneId.systemDefault());
 
     final var timeEnded =
-        LocalDateTime.ofInstant(Instant.ofEpochSecond(conversation.getEndTimeUTC()), ZoneOffset.UTC)
-            .atZone(Clock.systemDefaultZone().getZone())
-            .toLocalDateTime();
+        LocalDateTime.ofInstant(
+            Instant.ofEpochSecond(conversation.getEndTimeUTC()), ZoneId.systemDefault());
 
     return CommunicationChainDto.builder()
         .source(SourceType.BLOOMBERG.toString())
@@ -153,9 +163,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     for (final var message : messages) {
 
       final var timeSent =
-          LocalDateTime.ofInstant(Instant.ofEpochSecond(message.getDateTimeUTC()), ZoneOffset.UTC)
-              .atZone(Clock.systemUTC().getZone())
-              .toLocalDateTime();
+          LocalDateTime.ofInstant(
+              Instant.ofEpochSecond(message.getDateTimeUTC()), ZoneId.systemDefault());
 
       final var user = message.getUser();
 
@@ -190,5 +199,39 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     }
 
     return Map.of("communication", communications, "recipient", recipients, "user", users);
+  }
+
+  private Map<String, List<? extends Dto>> parseEntryEvents(
+      @NonNull final List<ParticipantEntered> entryEvents) {
+
+    final var recipients = new ArrayList<CommunicationRecipientDto>();
+    final var users = new ArrayList<ExternalUserDto>();
+
+    for (final var entryEvent : entryEvents) {
+
+      final var user = entryEvent.getUser();
+
+      final var chainLinkId = entryEvent.getConversationID();
+
+      final var recipient =
+          CommunicationRecipientDto.builder()
+              .chainLinkId(chainLinkId)
+              .recipient(user.getEmailAddress())
+              .build();
+
+      final var externalUser =
+          ExternalUserDto.builder()
+              .externalId(user.getEmailAddress())
+              .email(user.getEmailAddress())
+              .firstName(user.getFirstName())
+              .lastName(user.getLastName())
+              .source(SourceOrigin.BLOOMBERG_CHAT.toString())
+              .build();
+
+      recipients.add(recipient);
+      users.add(externalUser);
+    }
+
+    return Map.of("recipient", recipients, "user", users);
   }
 }

@@ -15,6 +15,8 @@
                 <xsd:element name="StartTimeUTC" type="xsd:long"/>
                 <xsd:element name="EndTimeUTC" type="xsd:long"/>
                 <xsd:element ref="Message" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="ParticipantEntered" minOccurs="0" maxOccurs="unbounded"/>
+                <xsd:element ref="ParticipantLeft" minOccurs="0" maxOccurs="unbounded"/>
             </xsd:sequence>
         </xsd:complexType>
     </xsd:element>
@@ -42,6 +44,26 @@
                 <xsd:element name="CompanyName" type="xsd:string"/>
                 <xsd:element name="EmailAddress" type="xsd:string"/>
                 <xsd:element name="CorporateEmailAddress" type="xsd:string"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="ParticipantEntered">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="ConversationID" type="xsd:string"/>
+                <xsd:element name="DateTimeUTC" type="xsd:long"/>
+                <xsd:element ref="User"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="ParticipantLeft">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="ConversationID" type="xsd:string"/>
+                <xsd:element name="DateTimeUTC" type="xsd:long"/>
+                <xsd:element ref="User"/>
             </xsd:sequence>
         </xsd:complexType>
     </xsd:element>
