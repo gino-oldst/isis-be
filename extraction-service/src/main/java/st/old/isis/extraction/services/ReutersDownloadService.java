@@ -81,7 +81,8 @@ public class ReutersDownloadService extends AzureDownloadService {
   }
 
   @Override
-  protected void processFile(@NonNull final ShareFileClient client) {
+  protected void processFile(
+      @NonNull final ShareFileClient client, @NonNull final String filename) {
 
     final var inputStream = client.openInputStream();
 

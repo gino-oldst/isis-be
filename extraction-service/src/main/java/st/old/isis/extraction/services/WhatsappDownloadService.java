@@ -49,7 +49,8 @@ public class WhatsappDownloadService extends AzureDownloadService {
   }
 
   @Override
-  protected void processFile(@NonNull final ShareFileClient client) {
+  protected void processFile(
+      @NonNull final ShareFileClient client, @NonNull final String filename) {
     // todo: implement Whatsapp file processing
   }
 }

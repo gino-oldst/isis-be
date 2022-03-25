@@ -45,7 +45,8 @@ public abstract class AzureDownloadService {
 
   protected abstract boolean skipFile(@NonNull final String filename);
 
-  protected abstract void processFile(@NonNull final ShareFileClient client);
+  protected abstract void processFile(
+      @NonNull final ShareFileClient client, @NonNull final String filename);
 
   public void sync() {
 
@@ -173,7 +174,7 @@ public abstract class AzureDownloadService {
 
     final var fileClient = client.getFileClient(filename);
 
-    processFile(fileClient);
+        processFile(fileClient, filename);
 
     saveToHistory(fileId, fileClient.getFilePath());
     saveToVersionControl(directoryName);

@@ -21,13 +21,19 @@ import java.util.regex.Pattern;
 @Service
 public class BloombergDownloadService extends AzureDownloadService {
 
-  private final BloombergChatExtractionService extractionService;
+  private final Pattern CHAT_FILE_PATTERN = Pattern.compile("^f840690.ib19.*\\.xml$");
+  private final Pattern EMAIL_FILE_PATTERN = Pattern.compile("^f840690.msg.*\\.xml$");
+
+  private final BloombergChatExtractionService chatExtractionService;
+  private final BloombergEmailExtractionService emailExtractionService;
 
   public BloombergDownloadService(
       @NonNull @Qualifier("Bloomberg") final ShareDirectoryClient bloomberg,
-      @NonNull final BloombergChatExtractionService extractionService) {
+      @NonNull final BloombergChatExtractionService chatExtractionService,
+      @NonNull final BloombergEmailExtractionService emailExtractionService) {
     super(bloomberg);
-    this.extractionService = extractionService;
+    this.chatExtractionService = chatExtractionService;
+    this.emailExtractionService = emailExtractionService;
   }
 
   @Override
@@ -76,22 +82,38 @@ public class BloombergDownloadService extends AzureDownloadService {
   }
 
   private List<Pattern> filenamePatterns() {
-    return List.of(
-        Pattern.compile("^f840690.ib19.*\\.xml$")
-        // ,Pattern.compile("^f840690.msg.*\\.xml$") will remain commented, needs impl for bloomberg
-        // email extraction
-        );
+    return List.of(CHAT_FILE_PATTERN, EMAIL_FILE_PATTERN);
   }
 
   @Override
-  protected void processFile(@NonNull final ShareFileClient client) {
+  protected void processFile(
+      @NonNull final ShareFileClient client, @NonNull final String filename) {
     try {
 
-      extractionService.parse(client.openInputStream(), LocalDate.now());
+      final var inputStream = client.openInputStream();
+      final var now = LocalDate.now();
+
+      if (isChat(filename)) {
+        log.info("Chat");
+        chatExtractionService.parse(inputStream, now);
+      }
+
+      if (isEmail(filename)) {
+        log.info("Email");
+        emailExtractionService.parse(inputStream, now);
+      }
 
     } catch (JAXBException | XMLStreamException e) {
       log.error("Error processing xml file: {}", e.getMessage());
       e.printStackTrace();
     }
+  }
+
+  private boolean isChat(@NonNull final String filename) {
+    return CHAT_FILE_PATTERN.matcher(filename).find();
+  }
+
+  private boolean isEmail(@NonNull final String filename) {
+    return EMAIL_FILE_PATTERN.matcher(filename).find();
   }
 }
