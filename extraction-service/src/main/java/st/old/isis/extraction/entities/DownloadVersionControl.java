@@ -1,4 +1,4 @@
-package st.old.isis.extraction.entity;
+package st.old.isis.extraction.entities;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

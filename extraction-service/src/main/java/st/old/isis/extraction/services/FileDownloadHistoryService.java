@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
-import st.old.isis.extraction.entity.FileDownloadHistory;
+import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.repositories.FileDownloadHistoryRepository;
 
 @Slf4j

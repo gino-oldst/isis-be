@@ -3,7 +3,7 @@ package st.old.isis.extraction.repositories;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.lang.NonNull;
-import st.old.isis.extraction.entity.DownloadVersionControl;
+import st.old.isis.extraction.entities.DownloadVersionControl;
 
 import java.util.Optional;
 

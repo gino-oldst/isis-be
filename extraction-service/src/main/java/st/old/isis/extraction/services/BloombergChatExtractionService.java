@@ -10,12 +10,12 @@ import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
-import st.old.isis.entities.generated.Conversation;
-import st.old.isis.entities.generated.FileDump;
-import st.old.isis.entities.generated.Message;
-import st.old.isis.entities.generated.ParticipantEntered;
 import st.old.isis.enums.SourceOrigin;
 import st.old.isis.enums.SourceType;
+import st.old.isis.extraction.entities.xml.BloombergChat;
+import st.old.isis.extraction.entities.xml.BloombergChatConversation;
+import st.old.isis.extraction.entities.xml.BloombergChatMessage;
+import st.old.isis.extraction.entities.xml.BloombergChatParticipantEntered;
 import st.old.isis.extraction.events.publisher.EventPublisher;
 import st.old.isis.extraction.services.internal.NotificationService;
 
@@ -52,7 +52,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     super(notificationService);
     this.eventPublisher = eventPublisher;
 
-    final var jaxbContext = JAXBContext.newInstance(FileDump.class);
+    final var jaxbContext = JAXBContext.newInstance(BloombergChat.class);
     this.unmarshaller = jaxbContext.createUnmarshaller();
   }
 
@@ -62,9 +62,9 @@ public class BloombergChatExtractionService extends XmlExtractionService {
       throws JAXBException {
 
     if (reader.getName().getLocalPart().equals("Conversation")) {
-      final var conversation = (Conversation) unmarshaller.unmarshal(reader);
+      final var conversation = unmarshaller.unmarshal(reader, BloombergChatConversation.class);
 
-      Optional.ofNullable(parseConversation(conversation, importDate))
+      Optional.ofNullable(parseConversation(conversation.getValue(), importDate))
           .ifPresent(eventPublisher::addToCommunicationChainBatch);
     }
   }
@@ -98,7 +98,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   }
 
   private CommunicationChainDto parseConversation(
-      @NonNull final Conversation conversation, @NonNull final LocalDate importDate) {
+      @NonNull final BloombergChatConversation conversation, @NonNull final LocalDate importDate) {
 
     final var roomId = conversation.getRoomID();
 
@@ -154,7 +154,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
         .build();
   }
 
-  private Map<String, List<? extends Dto>> parseMessages(@NonNull final List<Message> messages) {
+  private Map<String, List<? extends Dto>> parseMessages(
+      @NonNull final List<BloombergChatMessage> messages) {
 
     final var communications = new ArrayList<CommunicationMessageDto>();
     final var recipients = new ArrayList<CommunicationRecipientDto>();
@@ -202,7 +203,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   }
 
   private Map<String, List<? extends Dto>> parseEntryEvents(
-      @NonNull final List<ParticipantEntered> entryEvents) {
+      @NonNull final List<BloombergChatParticipantEntered> entryEvents) {
 
     final var recipients = new ArrayList<CommunicationRecipientDto>();
     final var users = new ArrayList<ExternalUserDto>();

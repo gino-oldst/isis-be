@@ -6,7 +6,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.enums.Source;
-import st.old.isis.extraction.entity.DownloadVersionControl;
+import st.old.isis.extraction.entities.DownloadVersionControl;
 import st.old.isis.extraction.repositories.DownloadVersionControlRepository;
 import st.old.isis.extraction.utils.DownloadUtils;
 

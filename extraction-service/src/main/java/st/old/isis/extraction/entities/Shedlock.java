@@ -1,4 +1,4 @@
-package st.old.isis.extraction.entity;
+package st.old.isis.extraction.entities;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
