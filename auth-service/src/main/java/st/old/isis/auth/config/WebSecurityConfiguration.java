@@ -30,7 +30,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(HttpSecurity http) throws Exception {
-    http.csrf().disable().exceptionHandling().and().authorizeRequests().anyRequest().permitAll();
+    http.cors().and().csrf().disable().exceptionHandling().and().authorizeRequests().anyRequest().permitAll();
   }
 
   @Override

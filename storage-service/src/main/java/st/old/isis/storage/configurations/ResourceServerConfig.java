@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.lang.NonNull;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
-import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
@@ -72,7 +70,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .authenticated()
         .and()
         .cors()
-        .disable()
+        .and()
         .csrf()
         .disable()
         .httpBasic()

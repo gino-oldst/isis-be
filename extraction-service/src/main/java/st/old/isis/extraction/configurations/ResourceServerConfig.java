@@ -70,7 +70,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .authenticated()
         .and()
         .cors()
-        .disable()
+        .and()
         .csrf()
         .disable()
         .httpBasic()
