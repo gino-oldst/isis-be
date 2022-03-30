@@ -113,6 +113,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedMessagesRecipients = mappedMessages.get("recipient");
     final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
 
+    //concat list of recipients and remove duplicates
     final var recipients =
         new ArrayList<>(
             Stream.concat(mappedMessagesRecipients.stream(), mappedEntryEventsRecipients.stream())
@@ -127,10 +128,15 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedMessagesUsers = mappedMessages.get("user");
     final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
 
+    //concat list of users and remove duplicates
     final var users =
-        Stream.concat(mappedMessagesUsers.stream(), mappedEntryEventsUsers.stream())
-            .map(user -> (ExternalUserDto) user)
-            .collect(Collectors.toList());
+        new ArrayList<>(
+            Stream.concat(mappedMessagesUsers.stream(), mappedEntryEventsUsers.stream())
+                .map(user -> (ExternalUserDto) user)
+                .collect(
+                    Collectors.toMap(
+                        ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
+                .values());
 
     eventPublisher.addToExternalUserBatch(users);
 

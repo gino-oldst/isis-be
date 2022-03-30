@@ -27,7 +27,6 @@ public class ExternalUser implements Serializable {
     @GenericGenerator(name = "uuid", strategy = "uuid2")
     private String id;
 
-    @Column(unique = true)
     private String externalId;
 
     private String email;
