@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
@@ -48,6 +49,7 @@ public abstract class AzureDownloadService {
   protected abstract void processFile(
       @NonNull final ShareFileClient client, @NonNull final String filename);
 
+  @Async
   public void sync() {
 
     try {
@@ -94,6 +96,7 @@ public abstract class AzureDownloadService {
     }
   }
 
+  @Async
   public void sync(@NonNull final String prefix) {
 
     try {
