@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.dto.metadata.Metadata;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,4 +32,6 @@ public class CommunicationRecipientDto implements Dto {
     private LocalDate dateFrom;
 
     private LocalDate dateTo;
+
+    private Metadata metadata;
 }

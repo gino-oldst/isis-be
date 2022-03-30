@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.mappers.MetadataConverter;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -30,4 +32,8 @@ public class CommunicationRecipient implements Serializable {
     private String recipient;
 
     private LocalDate dateImported;
+
+    @Lob
+    @Convert(converter = MetadataConverter.class)
+    private Metadata metadata;
 }

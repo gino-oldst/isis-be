@@ -74,7 +74,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     eventPublisher.finalizeBatchExternalUsers(true);
   }
 
-  @Audited(event = "BLOOMBERG_PARSE_XML_STREAM")
+  @Audited(event = "BLOOMBERG_PARSE_CHAT_XML_STREAM")
   public void processXml(@NonNull final InputStream inputStream)
       throws JAXBException, XMLStreamException {
     try {
@@ -85,7 +85,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     }
   }
 
-  @Audited(event = "BLOOMBERG_PARSE_XML_MULTIPART")
+  @Audited(event = "BLOOMBERG_PARSE_CHAT_XML_MULTIPART")
   public void processXml(MultipartFile multipartFile, LocalDate importDate)
       throws IOException, JAXBException, XMLStreamException {
     try {
@@ -101,7 +101,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
     final var roomId = conversation.getRoomID();
 
-    final var mappedMessages = parseMessages(conversation.getMessage());
+    final var mappedMessages = parseMessages(conversation.getMessage(), importDate);
 
     final var communications =
         mappedMessages.get("communication").stream()
@@ -113,7 +113,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedMessagesRecipients = mappedMessages.get("recipient");
     final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
 
-    //concat list of recipients and remove duplicates
+    // concat list of recipients and remove duplicates
     final var recipients =
         new ArrayList<>(
             Stream.concat(mappedMessagesRecipients.stream(), mappedEntryEventsRecipients.stream())
@@ -128,7 +128,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedMessagesUsers = mappedMessages.get("user");
     final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
 
-    //concat list of users and remove duplicates
+    // concat list of users and remove duplicates
     final var users =
         new ArrayList<>(
             Stream.concat(mappedMessagesUsers.stream(), mappedEntryEventsUsers.stream())
@@ -160,7 +160,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   }
 
   private Map<String, List<? extends Dto>> parseMessages(
-      @NonNull final List<BloombergChatMessage> messages) {
+      @NonNull final List<BloombergChatMessage> messages, @NonNull final LocalDate importDate) {
 
     final var communications = new ArrayList<CommunicationMessageDto>();
     final var recipients = new ArrayList<CommunicationRecipientDto>();
@@ -178,16 +178,19 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
       final var communication =
           CommunicationMessageDto.builder()
+              .importDate(importDate)
               .message(message.getContent())
               .timeSent(timeSent)
               .chainLinkId(chainLinkId)
               .sender(user.getEmailAddress())
+              .source(SourceType.BLOOMBERG_CHAT.toString())
               .build();
 
       final var recipient =
           CommunicationRecipientDto.builder()
               .chainLinkId(chainLinkId)
               .recipient(user.getEmailAddress())
+              .dateImported(importDate)
               .build();
 
       final var externalUser =

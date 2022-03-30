@@ -118,6 +118,7 @@ public class CommunicationRecipientService {
                 .chainLinkId(dto.getChainLinkId())
                 .recipient(dto.getRecipient())
                 .dateImported(dto.getDateImported())
+                .metadata(dto.getMetadata())
                 .build();
     }
 
@@ -127,6 +128,7 @@ public class CommunicationRecipientService {
                 .chainLinkId(entity.getChainLinkId())
                 .recipient(entity.getRecipient())
                 .dateImported(entity.getDateImported())
+                .metadata(entity.getMetadata())
                 .build();
     }
 }

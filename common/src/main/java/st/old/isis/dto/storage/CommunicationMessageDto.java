@@ -22,6 +22,8 @@ public class CommunicationMessageDto implements Dto {
 
     private String chainLinkId;
 
+    private String subject;
+
     private String message;
 
     private String sourceMessageId;
@@ -31,6 +33,8 @@ public class CommunicationMessageDto implements Dto {
     private LocalDate importDate;
 
     private String sender;
+
+    private String source;
 
     private LocalDateTime dateCreated;
 

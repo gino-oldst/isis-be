@@ -117,6 +117,8 @@ public class CommunicationMessageService {
                 .timeSent(dto.getTimeSent())
                 .importDate(dto.getImportDate())
                 .sender(dto.getSender())
+                .subject(dto.getSubject())
+                .source(dto.getSource())
                 .build();
     }
 
@@ -129,6 +131,8 @@ public class CommunicationMessageService {
                 .timeSent(entity.getTimeSent())
                 .importDate(entity.getImportDate())
                 .sender(entity.getSender())
+                .subject(entity.getSubject())
+                .source(entity.getSource())
                 .build();
     }
 }

@@ -30,6 +30,8 @@ public class CommunicationMessage implements Serializable {
 
     private String chainLinkId;
 
+    private String subject;
+
     @Lob
     private String message;
 
@@ -40,6 +42,8 @@ public class CommunicationMessage implements Serializable {
     private LocalDate importDate;
 
     private String sender;
+
+    private String source;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;

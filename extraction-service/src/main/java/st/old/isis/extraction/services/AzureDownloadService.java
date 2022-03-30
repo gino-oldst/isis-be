@@ -177,7 +177,7 @@ public abstract class AzureDownloadService {
 
     final var fileClient = client.getFileClient(filename);
 
-        processFile(fileClient, filename);
+    processFile(fileClient, filename);
 
     saveToHistory(fileId, fileClient.getFilePath());
     saveToVersionControl(directoryName);
