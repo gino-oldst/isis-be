@@ -13,7 +13,7 @@ import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
-import st.old.isis.dto.storage.UserDto;
+import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.entities.generated.ComplianceActivity;
 import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
@@ -27,7 +27,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -71,8 +73,7 @@ public class ReutersXmlExtractionService {
 
         //Process userLink entries
         final var communicationRecipients = parseCommunicationRecipients(activity);
-
-        //TODO call userLink service here
+        storageService.saveExternalUsers(communicationRecipients);
 
         //Process communication logs
         final var communicationChains = parseCommunicationChains(activity, importDate);
@@ -187,29 +188,28 @@ public class ReutersXmlExtractionService {
 
     }
 
-    private ListDto<UserDto> parseCommunicationRecipients(@NonNull ComplianceActivity activity) {
+    private List<ExternalUserDto> parseCommunicationRecipients(@NonNull ComplianceActivity activity) {
 
         if (null != activity.getUsers() && !activity.getUsers().getUserInfo().isEmpty()) {
 
             final var userInfoList = activity.getUsers().getUserInfo();
 
-            final var userList = userInfoList.stream().map(this::mapToUserDto).collect(Collectors.toList());
-
-            return ListDto.<UserDto>builder()
-                    .data(userList)
-                    .totalNoOfRecords(userList.size())
-                    .totalCurrentElements(userList.size())
-                    .build().success();
-
+            return new ArrayList<>(userInfoList.stream().
+                    map(this::mapToUserDto)
+                    .collect(
+                            Collectors.toMap(
+                                    ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
+                    .values());
         }
 
-        return ListDto.emptyList();
-
+        return new ArrayList<>();
     }
 
-    public UserDto mapToUserDto(ComplianceActivity.Users.UserInfo userInfo) {
+    public ExternalUserDto mapToUserDto(ComplianceActivity.Users.UserInfo userInfo) {
 
-        return UserDto.builder()
+        return ExternalUserDto.builder()
+                .source(SourceType.REUTERS.toString())
+                .externalId(userInfo.getIdentifier())
                 .email(userInfo.getEmail())
                 .firstName(userInfo.getFirstName())
                 .lastName(userInfo.getLastName())
