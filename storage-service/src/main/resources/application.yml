@@ -30,6 +30,8 @@ spring:
     table: flyway_storage_schema_history
     baseline-on-migrate: true
 isis:
+  audit:
+    enabled: ${AUDIT_ENABLED}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:

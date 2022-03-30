@@ -7,9 +7,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import st.old.isis.annotations.Audited;
+import st.old.isis.configuration.AuditConfiguration;
 import st.old.isis.context.AuditContext;
 import st.old.isis.dto.audit.AuditEvent;
 
@@ -23,9 +23,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuditAspect {
 
-  @Value("${isis.audit.enabled:false}")
-  private boolean auditEnabled;
-
+  private final AuditConfiguration auditConfiguration;
   private final ObjectMapper mapper;
 
   @Around("@annotation(st.old.isis.annotations.Audited)")
@@ -39,7 +37,7 @@ public class AuditAspect {
       return joinPoint.proceed();
     }
 
-    if (!auditEnabled) {
+    if (!auditConfiguration.isAuditEnabled()) {
       return joinPoint.proceed();
     }
 
@@ -56,10 +54,12 @@ public class AuditAspect {
 
     final var auditMethod = method.getAnnotation(Audited.class);
 
+    final var description = auditMethod.description();
+
     final var event =
         AuditEvent.builder()
             .event(auditMethod.event())
-            .description(auditMethod.description())
+            .description(description.isEmpty() ? null : description)
             .dateCreated(LocalDateTime.now())
             .build();
 

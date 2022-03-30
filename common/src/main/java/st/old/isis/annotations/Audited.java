@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.PARAMETER})
 public @interface Audited {
-  public String event() default "";
+  String event() default "";
 
-  public String description() default "";
+  String description() default "";
 }

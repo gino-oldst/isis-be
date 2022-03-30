@@ -23,7 +23,7 @@ public class CommunicationMessageService {
     private final CommunicationMessageRepository repository;
 
     @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
-    public CommunicationMessageDto create(@NonNull @Audited final CommunicationMessageDto dto) {
+    public CommunicationMessageDto create(@NonNull final CommunicationMessageDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -33,7 +33,7 @@ public class CommunicationMessageService {
     }
 
     @Audited(event = "UPDATE_COMMUNICATION_MESSAGE")
-    public CommunicationMessageDto update(@NonNull @Audited final CommunicationMessageDto dto) throws IsisException {
+    public CommunicationMessageDto update(@NonNull final CommunicationMessageDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 

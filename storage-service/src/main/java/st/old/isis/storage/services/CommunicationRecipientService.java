@@ -25,7 +25,7 @@ public class CommunicationRecipientService {
     private final CommunicationRecipientValidator validator;
 
     @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")
-    public CommunicationRecipientDto create(@NonNull @Audited final CommunicationRecipientDto dto) {
+    public CommunicationRecipientDto create(@NonNull final CommunicationRecipientDto dto) {
 
         final var entity = mapToEntity(dto);
 
@@ -35,7 +35,7 @@ public class CommunicationRecipientService {
     }
 
     @Audited(event = "UPDATE_COMMUNICATION_RECIPIENT")
-    public CommunicationRecipientDto update(@NonNull @Audited final CommunicationRecipientDto dto) throws IsisException {
+    public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto) throws IsisException {
 
         final var oldEntity = findById(dto.getId());
 
@@ -49,7 +49,7 @@ public class CommunicationRecipientService {
     }
 
     @Audited(event = "GET_COMMUNICATION_RECIPIENT_BY_ID")
-    public CommunicationRecipientDto getById(@NonNull @Audited final String id) throws IsisException {
+    public CommunicationRecipientDto getById(@NonNull final String id) throws IsisException {
 
         final var entity = findById(id);
 

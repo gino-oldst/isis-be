@@ -22,7 +22,7 @@ public class DataImportRecordService {
     private final DataImportRecordRepository repository;
 
     @Audited(event = "CREATE_DATA_IMPORT_RECORD")
-    public DataImportRecordDto create(@NonNull @Audited final DataImportRecordDto dto) throws IsisException{
+    public DataImportRecordDto create(@NonNull final DataImportRecordDto dto) throws IsisException{
 
         log.info("Creating data import record {}", dto);
 
@@ -34,7 +34,7 @@ public class DataImportRecordService {
     }
 
     @Audited(event = "UPDATE_DATA_IMPORT_RECORD")
-    public DataImportRecordDto update(@NonNull @Audited final DataImportRecordDto dto) throws IsisException{
+    public DataImportRecordDto update(@NonNull final DataImportRecordDto dto) throws IsisException{
 
         log.info("Updating data import record {}", dto);
 
@@ -73,7 +73,7 @@ public class DataImportRecordService {
     }
 
     @Audited(event = "GET_DATA_IMPORT_RECORD_BY_STATUS")
-    public ListDto<DataImportRecordDto> findByStatus(@Audited ProcessedStatus status){
+    public ListDto<DataImportRecordDto> findByStatus(ProcessedStatus status){
         final var records = repository.findByProcessedStatusOrderByImportDateAsc(status);
         ListDto<DataImportRecordDto> results = new ListDto<>();
         results.setData(new ArrayList<>());

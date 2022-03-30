@@ -29,7 +29,7 @@ public class EventLog implements Serializable {
 
   private String source;
 
-  @Column(columnDefinition = "TEXT")
+  @Lob
   private String metadata;
 
   @CreationTimestamp private LocalDateTime dateCreated;

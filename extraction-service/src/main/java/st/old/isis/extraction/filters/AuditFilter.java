@@ -2,6 +2,7 @@ package st.old.isis.extraction.filters;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -17,7 +18,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -62,8 +62,8 @@ public class AuditFilter extends OncePerRequestFilter {
 
     log.info("Auditing request...");
 
-    final var txnId =
-        Optional.ofNullable(request.getHeader("txn-id")).orElse(UUID.randomUUID().toString());
+    final var txnHeader = request.getHeader("txn-id");
+    final var txnId = Strings.isNotEmpty(txnHeader) ? txnHeader : UUID.randomUUID().toString();
 
     AuditContext.init(txnId, "Extraction Service");
   }
