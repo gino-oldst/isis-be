@@ -10,7 +10,6 @@ import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
-import st.old.isis.enums.SourceOrigin;
 import st.old.isis.enums.SourceType;
 import st.old.isis.extraction.entities.xml.BloombergChat;
 import st.old.isis.extraction.entities.xml.BloombergChatConversation;
@@ -144,7 +143,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
             Instant.ofEpochSecond(conversation.getEndTimeUTC()), ZoneId.systemDefault());
 
     return CommunicationChainDto.builder()
-        .source(SourceType.BLOOMBERG.toString())
+        .source(SourceType.BLOOMBERG_CHAT.toString())
         .sourceChainId(roomId)
         .dateFrom(timeStarted)
         .dateTo(timeEnded)
@@ -191,7 +190,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .email(user.getEmailAddress())
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
-              .source(SourceOrigin.BLOOMBERG_CHAT.toString())
+              .source(SourceType.BLOOMBERG_CHAT.toString())
               .build();
 
       communications.add(communication);
@@ -226,7 +225,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .email(user.getEmailAddress())
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
-              .source(SourceOrigin.BLOOMBERG_CHAT.toString())
+              .source(SourceType.BLOOMBERG_CHAT.toString())
               .build();
 
       recipients.add(recipient);

@@ -1,8 +1,8 @@
 package st.old.isis.enums;
 
 public enum SourceType {
-  BLOOMBERG,
+  BLOOMBERG_CHAT,
+  BLOOMBERG_MAIL,
   REUTERS,
-  WHATSAPP,
-  EMAIL
+  WHATSAPP
 }

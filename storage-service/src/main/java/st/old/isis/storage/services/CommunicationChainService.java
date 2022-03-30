@@ -75,7 +75,7 @@ public class CommunicationChainService {
         DataImportRecordDto dataImportRecordDto= DataImportRecordDto.builder()
                 .importDate(results.get(0).getDateImported())
                 .processedStatus(ProcessedStatus.PENDING_PROCESS)
-                .source(SourceType.REUTERS.toString())  //TODO Remove this once factory implementation is done.
+                .source(results.get(0).getSource())
                 .build();
 
         dataImportRecordService.create(dataImportRecordDto);
