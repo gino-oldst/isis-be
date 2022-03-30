@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(indexes = {@Index(name = "ext_user_ext_id_idx",  columnList="externalId", unique = true)})
+@Table(indexes = {@Index(name = "ext_user_ext_id_idx",  columnList="externalId,source", unique = true)})
 public class ExternalUser implements Serializable {
 
     private static final long serialVersionUID = -9127926173004611160L;

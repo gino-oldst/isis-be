@@ -177,6 +177,6 @@ public class ExternalUserService {
   }
 
   private String mapKey(@NonNull final ExternalUser user) {
-    return String.format("%s-%s", user.getId(), user.getSource());
+    return String.format("%s-%s", user.getExternalId(), user.getSource());
   }
 }
