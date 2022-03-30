@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @Builder
@@ -19,7 +20,13 @@ public class AuditEvent {
 
   private String metadata;
 
+  private AtomicInteger occurrence;
+
   private LocalDateTime dateCreated;
 
   private LocalDateTime dateModified;
+
+  public void addOccurrence() {
+    occurrence.incrementAndGet();
+  }
 }

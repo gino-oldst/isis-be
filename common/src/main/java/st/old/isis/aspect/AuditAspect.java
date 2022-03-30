@@ -16,6 +16,7 @@ import st.old.isis.dto.audit.AuditEvent;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Aspect
@@ -47,8 +48,6 @@ public class AuditAspect {
 
     log.debug("Recording event");
 
-    final var eventLog = AuditContext.getAuditContext();
-
     final var signature = (MethodSignature) joinPoint.getSignature();
     final var method = signature.getMethod();
 
@@ -61,6 +60,7 @@ public class AuditAspect {
             .event(auditMethod.event())
             .description(description.isEmpty() ? null : description)
             .dateCreated(LocalDateTime.now())
+            .occurrence(new AtomicInteger(1))
             .build();
 
     final var parameters = method.getParameters();
@@ -80,7 +80,7 @@ public class AuditAspect {
       event.setMetadata(mapper.writeValueAsString(metadata));
     }
 
-    eventLog.getEvents().add(event);
+    AuditContext.addEvent(event);
 
     return joinPoint.proceed();
   }
