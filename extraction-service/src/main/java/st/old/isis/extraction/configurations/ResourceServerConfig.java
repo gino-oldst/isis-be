@@ -62,10 +62,6 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
     http.authorizeRequests()
         .antMatchers("/actuator/**")
         .permitAll()
-        .antMatchers(internalEndpoints())
-        .access("#oauth2.hasScope('INTERNAL')")
-        .antMatchers(adminEndpoints())
-        .hasAnyAuthority("ADMIN")
         .anyRequest()
         .authenticated()
         .and()
@@ -82,13 +78,5 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .accessDeniedHandler(
             (request, response, authException) ->
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED));
-  }
-
-  private String[] internalEndpoints() {
-    return List.of("/extract/**", "/download/**").toArray(new String[0]);
-  }
-
-  private String[] adminEndpoints() {
-    return List.of("/extract/**").toArray(new String[0]);
   }
 }

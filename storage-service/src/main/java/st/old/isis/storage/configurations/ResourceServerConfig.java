@@ -64,10 +64,6 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .permitAll()
         .antMatchers("/auth/**")
         .permitAll()
-        .antMatchers(endpoints())
-        .access("#oauth2.hasScope('INTERNAL')")
-        .antMatchers(adminEndpoints())
-        .hasAnyAuthority("ADMIN")
         .anyRequest()
         .authenticated()
         .and()
@@ -84,35 +80,5 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .accessDeniedHandler(
             (request, response, authException) ->
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED));
-  }
-
-  private String[] endpoints() {
-    return List.of(
-            "/external/**",
-            "/alert/**",
-            "/alert-policy/**",
-            "/app-user/**",
-            "/communication/**",
-            "/keyword/**",
-            "/notification/**",
-            "/policy-map/**",
-            "/user/**",
-            "/user-link/**")
-        .toArray(new String[0]);
-  }
-
-  private String[] adminEndpoints() {
-    return List.of(
-                    "/external/**",
-                    "/alert/**",
-                    "/alert-policy/**",
-                    "/app-user/**",
-                    "/communication/**",
-                    "/keyword/**",
-                    "/notification/**",
-                    "/policy-map/**",
-                    "/user/**",
-                    "/user-link/**")
-            .toArray(new String[0]);
   }
 }
