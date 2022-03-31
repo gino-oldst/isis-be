@@ -141,7 +141,7 @@ public class CommunicationMessageService {
     Page<CommunicationMessageDto> page = new PageImpl<>(filteredResults.subList(start, end), paging, filteredResults.size());
 
     return ListDto.<CommunicationMessageDto>builder()
-        .data(filteredResults)
+        .data(page.getContent())
         .totalNoOfRecords(page.getTotalElements())
         .totalPages(page.getTotalPages())
         .totalCurrentElements(page.getNumberOfElements())
