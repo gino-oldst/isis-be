@@ -14,6 +14,7 @@ import st.old.isis.storage.repositories.CommunicationRecipientRepository;
 import st.old.isis.storage.specifications.CommunicationRecipientSpecification;
 import st.old.isis.storage.validators.CommunicationRecipientValidator;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,114 +22,127 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommunicationRecipientService {
 
-    private final CommunicationRecipientRepository repository;
-    private final CommunicationRecipientValidator validator;
+  private final CommunicationRecipientRepository repository;
+  private final CommunicationRecipientValidator validator;
 
-    @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")
-    public CommunicationRecipientDto create(@NonNull final CommunicationRecipientDto dto) {
+  public List<CommunicationRecipientDto> batchSave(
+      @NonNull final List<CommunicationRecipientDto> request) {
 
-        final var entity = mapToEntity(dto);
+    final var recipients = request.stream().map(this::mapToEntity).collect(Collectors.toList());
 
-        final var createdEntity = repository.save(entity);
+    return repository.saveAll(recipients).stream()
+        .map(this::mapToResource)
+        .collect(Collectors.toList());
+  }
 
-        return mapToResource(createdEntity);
-    }
+  @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")
+  public CommunicationRecipientDto create(@NonNull final CommunicationRecipientDto dto) {
 
-    @Audited(event = "UPDATE_COMMUNICATION_RECIPIENT")
-    public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto) throws IsisException {
+    final var entity = mapToEntity(dto);
 
-        final var oldEntity = findById(dto.getId());
+    final var createdEntity = repository.save(entity);
 
-        validator.updateValidate(oldEntity, dto);
+    return mapToResource(createdEntity);
+  }
 
-        final var newEntity = mapToEntity(dto);
+  @Audited(event = "UPDATE_COMMUNICATION_RECIPIENT")
+  public CommunicationRecipientDto update(@NonNull final CommunicationRecipientDto dto)
+      throws IsisException {
 
-        final var updatedEntity = repository.save(newEntity);
+    final var oldEntity = findById(dto.getId());
 
-        return mapToResource(updatedEntity);
-    }
+    validator.updateValidate(oldEntity, dto);
 
-    @Audited(event = "GET_COMMUNICATION_RECIPIENT_BY_ID")
-    public CommunicationRecipientDto getById(@NonNull final String id) throws IsisException {
+    final var newEntity = mapToEntity(dto);
 
-        final var entity = findById(id);
+    final var updatedEntity = repository.save(newEntity);
 
-        return mapToResource(entity);
-    }
+    return mapToResource(updatedEntity);
+  }
 
-    @Audited(event = "DELETE_COMMUNICATION_RECIPIENT")
-    public void delete(@NonNull @Audited final String id) throws IsisException {
+  @Audited(event = "GET_COMMUNICATION_RECIPIENT_BY_ID")
+  public CommunicationRecipientDto getById(@NonNull final String id) throws IsisException {
 
-        final var entity = findById(id);
+    final var entity = findById(id);
 
-        repository.delete(entity);
-    }
+    return mapToResource(entity);
+  }
 
-    @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
-    public ListDto<CommunicationRecipientDto> search(@NonNull @Audited final CommunicationRecipientDto filter) {
+  @Audited(event = "DELETE_COMMUNICATION_RECIPIENT")
+  public void delete(@NonNull @Audited final String id) throws IsisException {
 
-        final var spec = new CommunicationRecipientSpecification(filter);
+    final var entity = findById(id);
 
-        final var results = repository.findAll(spec)
-                .stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+    repository.delete(entity);
+  }
 
-        final var size = results.size();
+  @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
+  public ListDto<CommunicationRecipientDto> search(
+      @NonNull @Audited final CommunicationRecipientDto filter) {
 
-        return ListDto.<CommunicationRecipientDto>builder()
-                .data(results)
-                .totalNoOfRecords(size)
-                .totalPages(size)
-                .totalCurrentElements(size)
-                .build()
-                .success();
-    }
+    final var spec = new CommunicationRecipientSpecification(filter);
 
-    @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
-    public ListDto<CommunicationRecipientDto> search(@NonNull @Audited final CommunicationRecipientDto filter, @Audited Pageable pageable) {
+    final var results =
+        repository.findAll(spec).stream().map(this::mapToResource).collect(Collectors.toList());
 
-        final var spec = new CommunicationRecipientSpecification(filter);
+    final var size = results.size();
 
-        final var searchResults = repository.findAll(spec, pageable);
+    return ListDto.<CommunicationRecipientDto>builder()
+        .data(results)
+        .totalNoOfRecords(size)
+        .totalPages(size)
+        .totalCurrentElements(size)
+        .build()
+        .success();
+  }
 
-        final var results = searchResults.stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+  @Audited(event = "SEARCH_COMMUNICATION_RECIPIENT")
+  public ListDto<CommunicationRecipientDto> search(
+      @NonNull @Audited final CommunicationRecipientDto filter, @Audited Pageable pageable) {
 
-        return ListDto.<CommunicationRecipientDto>builder()
-                .data(results)
-                .totalNoOfRecords(searchResults.getTotalElements())
-                .totalPages(searchResults.getTotalPages())
-                .totalCurrentElements(searchResults.getNumberOfElements())
-                .build()
-                .success();
-    }
+    final var spec = new CommunicationRecipientSpecification(filter);
 
-    private CommunicationRecipient findById(@NonNull final String id) throws IsisException {
-        return repository.findById(id)
-                .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find a recipient with id: [%s]", id),
-                        "NotFoundException"));
-    }
+    final var searchResults = repository.findAll(spec, pageable);
 
-    private CommunicationRecipient mapToEntity(@NonNull final CommunicationRecipientDto dto) {
-        return CommunicationRecipient.builder()
-                .id(dto.getId())
-                .chainLinkId(dto.getChainLinkId())
-                .recipient(dto.getRecipient())
-                .dateImported(dto.getDateImported())
-                .metadata(dto.getMetadata())
-                .build();
-    }
+    final var results =
+        searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
 
-    private CommunicationRecipientDto mapToResource(@NonNull final CommunicationRecipient entity) {
-        return CommunicationRecipientDto.builder()
-                .id(entity.getId())
-                .chainLinkId(entity.getChainLinkId())
-                .recipient(entity.getRecipient())
-                .dateImported(entity.getDateImported())
-                .metadata(entity.getMetadata())
-                .build();
-    }
+    return ListDto.<CommunicationRecipientDto>builder()
+        .data(results)
+        .totalNoOfRecords(searchResults.getTotalElements())
+        .totalPages(searchResults.getTotalPages())
+        .totalCurrentElements(searchResults.getNumberOfElements())
+        .build()
+        .success();
+  }
+
+  private CommunicationRecipient findById(@NonNull final String id) throws IsisException {
+    return repository
+        .findById(id)
+        .orElseThrow(
+            () ->
+                IsisException.notFound(
+                    String.format("Cannot find a recipient with id: [%s]", id),
+                    "NotFoundException"));
+  }
+
+  private CommunicationRecipient mapToEntity(@NonNull final CommunicationRecipientDto dto) {
+    return CommunicationRecipient.builder()
+        .id(dto.getId())
+        .chainLinkId(dto.getChainLinkId())
+        .recipient(dto.getRecipient())
+        .dateImported(dto.getDateImported())
+        .metadata(dto.getMetadata())
+        .build();
+  }
+
+  private CommunicationRecipientDto mapToResource(@NonNull final CommunicationRecipient entity) {
+    return CommunicationRecipientDto.builder()
+        .id(entity.getId())
+        .chainLinkId(entity.getChainLinkId())
+        .recipient(entity.getRecipient())
+        .dateImported(entity.getDateImported())
+        .metadata(entity.getMetadata())
+        .build();
+  }
 }

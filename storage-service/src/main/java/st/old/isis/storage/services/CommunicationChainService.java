@@ -28,45 +28,18 @@ public class CommunicationChainService {
 
     private final CommunicationChainRepository repository;
 
-    private final CommunicationMessageService messageService;
-
-    private final CommunicationRecipientService recipientService;
-
     private final DataImportRecordService dataImportRecordService;
 
     @Audited(event = "IMPORT_COMMUNICATION_CHAIN_DATA")
     public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) throws IsisException {
 
-        List<CommunicationChainDto> results = new ArrayList<>();
+        final var chains = request.getData()
+                        .stream().map(this::mapToEntity)
+                        .collect(Collectors.toList());
 
-        request.getData().stream().forEach(chain -> {
-
-            final var newChain= repository.save(mapToEntity(chain));
-            final var chainLinkId= newChain.getId();
-            final var importDate= chain.getDateImported();
-
-            final var messages= chain.getMessages().stream()
-                    .map(message -> {
-                        message.setChainLinkId(chainLinkId);
-                        message.setImportDate(importDate);
-                        return messageService.create(message);
-                    })
-                    .collect(Collectors.toList());
-
-            final var recipients = chain.getRecipients().stream()
-                    .map(recipient -> {
-                        recipient.setChainLinkId(chainLinkId);
-                        recipient.setDateImported(importDate);
-                        return recipientService.create(recipient);
-                    })
-                    .collect(Collectors.toList());
-
-            final var chainDto= mapToResource(newChain);
-            chainDto.setMessages(messages);
-            chainDto.setRecipients(recipients);
-
-            results.add(chainDto);
-        });
+        final var results = repository.saveAll(chains)
+                .stream().map(this::mapToResource)
+                .collect(Collectors.toList());
 
         //TODO When factory pattern is implemented,
         // we can include post factory call instead of calling from inside individual services

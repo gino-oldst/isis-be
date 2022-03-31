@@ -54,7 +54,12 @@ public abstract class BatchListEventListener<T extends Dto, B extends BatchListE
 
       if (queue.size() >= batchConfiguration.getBatchSize()) {
         log.info("Batch persist [{}] objects", batchConfiguration.getBatchSize());
-        processBatch(batchConfiguration.getBatchSize());
+
+        final var cycle = queue.size() / batchConfiguration.getBatchSize();
+
+        for (int x = 0; x < cycle; x++) {
+          processBatch(batchConfiguration.getBatchSize());
+        }
       }
 
     } catch (Throwable err) {

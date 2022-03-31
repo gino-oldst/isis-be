@@ -88,7 +88,7 @@ public class ReutersXmlExtractionService {
 
     }
 
-    private ListDto<CommunicationChainDto> parseCommunicationChains(ComplianceActivity activity, LocalDate importDate) {
+    private ListDto<CommunicationChainDto> parseCommunicationChains(ComplianceActivity activity, LocalDate importDate) throws IsisException {
 
         log.info("START - Parsing Communication Chains");
 
@@ -106,7 +106,8 @@ public class ReutersXmlExtractionService {
                 final List<CommunicationMessageDto> commMessageList = new ArrayList<>();
 
                 final var sourceChainId = chat.getIdentifier();
-                final var recipients = parseChatParticipants(chat.getParticipants());
+                final var recipients = parseChatParticipants(chat.getParticipants(),
+                        sourceChainId, importDate);
 
                 if (null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
 
@@ -138,14 +139,14 @@ public class ReutersXmlExtractionService {
 
                     }
 
+                    storageService.saveMessages(commMessageList);
+                    storageService.saveRecipients(recipients);
 
                     final var commLog = CommunicationChainDto.builder()
                             .source(SourceType.REUTERS.toString())
                             .sourceChainId(sourceChainId)
                             .datePeriod(datePeriod)
                             .dateImported(importDate)
-                            .messages(commMessageList)
-                            .recipients(recipients)
                             .build();
 
                     commLogList.add(commLog);
@@ -173,7 +174,8 @@ public class ReutersXmlExtractionService {
         return dateFrom.toGregorianCalendar().toZonedDateTime().toLocalDate();
     }
 
-    private List<CommunicationRecipientDto> parseChatParticipants(ComplianceActivity.Chats.Chat.Participants participants) {
+    private List<CommunicationRecipientDto> parseChatParticipants(ComplianceActivity.Chats.Chat.Participants participants,
+                                                                  String sourceChainId, LocalDate importDate) {
 
         if (null != participants.getUser() && !participants.getUser().isEmpty()) {
 
@@ -181,7 +183,9 @@ public class ReutersXmlExtractionService {
 
             return users.stream()
                     .map(user -> CommunicationRecipientDto.builder()
+                            .chainLinkId(sourceChainId)
                             .recipient(user)
+                            .dateImported(importDate)
                             .build()).collect(Collectors.toList());
 
         }

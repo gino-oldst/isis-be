@@ -30,6 +30,16 @@ public class CommunicationMessageService {
 
   private final CommunicationRecipientService communicationRecipientService;
 
+  public List<CommunicationMessageDto> batchSave(
+      @NonNull final List<CommunicationMessageDto> request) {
+
+    final var messages = request.stream().map(this::mapToEntity).collect(Collectors.toList());
+
+    return repository.saveAll(messages).stream()
+        .map(this::mapToResource)
+        .collect(Collectors.toList());
+  }
+
   @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
   public CommunicationMessageDto create(@NonNull final CommunicationMessageDto dto) {
 
@@ -80,19 +90,26 @@ public class CommunicationMessageService {
 
     var filteredResults = rawResults;
 
-    if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
 
-      filteredResults = rawResults.stream().filter(message -> {
+      filteredResults =
+          rawResults.stream()
+              .filter(
+                  message -> {
+                    final var recpfilter =
+                        CommunicationRecipientDto.builder()
+                            .chainLinkId(message.getChainLinkId())
+                            .build();
+                    final var commRecpList = communicationRecipientService.search(recpfilter);
 
-        final var recpfilter = CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build();
-        final var commRecpList = communicationRecipientService.search(recpfilter);
+                    final var recpList =
+                        commRecpList.getData().stream()
+                            .map(CommunicationRecipientDto::getRecipient)
+                            .collect(Collectors.toList());
 
-        final var recpList = commRecpList.getData().stream().map(recp -> recp.getRecipient()).collect(Collectors.toList());
-
-        return recpList.containsAll(filter.getRecipients());
-
-      }).collect(Collectors.toList());
-
+                    return recpList.containsAll(filter.getRecipients());
+                  })
+              .collect(Collectors.toList());
     }
 
     final var size = filteredResults.size();
@@ -119,26 +136,34 @@ public class CommunicationMessageService {
 
     var filteredResults = rawResults;
 
-    if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
 
-      filteredResults = rawResults.stream().filter(message -> {
+      filteredResults =
+          rawResults.stream()
+              .filter(
+                  message -> {
+                    final var recpfilter =
+                        CommunicationRecipientDto.builder()
+                            .chainLinkId(message.getChainLinkId())
+                            .build();
+                    final var commRecpList = communicationRecipientService.search(recpfilter);
 
-        final var recpfilter = CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build();
-        final var commRecpList = communicationRecipientService.search(recpfilter);
+                    final var recpList =
+                        commRecpList.getData().stream()
+                            .map(CommunicationRecipientDto::getRecipient)
+                            .collect(Collectors.toList());
 
-        final var recpList = commRecpList.getData().stream().map(recp -> recp.getRecipient()).collect(Collectors.toList());
-
-        return recpList.containsAll(filter.getRecipients());
-
-      }).collect(Collectors.toList());
-
+                    return recpList.containsAll(filter.getRecipients());
+                  })
+              .collect(Collectors.toList());
     }
 
     Pageable paging = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-    int start = Math.min((int)paging.getOffset(), filteredResults.size());
+    int start = Math.min((int) paging.getOffset(), filteredResults.size());
     int end = Math.min((start + paging.getPageSize()), filteredResults.size());
 
-    Page<CommunicationMessageDto> page = new PageImpl<>(filteredResults.subList(start, end), paging, filteredResults.size());
+    Page<CommunicationMessageDto> page =
+        new PageImpl<>(filteredResults.subList(start, end), paging, filteredResults.size());
 
     return ListDto.<CommunicationMessageDto>builder()
         .data(page.getContent())

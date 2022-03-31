@@ -9,6 +9,8 @@ import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationMessageService;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -16,6 +18,11 @@ import st.old.isis.storage.services.CommunicationMessageService;
 public class CommunicationMessageController {
 
     private final CommunicationMessageService service;
+
+    @PostMapping("/batch")
+    public List<CommunicationMessageDto> batch(@RequestBody final List<CommunicationMessageDto> messages) {
+        return service.batchSave(messages);
+    }
 
     @GetMapping("/{id}")
     public CommunicationMessageDto getById(@PathVariable final String id) throws IsisException {

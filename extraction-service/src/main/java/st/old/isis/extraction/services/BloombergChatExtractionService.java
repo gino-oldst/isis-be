@@ -73,6 +73,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   protected void finalizeParsing() {
     eventPublisher.finalizeBatchCommunication(true);
     eventPublisher.finalizeBatchExternalUsers(true);
+    eventPublisher.finalizeBatchMessages(true);
+    eventPublisher.finalizeBatchRecipients(true);
   }
 
   @Audited(event = "BLOOMBERG_PARSE_CHAT_XML_STREAM")
@@ -155,6 +157,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
                 .values());
 
     eventPublisher.addToExternalUserBatch(users);
+    eventPublisher.addToMessageBatch(communications);
+    eventPublisher.addToRecipientBatch(recipients);
 
     final var timeStarted =
         LocalDateTime.ofInstant(
@@ -170,8 +174,6 @@ public class BloombergChatExtractionService extends XmlExtractionService {
         .dateFrom(timeStarted)
         .dateTo(timeEnded)
         .dateImported(importDate)
-        .messages(communications)
-        .recipients(recipients)
         .build();
   }
 

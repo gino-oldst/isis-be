@@ -19,4 +19,12 @@ public abstract class StorageUrlRepository {
   public ExternalUserUrl externalUser() {
     return new ExternalUserUrl(this);
   }
+
+  public MessageUrl message() {
+    return new MessageUrl(this);
+  }
+
+  public RecipientUrl recipient() {
+    return new RecipientUrl(this);
+  }
 }

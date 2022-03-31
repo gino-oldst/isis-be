@@ -73,6 +73,8 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
   protected void finalizeParsing() {
     eventPublisher.finalizeBatchCommunication(true);
     eventPublisher.finalizeBatchExternalUsers(true);
+    eventPublisher.finalizeBatchMessages(true);
+    eventPublisher.finalizeBatchRecipients(true);
   }
 
   @Audited(event = "BLOOMBERG_PARSE_EMAIL_XML_STREAM")
@@ -144,6 +146,8 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
     final var users = parseUsers(message);
 
     eventPublisher.addToExternalUserBatch(users);
+    eventPublisher.addToMessageBatch(List.of(content));
+    eventPublisher.addToRecipientBatch(recipients);
 
     return CommunicationChainDto.builder()
         .source(SourceType.BLOOMBERG_MAIL.toString())
@@ -151,8 +155,6 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
         .subject(subject)
         .dateFrom(timeSent)
         .dateImported(importDate)
-        .messages(List.of(content))
-        .recipients(recipients)
         .datePeriod(timeSent.toLocalDate())
         .build();
   }
