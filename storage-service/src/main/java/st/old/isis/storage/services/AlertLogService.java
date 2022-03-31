@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
+import st.old.isis.dto.storage.MessageActivityLogDto;
+import st.old.isis.enums.ActivityType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.repositories.AlertLogRepository;
@@ -23,6 +25,7 @@ public class AlertLogService {
 
     private final AlertLogRepository repository;
     private final AlertLogValidator validator;
+    private final MessageActivityLogService messageActivityLogService;
 
     @Audited(event = "CREATE_ALERT_LOG")
     public AlertLogDto create(@NonNull @Audited final AlertLogDto dto) {
@@ -30,6 +33,8 @@ public class AlertLogService {
         final var entity = mapToEntity(dto);
 
         final var createdEntity = repository.save(entity);
+
+        addActivityLog(createdEntity.getCommMessageId(), "An alert has been generated for this message");
 
         return mapToResource(createdEntity);
     }
@@ -42,6 +47,20 @@ public class AlertLogService {
         validator.updateValidate(oldEntity, dto);
 
         final var newEntity = mapToEntity(oldEntity, dto);
+
+        if (!oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes())) {
+            addActivityLog(newEntity.getCommMessageId(),
+                    String.format(
+                            "Note was added for alert [%s] : %s",
+                            dto.getPolicyId(), dto.getNotes()));
+        }
+
+        if (oldEntity.getStatus() != newEntity.getStatus()) {
+            addActivityLog(newEntity.getCommMessageId(),
+                    String.format(
+                            "Alert [%s] status has been updated to: [%s]",
+                            dto.getPolicyId(), dto.getStatus()));
+        }
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -159,4 +178,12 @@ public class AlertLogService {
         return entity;
     }
 
+    private void addActivityLog(@NonNull final String messageId, @NonNull final String message) {
+        messageActivityLogService.create(
+                MessageActivityLogDto.builder()
+                        .messageId(messageId)
+                        .type(ActivityType.SYSTEM_EVENT)
+                        .event(message)
+                        .build());
+    }
 }
