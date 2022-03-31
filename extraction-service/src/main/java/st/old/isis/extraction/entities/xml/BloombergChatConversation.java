@@ -15,6 +15,7 @@ import java.util.List;
       "startTimeUTC",
       "endTimeUTC",
       "message",
+      "attachment",
       "participantEntered",
       "participantLeft"
     })
@@ -31,6 +32,9 @@ public class BloombergChatConversation {
 
   @XmlElement(name = "Message")
   protected List<BloombergChatMessage> message;
+
+  @XmlElement(name = "Attachment")
+  protected List<BloombergChatAttachment> attachment;
 
   @XmlElement(name = "ParticipantEntered")
   protected List<BloombergChatParticipantEntered> participantEntered;
@@ -64,21 +68,28 @@ public class BloombergChatConversation {
 
   public List<BloombergChatMessage> getMessage() {
     if (message == null) {
-      message = new ArrayList<BloombergChatMessage>();
+      message = new ArrayList<>();
     }
     return this.message;
   }
 
+  public List<BloombergChatAttachment> getAttachment() {
+    if (attachment == null) {
+      attachment = new ArrayList<>();
+    }
+    return this.attachment;
+  }
+
   public List<BloombergChatParticipantEntered> getParticipantEntered() {
     if (participantEntered == null) {
-      participantEntered = new ArrayList<BloombergChatParticipantEntered>();
+      participantEntered = new ArrayList<>();
     }
     return this.participantEntered;
   }
 
   public List<BloombergChatParticipantLeft> getParticipantLeft() {
     if (participantLeft == null) {
-      participantLeft = new ArrayList<BloombergChatParticipantLeft>();
+      participantLeft = new ArrayList<>();
     }
     return this.participantLeft;
   }

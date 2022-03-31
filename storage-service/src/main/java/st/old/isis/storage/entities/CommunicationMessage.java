@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
+import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.mappers.MetadataConverter;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -21,35 +23,38 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CommunicationMessage implements Serializable {
 
-    private static final long serialVersionUID = 3476394832337716307L;
+  private static final long serialVersionUID = 3476394832337716307L;
 
-    @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+  @Id
+  @GeneratedValue(generator = "uuid")
+  @GenericGenerator(name = "uuid", strategy = "uuid2")
+  private String id;
 
-    private String chainLinkId;
+  private String chainLinkId;
 
-    private String subject;
+  private String subject;
 
-    @Lob
-    private String message;
+  @Lob private String message;
 
-    private String sourceMessageId;
+  private String sourceMessageId;
 
-    private LocalDateTime timeSent;
+  private LocalDateTime timeSent;
 
-    private LocalDate importDate;
+  private LocalDate importDate;
 
-    private String sender;
+  private String sender;
 
-    private String source;
+  private String source;
 
-    @CreationTimestamp
-    private LocalDateTime dateCreated;
+  private String type;
 
-    @UpdateTimestamp
-    private LocalDateTime dateModified;
+  @Lob
+  @Convert(converter = MetadataConverter.class)
+  private Metadata metadata;
 
-    private boolean deleted;
+  @CreationTimestamp private LocalDateTime dateCreated;
+
+  @UpdateTimestamp private LocalDateTime dateModified;
+
+  private boolean deleted;
 }

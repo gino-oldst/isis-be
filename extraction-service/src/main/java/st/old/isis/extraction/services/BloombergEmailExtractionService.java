@@ -5,11 +5,14 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.metadata.BloombergAttachment;
+import st.old.isis.dto.metadata.BloombergEmailMetadata;
 import st.old.isis.dto.metadata.BloombergEmailRecipientMetadata;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.enums.MessageType;
 import st.old.isis.enums.SourceType;
 import st.old.isis.extraction.entities.xml.BloombergEmail;
 import st.old.isis.extraction.entities.xml.BloombergEmailMessage;
@@ -115,6 +118,24 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
             .timeSent(timeSent)
             .source(SourceType.BLOOMBERG_MAIL.toString())
             .build();
+
+    if (!message.getAttachment().isEmpty()) {
+
+      final var attachments = new ArrayList<BloombergAttachment>();
+
+      for (final var attachment : message.getAttachment()) {
+
+        attachments.add(
+            BloombergAttachment.builder()
+                .fileId(attachment.getFileID())
+                .filename(attachment.getFileName())
+                .fileSize(Long.toString(attachment.getFileSize()))
+                .build());
+      }
+
+      content.setType(MessageType.BLOOMBERG_CHAT_ATTACHMENT.toString());
+      content.setMetadata(BloombergEmailMetadata.builder().attachments(attachments).build());
+    }
 
     final var subject = message.getSubject();
 

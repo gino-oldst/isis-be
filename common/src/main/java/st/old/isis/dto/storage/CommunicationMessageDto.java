@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.dto.metadata.Metadata;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,39 +17,42 @@ import java.util.List;
 @AllArgsConstructor
 public class CommunicationMessageDto implements Dto {
 
-    private static final long serialVersionUID = 1391943642716682739L;
+  private static final long serialVersionUID = 1391943642716682739L;
 
-    private String id;
+  private String id;
 
-    private String chainLinkId;
+  private String chainLinkId;
 
-    private String subject;
+  private String subject;
 
-    private String message;
+  private String message;
 
-    private String sourceMessageId;
+  private String sourceMessageId;
 
-    private LocalDateTime timeSent;
+  private LocalDateTime timeSent;
 
-    private LocalDate importDate;
+  private LocalDate importDate;
 
-    private String sender;
+  private String sender;
 
-    private String source;
+  private String source;
 
-    private LocalDateTime dateCreated;
+  private String type;
 
-    private LocalDateTime dateModified;
+  private Metadata metadata;
 
-    private boolean deleted;
+  private LocalDateTime dateCreated;
 
-    // Used for search function
-    private List<String> chains;
+  private LocalDateTime dateModified;
 
-    private List<String> senders;
+  private boolean deleted;
 
-    private LocalDate dateFrom;
+  // Used for search function
+  private List<String> chains;
 
-    private LocalDate dateTo;
+  private List<String> senders;
 
+  private LocalDate dateFrom;
+
+  private LocalDate dateTo;
 }

@@ -6,15 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.Dto;
+import st.old.isis.dto.metadata.BloombergAttachment;
+import st.old.isis.dto.metadata.BloombergChatAttachmentMetadata;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.enums.MessageType;
 import st.old.isis.enums.SourceType;
-import st.old.isis.extraction.entities.xml.BloombergChat;
-import st.old.isis.extraction.entities.xml.BloombergChatConversation;
-import st.old.isis.extraction.entities.xml.BloombergChatMessage;
-import st.old.isis.extraction.entities.xml.BloombergChatParticipantEntered;
+import st.old.isis.extraction.entities.xml.*;
 import st.old.isis.extraction.events.publisher.EventPublisher;
 import st.old.isis.extraction.services.internal.NotificationService;
 
@@ -23,6 +23,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -89,7 +90,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   public void processXml(MultipartFile multipartFile, LocalDate importDate)
       throws IOException, JAXBException, XMLStreamException {
     try {
-      parse(multipartFile.getInputStream(), importDate);
+      parse(new BufferedInputStream(multipartFile.getInputStream()), importDate);
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
@@ -102,9 +103,14 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var roomId = conversation.getRoomID();
 
     final var mappedMessages = parseMessages(conversation.getMessage(), importDate);
+    final var attachmentMessages = parseAttachments(conversation.getAttachment(), importDate);
+
+    final var mappedMessagesCommunications = mappedMessages.get("communication");
+    final var mappedAttachmentCommunications = attachmentMessages.get("communication");
 
     final var communications =
-        mappedMessages.get("communication").stream()
+        Stream.concat(
+                mappedMessagesCommunications.stream(), mappedAttachmentCommunications.stream())
             .map(message -> (CommunicationMessageDto) message)
             .collect(Collectors.toList());
 
@@ -112,11 +118,16 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
     final var mappedMessagesRecipients = mappedMessages.get("recipient");
     final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
+    final var mappedAttachmentRecipients = attachmentMessages.get("recipient");
 
     // concat list of recipients and remove duplicates
     final var recipients =
         new ArrayList<>(
-            Stream.concat(mappedMessagesRecipients.stream(), mappedEntryEventsRecipients.stream())
+            Stream.of(
+                    mappedMessagesRecipients.stream(),
+                    mappedEntryEventsRecipients.stream(),
+                    mappedAttachmentRecipients.stream())
+                .flatMap(stream -> stream)
                 .map(recipient -> (CommunicationRecipientDto) recipient)
                 .collect(
                     Collectors.toMap(
@@ -127,11 +138,16 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
     final var mappedMessagesUsers = mappedMessages.get("user");
     final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
+    final var mappedAttachmentUsers = attachmentMessages.get("user");
 
     // concat list of users and remove duplicates
     final var users =
         new ArrayList<>(
-            Stream.concat(mappedMessagesUsers.stream(), mappedEntryEventsUsers.stream())
+            Stream.of(
+                    mappedMessagesUsers.stream(),
+                    mappedEntryEventsUsers.stream(),
+                    mappedAttachmentUsers.stream())
+                .flatMap(stream -> stream)
                 .map(user -> (ExternalUserDto) user)
                 .collect(
                     Collectors.toMap(
@@ -184,6 +200,67 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .chainLinkId(chainLinkId)
               .sender(user.getEmailAddress())
               .source(SourceType.BLOOMBERG_CHAT.toString())
+              .build();
+
+      final var recipient =
+          CommunicationRecipientDto.builder()
+              .chainLinkId(chainLinkId)
+              .recipient(user.getEmailAddress())
+              .dateImported(importDate)
+              .build();
+
+      final var externalUser =
+          ExternalUserDto.builder()
+              .externalId(user.getEmailAddress())
+              .email(user.getEmailAddress())
+              .firstName(user.getFirstName())
+              .lastName(user.getLastName())
+              .source(SourceType.BLOOMBERG_CHAT.toString())
+              .build();
+
+      communications.add(communication);
+      recipients.add(recipient);
+      users.add(externalUser);
+    }
+
+    return Map.of("communication", communications, "recipient", recipients, "user", users);
+  }
+
+  private Map<String, List<? extends Dto>> parseAttachments(
+      @NonNull final List<BloombergChatAttachment> attachments,
+      @NonNull final LocalDate importDate) {
+
+    final var communications = new ArrayList<CommunicationMessageDto>();
+    final var recipients = new ArrayList<CommunicationRecipientDto>();
+    final var users = new ArrayList<ExternalUserDto>();
+
+    for (final var attachment : attachments) {
+
+      final var timeSent =
+          LocalDateTime.ofInstant(
+              Instant.ofEpochSecond(attachment.getDateTimeUTC()), ZoneId.systemDefault());
+
+      final var user = attachment.getUser();
+
+      final var chainLinkId = attachment.getConversationID();
+
+      final var communication =
+          CommunicationMessageDto.builder()
+              .importDate(importDate)
+              .timeSent(timeSent)
+              .chainLinkId(chainLinkId)
+              .sender(user.getEmailAddress())
+              .source(SourceType.BLOOMBERG_CHAT.toString())
+              .type(MessageType.BLOOMBERG_CHAT_ATTACHMENT.toString())
+              .metadata(
+                  BloombergChatAttachmentMetadata.builder()
+                      .attachment(
+                          BloombergAttachment.builder()
+                              .fileId(attachment.getFileID())
+                              .filename(attachment.getFileName())
+                              .fileSize(Long.toString(attachment.getFileSize()))
+                              .build())
+                      .build())
               .build();
 
       final var recipient =
