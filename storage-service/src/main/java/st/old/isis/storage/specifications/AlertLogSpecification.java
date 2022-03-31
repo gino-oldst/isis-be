@@ -29,6 +29,12 @@ public class AlertLogSpecification implements Specification<AlertLog> {
 
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
+        final var messageId = filter.getCommMessageId();
+
+        if (messageId != null) {
+            predicates.add(cb.equal(root.get("commMessageId"), messageId));
+        }
+
         if (filter.getKeyword() != null) {
             predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
         }
