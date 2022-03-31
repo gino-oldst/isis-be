@@ -3,9 +3,11 @@ package st.old.isis.storage.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationMessageService;
 
@@ -42,5 +44,10 @@ public class CommunicationMessageController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable final String id) throws IsisException {
         service.delete(id);
+    }
+
+    @PostMapping("/search/recent")
+    public RecentMessageDto beforeAfter(@RequestBody @NonNull final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
+        return service.getSurroundingMessages(filter, pageable);
     }
 }

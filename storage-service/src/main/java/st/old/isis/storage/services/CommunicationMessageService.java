@@ -12,12 +12,15 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
 import st.old.isis.storage.specifications.CommunicationMessageSpecification;
+import st.old.isis.storage.specifications.RecentMessageSpecification;
 import st.old.isis.utils.ListUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -172,6 +175,41 @@ public class CommunicationMessageService {
         .totalCurrentElements(page.getNumberOfElements())
         .build()
         .success();
+  }
+
+  @Audited(event = "GET_SURROUNDING_MESSAGES")
+  public RecentMessageDto getSurroundingMessages(
+      @NonNull final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
+
+    final var message = findById(filter.getId());
+
+    final var timeSent = message.getTimeSent();
+    final var chainLinkId = message.getChainLinkId();
+
+    final var beforeSpec = new RecentMessageSpecification(chainLinkId, timeSent, false);
+    final var afterSpec = new RecentMessageSpecification(chainLinkId, timeSent, true);
+
+    final var beforeResults =
+        repository
+            .findAll(beforeSpec, pageable)
+            .get()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
+
+    final var afterResults =
+        repository
+            .findAll(afterSpec, pageable)
+            .get()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
+
+    Collections.reverse(beforeResults);
+
+    return RecentMessageDto.builder()
+        .message(mapToResource(message))
+        .before(beforeResults)
+        .after(afterResults)
+        .build();
   }
 
   private CommunicationMessage findById(@NonNull final String id) throws IsisException {
