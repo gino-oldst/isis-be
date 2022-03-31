@@ -66,6 +66,8 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         .permitAll()
         .antMatchers(endpoints())
         .access("#oauth2.hasScope('INTERNAL')")
+        .antMatchers(adminEndpoints())
+        .hasAnyAuthority("ADMIN")
         .anyRequest()
         .authenticated()
         .and()
@@ -97,5 +99,20 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
             "/user/**",
             "/user-link/**")
         .toArray(new String[0]);
+  }
+
+  private String[] adminEndpoints() {
+    return List.of(
+                    "/external/**",
+                    "/alert/**",
+                    "/alert-policy/**",
+                    "/app-user/**",
+                    "/communication/**",
+                    "/keyword/**",
+                    "/notification/**",
+                    "/policy-map/**",
+                    "/user/**",
+                    "/user-link/**")
+            .toArray(new String[0]);
   }
 }
