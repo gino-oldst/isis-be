@@ -133,7 +133,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
                 .build());
       }
 
-      content.setType(MessageType.BLOOMBERG_CHAT_ATTACHMENT.toString());
+      content.setType(MessageType.BLOOMBERG_EMAIL.toString());
       content.setMetadata(BloombergEmailMetadata.builder().attachments(attachments).build());
     }
 
