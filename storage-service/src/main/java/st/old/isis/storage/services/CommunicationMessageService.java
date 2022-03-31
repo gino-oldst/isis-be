@@ -2,17 +2,23 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
 import st.old.isis.storage.specifications.CommunicationMessageSpecification;
+import st.old.isis.utils.ListUtils;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,6 +27,8 @@ import java.util.stream.Collectors;
 public class CommunicationMessageService {
 
   private final CommunicationMessageRepository repository;
+
+  private final CommunicationRecipientService communicationRecipientService;
 
   @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
   public CommunicationMessageDto create(@NonNull final CommunicationMessageDto dto) {
@@ -67,13 +75,30 @@ public class CommunicationMessageService {
 
     final var spec = new CommunicationMessageSpecification(filter);
 
-    final var results =
+    final var rawResults =
         repository.findAll(spec).stream().map(this::mapToResource).collect(Collectors.toList());
 
-    final var size = results.size();
+    var filteredResults = rawResults;
+
+    if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+
+      filteredResults = rawResults.stream().filter(message -> {
+
+        final var recpfilter = CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build();
+        final var commRecpList = communicationRecipientService.search(recpfilter);
+
+        final var recpList = commRecpList.getData().stream().map(recp -> recp.getRecipient()).collect(Collectors.toList());
+
+        return recpList.containsAll(filter.getRecipients());
+
+      }).collect(Collectors.toList());
+
+    }
+
+    final var size = filteredResults.size();
 
     return ListDto.<CommunicationMessageDto>builder()
-        .data(results)
+        .data(filteredResults)
         .totalNoOfRecords(size)
         .totalPages(size)
         .totalCurrentElements(size)
@@ -87,16 +112,39 @@ public class CommunicationMessageService {
 
     final var spec = new CommunicationMessageSpecification(filter);
 
-    final var searchResults = repository.findAll(spec, pageable);
+    final var searchResults = repository.findAll(spec);
 
-    final var results =
+    final var rawResults =
         searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
 
+    var filteredResults = rawResults;
+
+    if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+
+      filteredResults = rawResults.stream().filter(message -> {
+
+        final var recpfilter = CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build();
+        final var commRecpList = communicationRecipientService.search(recpfilter);
+
+        final var recpList = commRecpList.getData().stream().map(recp -> recp.getRecipient()).collect(Collectors.toList());
+
+        return recpList.containsAll(filter.getRecipients());
+
+      }).collect(Collectors.toList());
+
+    }
+
+    Pageable paging = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+    int start = Math.min((int)paging.getOffset(), filteredResults.size());
+    int end = Math.min((start + paging.getPageSize()), filteredResults.size());
+
+    Page<CommunicationMessageDto> page = new PageImpl<>(filteredResults.subList(start, end), paging, filteredResults.size());
+
     return ListDto.<CommunicationMessageDto>builder()
-        .data(results)
-        .totalNoOfRecords(searchResults.getTotalElements())
-        .totalPages(searchResults.getTotalPages())
-        .totalCurrentElements(searchResults.getNumberOfElements())
+        .data(filteredResults)
+        .totalNoOfRecords(page.getTotalElements())
+        .totalPages(page.getTotalPages())
+        .totalCurrentElements(page.getNumberOfElements())
         .build()
         .success();
   }
