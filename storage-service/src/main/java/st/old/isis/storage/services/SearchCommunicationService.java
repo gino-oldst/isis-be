@@ -64,7 +64,7 @@ public class SearchCommunicationService {
             final var chainListDto = chainService.search(chainFilter);
 
             if(chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())){
-                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getId()));
+                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
             }
 
             //TODO Map Subject and Source
@@ -136,7 +136,7 @@ public class SearchCommunicationService {
             final var chainListDto = chainService.search(chainFilter, pageable);
 
             if(chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())){
-                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getId()));
+                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
             }
 
             //TODO Map Subject and Source

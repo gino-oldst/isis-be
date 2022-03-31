@@ -33,7 +33,7 @@ public class CommunicationChainSpecification implements Specification<Communicat
         }
 
         if(!ListUtils.isNullOrEmpty(filter.getChains())) {
-            predicates.add(root.get("id").in(filter.getChains()));
+            predicates.add(root.get("sourceChainId").in(filter.getChains()));
         }
 
         if(filter.getFilterDateFrom() != null && filter.getFilterDateTo() != null) {
