@@ -55,4 +55,8 @@ public class CommunicationMessageDto implements Dto {
   private LocalDate dateFrom;
 
   private LocalDate dateTo;
+
+  private LocalDate dateSentFrom;
+
+  private LocalDate dateSentTo;
 }
