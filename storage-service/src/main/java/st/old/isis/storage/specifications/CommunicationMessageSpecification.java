@@ -60,33 +60,28 @@ public class CommunicationMessageSpecification implements Specification<Communic
       predicates.add(cb.equal(root.get("importDate"), filter.getImportDate()));
     }
 
-    final var source = filter.getSource();
-
-    if (source != null) {
-      predicates.add(cb.equal(root.get("source"), source));
+    if (filter.getSource() != null) {
+      predicates.add(cb.equal(root.get("source"), filter.getSource()));
     }
 
-    final var type = filter.getType();
-
-    if (type != null) {
-      predicates.add(cb.equal(root.get("type"), type));
+    if(!ListUtils.isNullOrEmpty(filter.getSources())){
+      predicates.add(root.get("source").in(filter.getSources()));
     }
 
-    final var subject = filter.getSubject();
-
-    if (type != null) {
-      predicates.add(cb.like(cb.upper(root.get("subject")), "%" + subject.toUpperCase() + "%"));
+    if (filter.getType() != null) {
+      predicates.add(cb.equal(root.get("type"), filter.getType()));
     }
 
-    final var dateSentFrom = filter.getDateSentFrom();
-    final var dateSentTo = filter.getDateSentTo();
+    if (filter.getSubject() != null) {
+      predicates.add(cb.like(cb.upper(root.get("subject")), "%" + filter.getSubject().toUpperCase() + "%"));
+    }
 
-    if (dateSentFrom != null && dateSentTo != null) {
+    if (filter.getDateSentFrom() != null && filter.getDateSentTo() != null) {
       predicates.add(
           cb.between(
               root.get("timeSent"),
-              LocalDateTime.of(dateSentFrom, LocalTime.MIN),
-              LocalDateTime.of(dateSentTo, LocalTime.MAX)));
+              LocalDateTime.of(filter.getDateSentFrom(), LocalTime.MIN),
+              LocalDateTime.of(filter.getDateSentTo(), LocalTime.MAX)));
     }
 
     predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
