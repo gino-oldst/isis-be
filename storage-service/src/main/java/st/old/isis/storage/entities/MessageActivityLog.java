@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UpdateTimestamp;
 import st.old.isis.enums.ActivityType;
 
 import javax.persistence.*;
@@ -20,22 +21,23 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MessageActivityLog implements Serializable {
 
-    private static final long serialVersionUID = 1105173063055870983L;
+  private static final long serialVersionUID = 1105173063055870983L;
 
-    @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+  @Id
+  @GeneratedValue(generator = "uuid")
+  @GenericGenerator(name = "uuid", strategy = "uuid2")
+  private String id;
 
-    private String messageId;
+  private String messageId;
 
-    private String executorId;
+  private String executorId;
 
-    private String event;
+  private String event;
 
-    @Enumerated(EnumType.STRING)
-    private ActivityType type;
+  @Enumerated(EnumType.STRING)
+  private ActivityType type;
 
-    @CreationTimestamp
-    private LocalDateTime dateCreated;
+  @CreationTimestamp private LocalDateTime dateCreated;
+
+  @UpdateTimestamp private LocalDateTime dateModified;
 }

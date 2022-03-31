@@ -10,7 +10,6 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.MessageActivityLogDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.MessageActivityLog;
-import st.old.isis.storage.entities.User;
 import st.old.isis.storage.repositories.MessageActivityLogRepository;
 import st.old.isis.storage.specifications.MessageActivityLogSpecification;
 
@@ -21,110 +20,125 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MessageActivityLogService {
 
-    private final MessageActivityLogRepository repository;
+  private final MessageActivityLogRepository repository;
 
-    @Audited(event = "CREATE_MESSAGE_ACTIVITY_LOG")
-    public MessageActivityLogDto create(@NonNull @Audited final MessageActivityLogDto dto) {
+  @Audited(event = "CREATE_MESSAGE_ACTIVITY_LOG")
+  public MessageActivityLogDto create(@NonNull @Audited final MessageActivityLogDto dto) {
 
-        final var entity = mapToEntity(dto);
+    final var entity = mapToEntity(dto);
 
-        final var createdEntity = repository.save(entity);
+    final var createdEntity = repository.save(entity);
 
-        return mapToResource(createdEntity);
-    }
+    return mapToResource(createdEntity);
+  }
 
-    @Audited(event = "GET_MESSAGE_ACTIVITY_LOG_BY_ID")
-    public MessageActivityLogDto getById(@NonNull @Audited final String id) throws IsisException {
+  @Audited(event = "UPDATE_MESSAGE_ACTIVITY_LOG")
+  public MessageActivityLogDto update(@NonNull @Audited final MessageActivityLogDto dto)
+      throws IsisException {
 
-        final var entity = findById(id);
+    final var oldEntity = findById(dto.getId());
 
-        return mapToResource(entity);
-    }
+    final var newEntity = mapToEntity(oldEntity, dto);
 
-    @Audited(event = "DELETE_MESSAGE_ACTIVITY_LOG")
-    public void delete(@NonNull @Audited final String id) throws IsisException {
+    final var updatedEntity = repository.save(newEntity);
 
-        final var entity = findById(id);
+    return mapToResource(updatedEntity);
+  }
 
-        repository.delete(entity);
-    }
+  @Audited(event = "GET_MESSAGE_ACTIVITY_LOG_BY_ID")
+  public MessageActivityLogDto getById(@NonNull @Audited final String id) throws IsisException {
 
-    @Audited(event = "SEARCH_MESSAGE_ACTIVITY_LOG")
-    public ListDto<MessageActivityLogDto> search(@NonNull @Audited final MessageActivityLogDto filter) {
+    final var entity = findById(id);
 
-        final var spec = new MessageActivityLogSpecification(filter);
+    return mapToResource(entity);
+  }
 
-        final var results = repository.findAll(spec)
-                .stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+  @Audited(event = "DELETE_MESSAGE_ACTIVITY_LOG")
+  public void delete(@NonNull @Audited final String id) throws IsisException {
 
-        final var size = results.size();
+    final var entity = findById(id);
 
-        return ListDto.<MessageActivityLogDto>builder()
-                .data(results)
-                .totalNoOfRecords(size)
-                .totalPages(size)
-                .totalCurrentElements(size)
-                .build()
-                .success();
-    }
+    repository.delete(entity);
+  }
 
-    @Audited(event = "SEARCH_USER")
-    public ListDto<MessageActivityLogDto> search(@NonNull @Audited final MessageActivityLogDto filter, Pageable pageable) {
+  @Audited(event = "SEARCH_MESSAGE_ACTIVITY_LOG")
+  public ListDto<MessageActivityLogDto> search(
+      @NonNull @Audited final MessageActivityLogDto filter) {
 
-        final var spec = new MessageActivityLogSpecification(filter);
+    final var spec = new MessageActivityLogSpecification(filter);
 
-        final var searchResults = repository.findAll(spec, pageable);
+    final var results =
+        repository.findAll(spec).stream().map(this::mapToResource).collect(Collectors.toList());
 
-        final var results = searchResults.stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+    final var size = results.size();
 
-        return ListDto.<MessageActivityLogDto>builder()
-                .data(results)
-                .totalNoOfRecords(searchResults.getTotalElements())
-                .totalPages(searchResults.getTotalPages())
-                .totalCurrentElements(searchResults.getNumberOfElements())
-                .build()
-                .success();
-    }
+    return ListDto.<MessageActivityLogDto>builder()
+        .data(results)
+        .totalNoOfRecords(size)
+        .totalPages(size)
+        .totalCurrentElements(size)
+        .build()
+        .success();
+  }
 
-    private MessageActivityLog findById(@NonNull final String id) throws IsisException {
-        return repository.findById(id)
-                .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find user with id: [%s]", id),
-                        "NotFoundException"));
-    }
+  @Audited(event = "SEARCH_USER")
+  public ListDto<MessageActivityLogDto> search(
+      @NonNull @Audited final MessageActivityLogDto filter, Pageable pageable) {
 
-    private MessageActivityLog mapToEntity(@NonNull final MessageActivityLogDto dto) {
-        return MessageActivityLog.builder()
-                .id(dto.getId())
-                .messageId(dto.getMessageId())
-                .executorId(dto.getExecutorId())
-                .event(dto.getEvent())
-                .type(dto.getType())
-                .dateCreated(dto.getDateCreated())
-                .build();
-    }
+    final var spec = new MessageActivityLogSpecification(filter);
 
-    private MessageActivityLogDto mapToResource(@NonNull final MessageActivityLog entity) {
-        return MessageActivityLogDto.builder()
-                .id(entity.getId())
-                .messageId(entity.getMessageId())
-                .executorId(entity.getExecutorId())
-                .event(entity.getEvent())
-                .type(entity.getType())
-                .dateCreated(entity.getDateCreated())
-                .build();
-    }
+    final var searchResults = repository.findAll(spec, pageable);
 
-    //map read-only properties from old entity to new entity
-    private MessageActivityLog mapToEntity(@NonNull User oldEntity, @NonNull MessageActivityLogDto newDto) {
+    final var results =
+        searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
 
-        final var entity = mapToEntity(newDto);
-        entity.setDateCreated(oldEntity.getDateCreated());
+    return ListDto.<MessageActivityLogDto>builder()
+        .data(results)
+        .totalNoOfRecords(searchResults.getTotalElements())
+        .totalPages(searchResults.getTotalPages())
+        .totalCurrentElements(searchResults.getNumberOfElements())
+        .build()
+        .success();
+  }
 
-        return entity;
-    }
+  private MessageActivityLog findById(@NonNull final String id) throws IsisException {
+    return repository
+        .findById(id)
+        .orElseThrow(
+            () ->
+                IsisException.notFound(
+                    String.format("Cannot find user with id: [%s]", id), "NotFoundException"));
+  }
+
+  private MessageActivityLog mapToEntity(@NonNull final MessageActivityLogDto dto) {
+    return MessageActivityLog.builder()
+        .id(dto.getId())
+        .messageId(dto.getMessageId())
+        .executorId(dto.getExecutorId())
+        .event(dto.getEvent())
+        .type(dto.getType())
+        .dateCreated(dto.getDateCreated())
+        .build();
+  }
+
+  private MessageActivityLogDto mapToResource(@NonNull final MessageActivityLog entity) {
+    return MessageActivityLogDto.builder()
+        .id(entity.getId())
+        .messageId(entity.getMessageId())
+        .executorId(entity.getExecutorId())
+        .event(entity.getEvent())
+        .type(entity.getType())
+        .dateCreated(entity.getDateCreated())
+        .build();
+  }
+
+  // map read-only properties from old entity to new entity
+  private MessageActivityLog mapToEntity(
+      @NonNull MessageActivityLog oldEntity, @NonNull MessageActivityLogDto newDto) {
+
+    final var entity = mapToEntity(newDto);
+    entity.setDateCreated(oldEntity.getDateCreated());
+
+    return entity;
+  }
 }
