@@ -132,49 +132,19 @@ public class CommunicationMessageService {
 
     final var spec = new CommunicationMessageSpecification(filter);
 
-    final var searchResults = repository.findAll(spec);
+    final var searchResults = repository.findAll(spec, pageable);
 
-    final var rawResults =
-        searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
-
-    var filteredResults = rawResults;
-
-    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
-
-      filteredResults =
-          rawResults.stream()
-              .filter(
-                  message -> {
-                    final var recpfilter =
-                        CommunicationRecipientDto.builder()
-                            .chainLinkId(message.getChainLinkId())
-                            .build();
-                    final var commRecpList = communicationRecipientService.search(recpfilter);
-
-                    final var recpList =
-                        commRecpList.getData().stream()
-                            .map(CommunicationRecipientDto::getRecipient)
-                            .collect(Collectors.toList());
-
-                    return recpList.containsAll(filter.getRecipients());
-                  })
-              .collect(Collectors.toList());
-    }
-
-    Pageable paging = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-    int start = Math.min((int) paging.getOffset(), filteredResults.size());
-    int end = Math.min((start + paging.getPageSize()), filteredResults.size());
-
-    Page<CommunicationMessageDto> page =
-        new PageImpl<>(filteredResults.subList(start, end), paging, filteredResults.size());
+    final var results =
+            searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
 
     return ListDto.<CommunicationMessageDto>builder()
-        .data(page.getContent())
-        .totalNoOfRecords(page.getTotalElements())
-        .totalPages(page.getTotalPages())
-        .totalCurrentElements(page.getNumberOfElements())
-        .build()
-        .success();
+            .data(results)
+            .totalNoOfRecords(searchResults.getTotalElements())
+            .totalPages(searchResults.getTotalPages())
+            .totalCurrentElements(searchResults.getNumberOfElements())
+            .build()
+            .success();
+
   }
 
   @Audited(event = "GET_SURROUNDING_MESSAGES")
