@@ -3,11 +3,13 @@ package st.old.isis.auth.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.AccountStatusUserDetailsChecker;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import st.old.isis.auth.service.internal.StorageService;
+import st.old.isis.auth.utils.UserPrincipal;
 import st.old.isis.dto.storage.RoleDto;
 
 import javax.transaction.Transactional;
@@ -30,14 +32,11 @@ public class UserDetailsService
 
     try {
       final var user = storageService.getByUsername(username);
-      return new org.springframework.security.core.userdetails.User(
-          user.getUsername(),
-          user.getPassword(),
-          !user.isDeleted(),
-          true,
-          true,
-          true,
-          getAuthority(user.getRoles()));
+
+      final var userDetail = new UserPrincipal(user);
+      new AccountStatusUserDetailsChecker().check(userDetail);
+      return userDetail;
+
     } catch (Exception e) {
       throw new UsernameNotFoundException("Invalid username or password:", e);
     }
