@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.MessageActivityLogDto;
 import st.old.isis.storage.entities.MessageActivityLog;
+import st.old.isis.utils.ListUtils;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -30,27 +31,28 @@ public class MessageActivityLogSpecification implements Specification<MessageAct
 
     final List<Predicate> predicates = new ArrayList<>();
 
-    final var messageId = filter.getMessageId();
-
-    if (messageId != null) {
-      predicates.add(cb.equal(root.get("messageId"), messageId));
+    if (filter.getMessageId() != null) {
+      predicates.add(cb.equal(root.get("messageId"), filter.getMessageId()));
     }
 
-    final var type = filter.getType();
-
-    if (messageId != null) {
-      predicates.add(cb.equal(root.get("type"), type));
+    if (filter.getType() != null) {
+      predicates.add(cb.equal(root.get("type"), filter.getType()));
     }
 
-    final var dateCreatedFrom = filter.getDateCreatedFrom();
-    final var dateCreatedTo = filter.getDateCreatedTo();
+    if (filter.getExecutorId() != null) {
+      predicates.add(cb.equal(root.get("executorId"), filter.getExecutorId()));
+    }
 
-    if (dateCreatedFrom != null && dateCreatedTo != null) {
+    if (!ListUtils.isNullOrEmpty(filter.getExecutorIds())) {
+      predicates.add(root.get("executorId").in(filter.getExecutorIds()));
+    }
+
+    if (filter.getDateCreatedFrom() != null && filter.getDateCreatedTo() != null) {
       predicates.add(
           cb.between(
               root.get("dateCreated"),
-              LocalDateTime.of(dateCreatedFrom, LocalTime.MIN),
-              LocalDateTime.of(dateCreatedTo, LocalTime.MAX)));
+              LocalDateTime.of(filter.getDateCreatedFrom(), LocalTime.MIN),
+              LocalDateTime.of(filter.getDateCreatedTo(), LocalTime.MAX)));
     }
 
     return cb.and(predicates.toArray(Predicate[]::new));

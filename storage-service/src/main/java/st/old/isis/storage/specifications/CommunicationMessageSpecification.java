@@ -31,6 +31,10 @@ public class CommunicationMessageSpecification implements Specification<Communic
 
     final List<Predicate> predicates = new ArrayList<>();
 
+    if (filter.getId() != null) {
+      predicates.add(cb.like(root.get("id"), "%" + filter.getId() + "%"));
+    }
+
     if (filter.getChainLinkId() != null) {
       predicates.add(cb.equal(root.get("chainLinkId"), filter.getChainLinkId()));
     }
