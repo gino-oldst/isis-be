@@ -43,10 +43,6 @@ public class MessageActivityLogSpecification implements Specification<MessageAct
       predicates.add(cb.equal(root.get("executorId"), filter.getExecutorId()));
     }
 
-    if (!ListUtils.isNullOrEmpty(filter.getExecutorIds())) {
-      predicates.add(root.get("executorId").in(filter.getExecutorIds()));
-    }
-
     if (filter.getDateCreatedFrom() != null && filter.getDateCreatedTo() != null) {
       predicates.add(
           cb.between(
