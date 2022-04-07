@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableScheduling
-@EnableSchedulerLock(defaultLockAtMostFor = "${isis.download.scheduler.lock-time}")
+@EnableSchedulerLock(defaultLockAtMostFor = "${isis.download.scheduler.max-lock-time}")
 public class ShedlockConfiguration {
 
   @Bean

@@ -5,24 +5,36 @@ import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import st.old.isis.extraction.services.AzureDownloadService;
-
-import java.util.List;
+import st.old.isis.extraction.services.BloombergDownloadService;
+import st.old.isis.extraction.services.ReutersDownloadService;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DownloadScheduler {
 
-  private final List<AzureDownloadService> service;
+  private final ReutersDownloadService reutersDownloadService;
+  private final BloombergDownloadService bloombergDownloadService;
 
-  @Scheduled(cron = "${isis.download.scheduler.cron}")
-  @SchedulerLock(name = "downloadRawFiles",
-          lockAtLeastFor = "${isis.download.scheduler.lock-time}")
-  public void downloadRawFiles() {
+  @Scheduled(cron = "${isis.download.scheduler.reuters.cron}")
+  @SchedulerLock(
+      name = "downloadReutersRawFiles",
+      lockAtLeastFor = "${isis.download.scheduler.reuters.lock-time}")
+  public void downloadReutersRawFiles() {
 
-    log.info("Downloading raw files from azure...");
+    log.info("Downloading Reuters raw files from azure...");
 
-    service.forEach(AzureDownloadService::sync);
+    reutersDownloadService.sync();
+  }
+
+  @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
+  @SchedulerLock(
+          name = "downloadBloombergRawFiles",
+          lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
+  public void downloadBloombergRawFiles() {
+
+    log.info("Downloading Bloomberg raw files from azure...");
+
+    bloombergDownloadService.sync();
   }
 }

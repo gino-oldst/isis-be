@@ -48,9 +48,13 @@ isis:
   download:
     timeout: ${AZURE_DOWNLOAD_TIMEOUT}
     scheduler:
-      cron: ${DOWNLOAD_SCHEDULER_CRON}
-      lock-time: ${DOWNLOAD_SCHEDULER_LOCK_TIME}
       max-lock-time: ${DOWNLOAD_SCHEDULER_MAX_LOCK_TIME}
+      bloomberg:
+        cron: ${BLOOMBERG_DOWNLOAD_SCHEDULER_CRON}
+        lock-time: ${BLOOMBERG_DOWNLOAD_SCHEDULER_LOCK_TIME}
+      reuters:
+        cron: ${REUTERS_DOWNLOAD_SCHEDULER_CRON}
+        lock-time: ${REUTERS_DOWNLOAD_SCHEDULER_LOCK_TIME}
     directory:
       bloomberg: ${BLOOMBERG_DIRECTORY_NAME}
       ice-chat: ${ICE_CHAT_DIRECTORY_NAME}
