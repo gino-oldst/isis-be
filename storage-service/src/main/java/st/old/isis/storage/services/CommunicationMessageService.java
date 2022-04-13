@@ -207,7 +207,7 @@ public class CommunicationMessageService {
         .build();
   }
 
-  private CommunicationMessageDto mapToResource(@NonNull final CommunicationMessage entity) {
+  public CommunicationMessageDto mapToResource(@NonNull final CommunicationMessage entity) {
     return CommunicationMessageDto.builder()
         .id(entity.getId())
         .chainLinkId(entity.getChainLinkId())
