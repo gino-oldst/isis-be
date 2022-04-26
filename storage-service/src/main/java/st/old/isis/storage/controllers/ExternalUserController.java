@@ -22,19 +22,8 @@ public class ExternalUserController {
   private final ObjectUtils objectUtils;
 
   @PostMapping("/batch")
-  public ListDto<ExternalUserDto> batchedSave(@RequestBody List<ExternalUserDto> users)
-      throws IsisException {
-    try {
+  public ListDto<ExternalUserDto> batchedSave(@RequestBody List<ExternalUserDto> users) {
       return service.batchedSave(users);
-    } catch (Exception e) {
-      try {
-        log.info("Request: {}", objectUtils.toString(users));
-      } catch (IsisException ex) {
-        ex.printStackTrace();
-        throw ex;
-      }
-      throw e;
-    }
   }
 
   @PostMapping("/search")
