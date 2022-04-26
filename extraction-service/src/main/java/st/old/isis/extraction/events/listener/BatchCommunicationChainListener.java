@@ -9,6 +9,7 @@ import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchCommunicationChainEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
+import st.old.isis.utils.ObjectUtils;
 
 @Slf4j
 @Component
@@ -16,13 +17,16 @@ public class BatchCommunicationChainListener
     extends BatchEventListener<CommunicationChainDto, BatchCommunicationChainEvent> {
 
   private final StorageService storageService;
+  private final ObjectUtils objectUtils;
 
   public BatchCommunicationChainListener(
       @NonNull final StorageService storageService,
+      @NonNull final ObjectUtils objectUtils,
       @NonNull final NotificationService notificationService,
       @NonNull final BatchConfiguration batchConfiguration) {
     super(batchConfiguration, notificationService);
     this.storageService = storageService;
+    this.objectUtils = objectUtils;
   }
 
   @Override
@@ -33,6 +37,12 @@ public class BatchCommunicationChainListener
   @Override
   protected void persist(ListDto<CommunicationChainDto> list) throws Throwable {
     log.info("Importing [{}] communication chains", list.getTotalNoOfRecords());
-    storageService.importChain(list);
+    try {
+      storageService.importChain(list);
+    } catch (Throwable e) {
+      //todo: save failed requests to a file for retrying or do an immediate retry
+      log.error("Error persisting communication chains: {}", objectUtils.toString(list));
+      throw e;
+    }
   }
 }
