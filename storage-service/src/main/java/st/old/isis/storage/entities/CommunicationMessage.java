@@ -16,11 +16,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@Table
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+    indexes = {
+      @Index(name = "idx_communication_message_time_sent", columnList = "timeSent"),
+      @Index(name = "idx_communication_message_source", columnList = "source"),
+      @Index(name = "idx_communication_message_sender", columnList = "sender"),
+      @Index(name = "idx_communication_message_chain_link_id", columnList = "chainLinkId")
+    })
 public class CommunicationMessage implements Serializable {
 
   private static final long serialVersionUID = 3476394832337716307L;

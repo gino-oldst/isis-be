@@ -11,8 +11,6 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +38,7 @@ public class CommunicationMessageSpecification implements Specification<Communic
     }
 
     if (!ListUtils.isNullOrEmpty(filter.getChains())) {
-      predicates.add(root.get("id").in(filter.getChains()));
+      predicates.add(root.get("chainLinkId").in(filter.getChains()));
     }
 
     if (filter.getDateFrom() != null && filter.getDateTo() != null) {
@@ -68,7 +66,7 @@ public class CommunicationMessageSpecification implements Specification<Communic
       predicates.add(cb.equal(root.get("source"), filter.getSource()));
     }
 
-    if(!ListUtils.isNullOrEmpty(filter.getSources())){
+    if (!ListUtils.isNullOrEmpty(filter.getSources())) {
       predicates.add(root.get("source").in(filter.getSources()));
     }
 
@@ -77,15 +75,13 @@ public class CommunicationMessageSpecification implements Specification<Communic
     }
 
     if (filter.getSubject() != null) {
-      predicates.add(cb.like(cb.upper(root.get("subject")), "%" + filter.getSubject().toUpperCase() + "%"));
+      predicates.add(
+          cb.like(cb.upper(root.get("subject")), "%" + filter.getSubject().toUpperCase() + "%"));
     }
 
     if (filter.getDateSentFrom() != null && filter.getDateSentTo() != null) {
       predicates.add(
-          cb.between(
-              root.get("timeSent"),
-              LocalDateTime.of(filter.getDateSentFrom(), LocalTime.MIN),
-              LocalDateTime.of(filter.getDateSentTo(), LocalTime.MAX)));
+          cb.between(root.get("timeSent"), filter.getDateSentFrom(), filter.getDateSentTo()));
     }
 
     predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));

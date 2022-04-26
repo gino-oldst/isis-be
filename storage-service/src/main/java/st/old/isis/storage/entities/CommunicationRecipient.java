@@ -13,27 +13,31 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
-@Table
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+    indexes = {
+      @Index(name = "idx_communication_recipient_recipient", columnList = "recipient"),
+      @Index(name = "idx_communication_recipient_chain_link_id", columnList = "chainLinkId")
+    })
 public class CommunicationRecipient implements Serializable {
 
-    private static final long serialVersionUID = 393945302551301426L;
+  private static final long serialVersionUID = 393945302551301426L;
 
-    @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+  @Id
+  @GeneratedValue(generator = "uuid")
+  @GenericGenerator(name = "uuid", strategy = "uuid2")
+  private String id;
 
-    private String chainLinkId;
+  private String chainLinkId;
 
-    private String recipient;
+  private String recipient;
 
-    private LocalDate dateImported;
+  private LocalDate dateImported;
 
-    @Lob
-    @Convert(converter = MetadataConverter.class)
-    private Metadata metadata;
+  @Lob
+  @Convert(converter = MetadataConverter.class)
+  private Metadata metadata;
 }

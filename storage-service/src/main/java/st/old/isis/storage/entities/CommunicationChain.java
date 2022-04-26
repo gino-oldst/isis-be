@@ -14,39 +14,41 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@Table
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+    indexes = {
+      @Index(name = "idx_communication_chain_source_chain_id", columnList = "sourceChainId"),
+      @Index(name = "idx_communication_chain_source", columnList = "source")
+    })
 public class CommunicationChain implements Serializable {
 
-    private static final long serialVersionUID = 3476394832337716307L;
+  private static final long serialVersionUID = 3476394832337716307L;
 
-    @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+  @Id
+  @GeneratedValue(generator = "uuid")
+  @GenericGenerator(name = "uuid", strategy = "uuid2")
+  private String id;
 
-    private String source;
+  private String source;
 
-    private String sourceChainId;
+  private String sourceChainId;
 
-    private String subject;
+  private String subject;
 
-    private LocalDate datePeriod;
+  private LocalDate datePeriod;
 
-    private LocalDate dateImported;
+  private LocalDate dateImported;
 
-    private LocalDateTime dateFrom;
+  private LocalDateTime dateFrom;
 
-    private LocalDateTime dateTo;
+  private LocalDateTime dateTo;
 
-    @CreationTimestamp
-    private LocalDateTime dateCreated;
+  @CreationTimestamp private LocalDateTime dateCreated;
 
-    @UpdateTimestamp
-    private LocalDateTime dateModified;
+  @UpdateTimestamp private LocalDateTime dateModified;
 
-    private boolean deleted;
+  private boolean deleted;
 }

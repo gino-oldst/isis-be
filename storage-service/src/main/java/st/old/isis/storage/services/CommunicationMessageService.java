@@ -2,9 +2,7 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -20,8 +18,10 @@ import st.old.isis.storage.specifications.CommunicationMessageSpecification;
 import st.old.isis.storage.specifications.RecentMessageSpecification;
 import st.old.isis.utils.ListUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,7 +36,11 @@ public class CommunicationMessageService {
   public List<CommunicationMessageDto> batchSave(
       @NonNull final List<CommunicationMessageDto> request) {
 
-    final var messages = request.stream().map(this::mapToEntity).collect(Collectors.toList());
+    final var messages =
+        request.stream()
+            .filter(message -> !Strings.isEmpty(message.getSender()))
+            .map(this::mapToEntity)
+            .collect(Collectors.toList());
 
     return repository.saveAll(messages).stream()
         .map(this::mapToResource)
@@ -130,21 +134,46 @@ public class CommunicationMessageService {
   public ListDto<CommunicationMessageDto> search(
       @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
 
-    final var spec = new CommunicationMessageSpecification(filter);
+    var chains = List.<String>of();
 
-    final var searchResults = repository.findAll(spec, pageable);
+    final var recipients = filter.getRecipients();
+
+    if (!ListUtils.isNullOrEmpty(recipients)) {
+
+      final var recipientFilter =
+          CommunicationRecipientDto.builder().recipients(filter.getRecipients()).build();
+
+      chains =
+          communicationRecipientService.search(recipientFilter).getData().stream()
+              .map(CommunicationRecipientDto::getChainLinkId)
+              .collect(Collectors.toList());
+    }
+
+    final var messageFilter =
+        CommunicationMessageDto.builder()
+            .chains(chains)
+            .dateSentFrom(filter.getDateSentFrom())
+            .dateSentTo(filter.getDateSentTo())
+            .source(filter.getSource())
+            .sources(filter.getSources())
+            .sender(filter.getSender())
+            .senders(filter.getSenders())
+            .build();
+
+    final var spec = new CommunicationMessageSpecification(messageFilter);
+
+    final var searchResults = repository.findAll(spec);
+
+    final var keyword = filter.getMessage();
 
     final var results =
-            searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
+        searchResults.stream()
+            .filter(message -> Objects.nonNull(message.getMessage()))
+            .filter(message -> Strings.isEmpty(keyword) || message.getMessage().contains(keyword))
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
 
-    return ListDto.<CommunicationMessageDto>builder()
-            .data(results)
-            .totalNoOfRecords(searchResults.getTotalElements())
-            .totalPages(searchResults.getTotalPages())
-            .totalCurrentElements(searchResults.getNumberOfElements())
-            .build()
-            .success();
-
+    return pagedResults(results, pageable);
   }
 
   @Audited(event = "GET_SURROUNDING_MESSAGES")
@@ -220,6 +249,60 @@ public class CommunicationMessageService {
         .source(entity.getSource())
         .type(entity.getType())
         .metadata(entity.getMetadata())
+        .build();
+  }
+
+  private int startingIndex(int totalSize, int pageNum, int pageSize) {
+
+    if (pageNum == 0) {
+      return 0;
+    }
+
+    var index = pageNum * pageSize;
+
+    return (index > totalSize) ? (pageNum - 1) * pageSize : index;
+  }
+
+  private int endingIndex(int totalSize, int startingIndex, int pageSize) {
+
+    final var index = startingIndex + pageSize;
+
+    return Math.min(index, totalSize);
+  }
+
+  private ListDto<CommunicationMessageDto> pagedResults(
+      final List<CommunicationMessageDto> messages, Pageable pageable) {
+
+    if (messages.isEmpty()) {
+      return ListDto.emptyList();
+    }
+
+    final var totalSize = messages.size();
+    final var pageSize = pageable.getPageSize();
+    final var pageNum = pageable.getPageNumber();
+
+    final var startingIndex = startingIndex(totalSize, pageNum, pageSize);
+    final var endingIndex = endingIndex(totalSize, startingIndex, pageSize);
+
+    var totalPages = totalSize / pageSize + ((totalSize % pageSize > 0) ? 1 : 0);
+
+    if (startingIndex > endingIndex) {
+      return ListDto.<CommunicationMessageDto>builder()
+          .totalNoOfRecords(totalSize)
+          .totalCurrentElements(0)
+          .totalPages(totalPages)
+          .data(new ArrayList<>())
+          .build()
+          .success();
+    }
+
+    final var pagedResults = messages.subList(startingIndex, endingIndex);
+
+    return ListDto.<CommunicationMessageDto>builder()
+        .data(pagedResults)
+        .totalNoOfRecords(totalSize)
+        .totalCurrentElements(pagedResults.size())
+        .totalPages(totalPages)
         .build();
   }
 }

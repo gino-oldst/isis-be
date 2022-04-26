@@ -2,6 +2,7 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ExternalUserService {
 
     final List<ExternalUser> users =
         list.stream()
+            .filter(user -> !Strings.isEmpty(user.getEmail()))
             .map(this::mapToEntity)
             .peek(user -> user.setExternalId(user.getExternalId().toLowerCase()))
             .peek(
@@ -72,8 +74,7 @@ public class ExternalUserService {
 
     final var results = findAll(filter);
 
-    return results.stream()
-        .collect(Collectors.toMap(this::mapKey, Function.identity()));
+    return results.stream().collect(Collectors.toMap(this::mapKey, Function.identity()));
   }
 
   @Audited(event = "GET_EXTERNAL_USER_BY_ID")

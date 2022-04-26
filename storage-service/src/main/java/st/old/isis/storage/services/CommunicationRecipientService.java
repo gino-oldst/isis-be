@@ -2,6 +2,7 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,9 @@ import st.old.isis.storage.repositories.CommunicationRecipientRepository;
 import st.old.isis.storage.specifications.CommunicationRecipientSpecification;
 import st.old.isis.storage.validators.CommunicationRecipientValidator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,9 +31,38 @@ public class CommunicationRecipientService {
   public List<CommunicationRecipientDto> batchSave(
       @NonNull final List<CommunicationRecipientDto> request) {
 
-    final var recipients = request.stream().map(this::mapToEntity).collect(Collectors.toList());
+    final var recipients =
+        request.stream()
+            .filter(Objects::nonNull)
+            .map(CommunicationRecipientDto::getRecipient)
+            .collect(Collectors.toList());
 
-    return repository.saveAll(recipients).stream()
+    final var filter = CommunicationRecipientDto.builder().recipients(recipients).build();
+    final var spec = new CommunicationRecipientSpecification(filter);
+
+    final var existingRecipients =
+        repository.findAll(spec).stream()
+            .collect(
+                Collectors.toMap(
+                    CommunicationRecipient::getRecipient,
+                    (recipient) -> new ArrayList<>(List.of(recipient.getChainLinkId())),
+                    (old, latest) -> {
+                      old.addAll(latest);
+                      return old;
+                    }));
+
+    final var recipientsEntity =
+        request.stream()
+            .filter(recipient -> !Strings.isEmpty(recipient.getRecipient()))
+            .filter(
+                recipient ->
+                    !existingRecipients
+                        .getOrDefault(recipient.getRecipient(), new ArrayList<>())
+                        .contains(recipient.getChainLinkId()))
+            .map(this::mapToEntity)
+            .collect(Collectors.toList());
+
+    return repository.saveAll(recipientsEntity).stream()
         .map(this::mapToResource)
         .collect(Collectors.toList());
   }
