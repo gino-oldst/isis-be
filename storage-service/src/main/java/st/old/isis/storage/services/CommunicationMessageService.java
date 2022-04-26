@@ -169,7 +169,9 @@ public class CommunicationMessageService {
     final var results =
         searchResults.stream()
             .filter(message -> Objects.nonNull(message.getMessage()))
-            .filter(message -> Strings.isEmpty(keyword) || message.getMessage().contains(keyword))
+            .filter(
+                message ->
+                    Strings.isEmpty(keyword) || containsIgnoreCase(message.getMessage(), keyword))
             .map(this::mapToResource)
             .collect(Collectors.toList());
 
@@ -304,5 +306,30 @@ public class CommunicationMessageService {
         .totalCurrentElements(pagedResults.size())
         .totalPages(totalPages)
         .build();
+  }
+
+  public static boolean containsIgnoreCase(String source, String word) {
+    final var length = word.length();
+    if (length == 0) {
+      return true;
+    }
+
+    final var firstLo = Character.toLowerCase(word.charAt(0));
+    final var firstUp = Character.toUpperCase(word.charAt(0));
+
+    for (int i = source.length() - length; i >= 0; i--) {
+
+      final var ch = source.charAt(i);
+
+      if (ch != firstLo && ch != firstUp) {
+        continue;
+      }
+
+      if (source.regionMatches(true, i, word, 0, length)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
