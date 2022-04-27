@@ -9,14 +9,15 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.dto.communication.QuickCommunicationDto;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
-import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
-import st.old.isis.storage.specifications.CommunicationMessageSpecification;
+import st.old.isis.storage.specifications.AlertLogSpecification;
+import st.old.isis.utils.ListUtils;
 
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -27,56 +28,60 @@ public class QuickCommunicationService {
 
     private final CommunicationMessageService communicationMessageService;
 
+    private final AlertLogRepository alertLogRepository;
+
     private final AlertLogService alertLogService;
 
     private final CommunicationRecipientService communicationRecipientService;
 
-    @Audited(event = "QUICK_SEARCH_COMMUNICATION_MESSAGE")
-    public ListDto<QuickCommunicationDto> search(@NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
+    @Audited(event = "SEARCH_PAGED_QUICK_COMMUNICATION")
+    public ListDto<QuickCommunicationDto> search(@NonNull @Audited final AlertLogDto filter, @Audited Pageable pageable) throws IsisException {
 
-        final var spec = new CommunicationMessageSpecification(filter);
+        final var spec = new AlertLogSpecification(filter);
 
-        // Retrieve pageable communication messages
-        final var searchResults = communicationMessageRepository.findAll(spec, pageable);
+        final var messageIds = alertLogRepository.findDistinctMessages(pageable);
 
-        if(searchResults.isEmpty()){
-            throw IsisException.notFound("No communication message found with filter indicated", "NotFoundException");
+        if(messageIds.isEmpty()){
+            throw IsisException.notFound("No messages found for indicated filter", "NotFoundException");
         }
 
-        final var quickCommunications= new ArrayList<>();
+        final List<QuickCommunicationDto> quickCommList= new ArrayList<>();
 
-        final var quickComms= searchResults.stream().map(message -> {
+        messageIds.stream().forEach(messageId -> {
 
-            // For each message, retrieve corresponding alert logs
-            final var alertFilter = AlertLogDto.builder()
-                    .commMessageId(message.getId())
-                    .build();
+            try {
 
-            final var alerts= alertLogService.search(alertFilter);
+                // Retrieve alerts for that specific message
+                final var alerts = alertLogService.search(AlertLogDto.builder().commMessageId(messageId).build());
 
-            // For each message, get corresponding recipients
+                if(!ListUtils.isNullOrEmpty(alerts.getData())) {
+                    // Retrieve message
+                    final var message= communicationMessageService.getById(messageId);
 
-            final var recpFilter= CommunicationRecipientDto.builder()
-                    .chainLinkId(message.getChainLinkId())
-                    .build();
+                    // Retrieve the recipients
+                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
 
-            final var recipients= communicationRecipientService.search(recpFilter);
+                    final var quickComm = QuickCommunicationDto.builder()
+                            .message(message)
+                            .alerts(alerts)
+                            .recipients(recipients)
+                            .build();
 
-            return QuickCommunicationDto.builder()
-                    .message(communicationMessageService.mapToResource(message))
-                    .alerts(alerts)
-                    .recipients(recipients)
-                    .build();
-        }).collect(Collectors.toList());
+                    quickCommList.add(quickComm);
+                }
 
+            } catch (IsisException e) {
+                log.error("An error occurred during generation of quick communication object: {}", e.getMessage());
+            }
+
+        });
 
         return ListDto.<QuickCommunicationDto>builder()
-                .data(quickComms)
-                .totalNoOfRecords(searchResults.getTotalElements())
-                .totalPages(searchResults.getTotalPages())
-                .totalCurrentElements(searchResults.getNumberOfElements())
-                .build()
-                .success();
+                .data(quickCommList)
+                .totalPages(messageIds.getTotalPages())
+                .totalNoOfRecords(messageIds.getTotalElements())
+                .totalCurrentElements(messageIds.getNumberOfElements())
+                .build().success();
 
     }
 

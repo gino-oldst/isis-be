@@ -7,6 +7,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.communication.QuickCommunicationDto;
 import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
@@ -24,7 +25,7 @@ public class QuickCommunicationController {
     private final QuickCommunicationService service;
 
     @PostMapping("/search/paged")
-    public ListDto<QuickCommunicationDto> pagedSearch(@RequestBody final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
+    public ListDto<QuickCommunicationDto> pagedSearch(@RequestBody final AlertLogDto filter, Pageable pageable) throws IsisException {
         return service.search(filter, pageable);
     }
 
