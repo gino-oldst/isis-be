@@ -130,15 +130,15 @@ public class ReutersXmlExtractionService {
               final var timeSent =
                   event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 
-              final var commMessage =
-                  CommunicationMessageDto.builder()
-                      .chainLinkId(sourceChainId)
-                      .message(message.getContent())
-                      .sourceMessageId(String.valueOf(message.getMessageID()))
-                      .timeSent(timeSent)
-                      .sender(eventUser)
-                      .source(SourceType.REUTERS.toString())
-                      .build();
+                            final var commMessage = CommunicationMessageDto.builder()
+                                    .chainLinkId(sourceChainId)
+                                    .message(message.getContent())
+                                    .sourceMessageId(String.valueOf(message.getMessageID()))
+                                    .timeSent(timeSent)
+                                    .sender(eventUser)
+                                    .importDate(importDate)
+                                    .source(SourceType.REUTERS.toString())
+                                    .build();
 
               commMessageList.add(commMessage);
             }
