@@ -9,6 +9,8 @@ import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchExternalUsersEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
+import st.old.isis.utils.ListUtils;
+import st.old.isis.utils.ObjectUtils;
 
 @Slf4j
 @Component
@@ -16,13 +18,16 @@ public class BatchExternalUserListener
     extends BatchListEventListener<ExternalUserDto, BatchExternalUsersEvent> {
 
   private final StorageService storageService;
+  private final ObjectUtils objectUtils;
 
   public BatchExternalUserListener(
       @NonNull final StorageService storageService,
+      @NonNull final ObjectUtils objectUtils,
       @NonNull final NotificationService notificationService,
       @NonNull final BatchConfiguration batchConfiguration) {
     super(batchConfiguration, notificationService);
     this.storageService = storageService;
+    this.objectUtils = objectUtils;
   }
 
   @Override
@@ -32,7 +37,19 @@ public class BatchExternalUserListener
 
   @Override
   protected void persist(ListDto<ExternalUserDto> list) throws Throwable {
+
+    if (ListUtils.isNullOrEmpty(list.getData())) {
+      return;
+    }
+
     log.info("Persisting [{}] external users", list.getTotalNoOfRecords());
-    storageService.saveExternalUsers(list.getData());
+
+    try {
+      storageService.saveExternalUsers(list.getData());
+    } catch (Throwable e) {
+      // todo: save failed requests to a file for retrying or do an immediate retry
+      log.error("Error persisting external users: {}", objectUtils.toString(list));
+      throw e;
+    }
   }
 }

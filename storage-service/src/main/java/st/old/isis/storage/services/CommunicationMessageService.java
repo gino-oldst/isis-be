@@ -6,7 +6,10 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import st.old.isis.annotations.Audited;
+import st.old.isis.context.AuditContext;
+import st.old.isis.dto.audit.AuditEvent;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
@@ -33,6 +36,7 @@ public class CommunicationMessageService {
 
   private final CommunicationRecipientService communicationRecipientService;
 
+  @Audited(event = "BATCH_MESSAGE_SAVE")
   public List<CommunicationMessageDto> batchSave(
       @NonNull final List<CommunicationMessageDto> request) {
 
@@ -131,8 +135,11 @@ public class CommunicationMessageService {
   }
 
   @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
+  @Transactional(timeoutString = "${isis.search.timeout:60}", readOnly = true)
   public ListDto<CommunicationMessageDto> search(
       @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
+
+    final long start = System.currentTimeMillis();
 
     var chains = List.<String>of();
 
@@ -174,6 +181,16 @@ public class CommunicationMessageService {
                     Strings.isEmpty(keyword) || containsIgnoreCase(message.getMessage(), keyword))
             .map(this::mapToResource)
             .collect(Collectors.toList());
+
+    final var executionTime = System.currentTimeMillis() - start;
+
+    AuditContext.addEvent(
+        AuditEvent.builder()
+            .event("SEARCH_RESULTS")
+            .metadata(
+                String.format(
+                    "{\"executionTime\": %s \"resultSize\": %s}", executionTime, results.size()))
+            .build());
 
     return pagedResults(results, pageable);
   }

@@ -28,6 +28,7 @@ public class CommunicationRecipientService {
   private final CommunicationRecipientRepository repository;
   private final CommunicationRecipientValidator validator;
 
+  @Audited
   public List<CommunicationRecipientDto> batchSave(
       @NonNull final List<CommunicationRecipientDto> request) {
 

@@ -1,6 +1,7 @@
 package st.old.isis.extraction.services.internal;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Async;
@@ -12,6 +13,7 @@ import st.old.isis.extraction.builder.AuditUrl;
 import st.old.isis.utils.HttpEntityBuilder;
 import st.old.isis.utils.ObjectUtils;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuditService {
@@ -22,19 +24,25 @@ public class AuditService {
   private final AuditConfiguration auditConfiguration;
 
   @Async
-  public EventLogDto recordEvent(@NonNull final EventLogDto event) throws IsisException {
+  public EventLogDto recordEvent(@NonNull final EventLogDto event) {
 
     if (!auditConfiguration.isAuditEnabled()) {
       return null;
     }
 
-    final var url = auditUrl.auditUrl().root();
+    try {
+      final var url = auditUrl.auditUrl().root();
 
-    final var entity =
-        HttpEntityBuilder.builder().jsonContent().body(objectUtils.toString(event)).build();
+      final var entity =
+          HttpEntityBuilder.builder().jsonContent().body(objectUtils.toString(event)).build();
 
-    final var typeReference = new ParameterizedTypeReference<EventLogDto>() {};
+      final var typeReference = new ParameterizedTypeReference<EventLogDto>() {};
 
-    return restService.post(url, entity, typeReference);
+      return restService.post(url, entity, typeReference);
+    } catch (IsisException e) {
+      log.error(String.format("Error sending audited events: %s", event), e);
+    }
+
+    return EventLogDto.builder().build();
   }
 }

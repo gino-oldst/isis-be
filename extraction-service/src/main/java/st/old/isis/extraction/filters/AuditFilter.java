@@ -10,7 +10,6 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import st.old.isis.context.AuditContext;
 import st.old.isis.dto.audit.AuditEvent;
-import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.internal.AuditService;
 
 import javax.servlet.FilterChain;
@@ -33,8 +32,6 @@ public class AuditFilter extends OncePerRequestFilter {
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
-
-    log.info("Start auditing...");
 
     if (isAsyncDispatch(request)) {
       filterChain.doFilter(request, response);
@@ -60,8 +57,6 @@ public class AuditFilter extends OncePerRequestFilter {
   protected void beforeRequest(
       ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) {
 
-    log.info("Auditing request...");
-
     final var txnHeader = request.getHeader("txn-id");
     final var txnId = Strings.isNotEmpty(txnHeader) ? txnHeader : UUID.randomUUID().toString();
 
@@ -70,8 +65,6 @@ public class AuditFilter extends OncePerRequestFilter {
 
   protected void afterRequest(
       ContentCachingRequestWrapper request, ContentCachingResponseWrapper response) {
-
-    log.info("Auditing response...");
 
     try {
 
@@ -88,12 +81,9 @@ public class AuditFilter extends OncePerRequestFilter {
         event = AuditEvent.builder().event("REQUEST_FAILED").build();
       }
 
-      audit.getEvents().add(event);
-
-      try {
+      if (!audit.getEvents().isEmpty()) {
+        audit.getEvents().add(event);
         auditService.recordEvent(audit);
-      } catch (IsisException e) {
-        log.error(String.format("Error sending audited events: %s", audit), e);
       }
 
     } finally {

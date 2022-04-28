@@ -150,6 +150,7 @@ public abstract class AzureDownloadService {
     }
 
     items.forEach(item -> inspectItem(subdirectory, item, directory));
+    saveToVersionControl(directory);
   }
 
   private void processFile(
@@ -180,7 +181,6 @@ public abstract class AzureDownloadService {
     processFile(fileClient, filename);
 
     saveToHistory(fileId, fileClient.getFilePath());
-    saveToVersionControl(directoryName);
 
     log.info("Elapsed " + (System.currentTimeMillis() - start) + " ms");
   }

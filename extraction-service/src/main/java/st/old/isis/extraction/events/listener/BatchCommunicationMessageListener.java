@@ -2,6 +2,7 @@ package st.old.isis.extraction.events.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
@@ -9,6 +10,7 @@ import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchCommunicationMessageEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
+import st.old.isis.utils.ListUtils;
 import st.old.isis.utils.ObjectUtils;
 
 @Slf4j
@@ -34,13 +36,20 @@ public class BatchCommunicationMessageListener
     return false;
   }
 
+  @Async
   @Override
   protected void persist(ListDto<CommunicationMessageDto> list) throws Throwable {
+
+    if (ListUtils.isNullOrEmpty(list.getData())) {
+      return;
+    }
+
     log.info("Persisting [{}] messages", list.getTotalNoOfRecords());
+
     try {
       storageService.saveMessages(list.getData());
     } catch (Throwable e) {
-      //todo: save failed requests to a file for retrying or do an immediate retry
+      // todo: save failed requests to a file for retrying or do an immediate retry
       log.error("Error persisting messages: {}", objectUtils.toString(list.getData()));
       throw e;
     }

@@ -51,3 +51,5 @@ isis:
       all-pending:
         cron: ${SCHEDULER_PROCESSOR_ALL_PENDING_CRON}
         lock-time: ${SCHEDULER_PROCESSOR_ALL_PENDING_LOCK_TIME}
+  search:
+    timeout: ${SEARCH_TIMEOUT}
