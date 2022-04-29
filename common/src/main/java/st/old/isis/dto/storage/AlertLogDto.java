@@ -9,6 +9,7 @@ import st.old.isis.enums.AlertStatusType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -49,6 +50,10 @@ public class AlertLogDto implements Dto {
     private LocalDateTime dateCreatedFromRange;
 
     private LocalDateTime dateCreatedToRange;
+
+    private List<String> keywordIds;
+
+    private List<AlertStatusType> statusTypes;
 
     private boolean deleted;
 }

@@ -37,6 +37,10 @@ public class QuickCommunicationSpecification implements Specification<AlertLog> 
             predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
         }
 
+        if (filter.getKeywordId() != null) {
+            predicates.add(cb.equal(root.get("keywordId"), filter.getKeywordId()));
+        }
+
         if (filter.getDescription() != null) {
             predicates.add(cb.like(root.get("message"), "%"+filter.getDescription()+"%"));
         }
@@ -48,6 +52,8 @@ public class QuickCommunicationSpecification implements Specification<AlertLog> 
         if (filter.getDateCreatedFromRange() != null && filter.getDateCreatedToRange() != null) {
             predicates.add(cb.between(root.get("dateCreated"), filter.getDateCreatedFromRange(), filter.getDateCreatedToRange()));
         }
+
+        query.select(root.get("commMessageId")).distinct(true);
 
         return cb.and(predicates.toArray(Predicate[]::new));
     }

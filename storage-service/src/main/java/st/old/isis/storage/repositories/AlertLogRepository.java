@@ -14,6 +14,9 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, String>,
         JpaSpecificationExecutor<AlertLog> {
 
     @Query("SELECT DISTINCT a.commMessageId FROM AlertLog a")
-    public Page<String> findDistinctMessages(Pageable pageable);
+    public Page<String> findDistinctMessagesPaged(Pageable pageable);
+
+    @Query("SELECT DISTINCT a.commMessageId FROM AlertLog a")
+    public List<String> findDistinctMessages();
 
 }

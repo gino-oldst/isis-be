@@ -9,6 +9,10 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.enums.AlertStatusType;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,5 +27,20 @@ public class QuickCommunicationDto implements Dto {
     private ListDto<AlertLogDto> alerts;
 
     private ListDto<CommunicationRecipientDto> recipients;
+
+    private LocalDateTime dateFrom;
+
+    private LocalDateTime dateTo;
+
+    private List<String> senders;
+
+    private List<String> keywords;
+
+    private List<String> keywordIds;
+
+    private List<String> sources;
+
+    private List<AlertStatusType> statusTypes;
+
 
 }

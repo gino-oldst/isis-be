@@ -5,6 +5,7 @@ import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.storage.entities.AlertLog;
+import st.old.isis.utils.ListUtils;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -37,12 +38,20 @@ public class AlertLogSpecification implements Specification<AlertLog> {
             predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
         }
 
+        if (!ListUtils.isNullOrEmpty(filter.getKeywordIds()) ) {
+            predicates.add(root.get("keywordId").in(filter.getKeywordIds()));
+        }
+
         if (filter.getDescription() != null) {
             predicates.add(cb.like(root.get("message"), "%"+filter.getDescription()+"%"));
         }
 
         if (filter.getStatus() != null) {
             predicates.add(cb.equal(root.get("status"), filter.getStatus()));
+        }
+
+        if (!ListUtils.isNullOrEmpty(filter.getStatusTypes()) ) {
+            predicates.add(root.get("status").in(filter.getStatusTypes()));
         }
 
         if (filter.getDateCreatedFromRange() != null && filter.getDateCreatedToRange() != null) {

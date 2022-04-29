@@ -25,7 +25,7 @@ public class QuickCommunicationController {
     private final QuickCommunicationService service;
 
     @PostMapping("/search/paged")
-    public ListDto<QuickCommunicationDto> pagedSearch(@RequestBody final AlertLogDto filter, Pageable pageable) throws IsisException {
+    public ListDto<QuickCommunicationDto> pagedSearch(@RequestBody final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
         return service.search(filter, pageable);
     }
 
