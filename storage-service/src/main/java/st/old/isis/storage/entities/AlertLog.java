@@ -15,11 +15,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@Table
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(
+    indexes = {
+            @Index(name = "idx_communication_message_commMessageId", columnList = "commMessageId"),
+            @Index(name = "idx_communication_message_keywordId", columnList = "keywordId"),
+            @Index(name = "idx_communication_message_status", columnList = "status")
+    })
 public class AlertLog implements Serializable {
 
     private static final long serialVersionUID = -6826325590367273222L;
