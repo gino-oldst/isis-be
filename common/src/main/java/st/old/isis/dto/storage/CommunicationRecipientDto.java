@@ -34,4 +34,6 @@ public class CommunicationRecipientDto implements Dto {
     private LocalDate dateTo;
 
     private Metadata metadata;
+
+    private List<String> chains;
 }

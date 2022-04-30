@@ -14,4 +14,6 @@ public class BloombergEmailMetadata extends Metadata {
   private static final long serialVersionUID = -9193581254799907386L;
 
   private List<BloombergAttachment> attachments;
+  private BloombergEmailOriginalSender originalSender;
+  private BloombergEmailSharedMessenger sharedMessenger;
 }

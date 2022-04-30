@@ -13,6 +13,7 @@ import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.enums.MessageType;
+import st.old.isis.enums.Source;
 import st.old.isis.enums.SourceType;
 import st.old.isis.extraction.entities.xml.*;
 import st.old.isis.extraction.events.publisher.EventPublisher;
@@ -217,7 +218,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .email(user.getEmailAddress())
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
-              .source(SourceType.BLOOMBERG_CHAT.toString())
+              .source(Source.BLOOMBERG.toString())
               .build();
 
       communications.add(communication);
@@ -278,7 +279,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .email(user.getEmailAddress())
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
-              .source(SourceType.BLOOMBERG_CHAT.toString())
+              .source(Source.BLOOMBERG.toString())
               .build();
 
       communications.add(communication);
@@ -313,7 +314,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .email(user.getEmailAddress())
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
-              .source(SourceType.BLOOMBERG_CHAT.toString())
+              .source(Source.BLOOMBERG.toString())
               .build();
 
       recipients.add(recipient);

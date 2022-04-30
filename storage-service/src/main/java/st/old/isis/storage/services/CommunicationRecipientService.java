@@ -28,25 +28,25 @@ public class CommunicationRecipientService {
   private final CommunicationRecipientRepository repository;
   private final CommunicationRecipientValidator validator;
 
-  @Audited
+  @Audited(event = "BATCH_RECIPIENT_SAVE")
   public List<CommunicationRecipientDto> batchSave(
       @NonNull final List<CommunicationRecipientDto> request) {
 
-    final var recipients =
+    final var chains =
         request.stream()
             .filter(Objects::nonNull)
-            .map(CommunicationRecipientDto::getRecipient)
+            .map(CommunicationRecipientDto::getChainLinkId)
             .collect(Collectors.toList());
 
-    final var filter = CommunicationRecipientDto.builder().recipients(recipients).build();
+    final var filter = CommunicationRecipientDto.builder().chains(chains).build();
     final var spec = new CommunicationRecipientSpecification(filter);
 
     final var existingRecipients =
         repository.findAll(spec).stream()
             .collect(
                 Collectors.toMap(
-                    CommunicationRecipient::getRecipient,
-                    (recipient) -> new ArrayList<>(List.of(recipient.getChainLinkId())),
+                    CommunicationRecipient::getChainLinkId,
+                    (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
                     (old, latest) -> {
                       old.addAll(latest);
                       return old;
@@ -58,8 +58,8 @@ public class CommunicationRecipientService {
             .filter(
                 recipient ->
                     !existingRecipients
-                        .getOrDefault(recipient.getRecipient(), new ArrayList<>())
-                        .contains(recipient.getChainLinkId()))
+                        .getOrDefault(recipient.getChainLinkId(), new ArrayList<>())
+                        .contains(recipient.getRecipient()))
             .map(this::mapToEntity)
             .collect(Collectors.toList());
 

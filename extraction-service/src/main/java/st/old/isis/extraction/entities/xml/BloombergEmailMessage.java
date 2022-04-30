@@ -15,7 +15,9 @@ import java.util.List;
     "recipient",
     "attachment",
     "msgBody",
-    "subject"
+    "subject",
+    "originalSender",
+    "sharedMessenger"
 })
 public class BloombergEmailMessage {
 
@@ -33,6 +35,10 @@ public class BloombergEmailMessage {
     protected String msgBody;
     @XmlElement(name = "Subject", required = true)
     protected String subject;
+    @XmlElement(name = "OrigSender")
+    protected BloombergEmailOriginalSender originalSender;
+    @XmlElement(name = "SharedMessenger")
+    protected BloombergEmailSharedMessenger sharedMessenger;
 
     public String getMsgID() {
         return msgID;
@@ -88,4 +94,19 @@ public class BloombergEmailMessage {
         this.subject = value;
     }
 
+    public BloombergEmailOriginalSender getOriginalSender() {
+        return originalSender;
+    }
+
+    public void setOriginalSender(BloombergEmailOriginalSender value) {
+        this.originalSender = value;
+    }
+
+    public BloombergEmailSharedMessenger getSharedMessenger() {
+        return sharedMessenger;
+    }
+
+    public void setSharedMessenger(BloombergEmailSharedMessenger value) {
+        this.sharedMessenger = value;
+    }
 }

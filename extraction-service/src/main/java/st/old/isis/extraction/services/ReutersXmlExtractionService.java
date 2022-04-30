@@ -16,6 +16,7 @@ import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.entities.generated.ComplianceActivity;
+import st.old.isis.enums.Source;
 import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.internal.NotificationService;
@@ -222,7 +223,7 @@ public class ReutersXmlExtractionService {
   public ExternalUserDto mapToUserDto(ComplianceActivity.Users.UserInfo userInfo) {
 
     return ExternalUserDto.builder()
-        .source(SourceType.REUTERS.toString())
+        .source(Source.REUTERS.toString())
         .externalId(userInfo.getIdentifier())
         .email(userInfo.getEmail())
         .firstName(userInfo.getFirstName())

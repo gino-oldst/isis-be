@@ -17,7 +17,7 @@ spring:
     database: SQL_SERVER
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.SQLServer2008Dialect
+        dialect: org.hibernate.dialect.SQLServer2012Dialect
         jdbc:
           time_zone: UTC
     hibernate:

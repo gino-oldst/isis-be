@@ -1,18 +1,18 @@
 package st.old.isis.extraction.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
-import st.old.isis.dto.metadata.BloombergAttachment;
-import st.old.isis.dto.metadata.BloombergEmailMetadata;
-import st.old.isis.dto.metadata.BloombergEmailRecipientMetadata;
+import st.old.isis.dto.metadata.*;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.enums.MessageType;
+import st.old.isis.enums.Source;
 import st.old.isis.enums.SourceType;
 import st.old.isis.extraction.entities.xml.BloombergEmail;
 import st.old.isis.extraction.entities.xml.BloombergEmailMessage;
@@ -20,6 +20,7 @@ import st.old.isis.extraction.entities.xml.BloombergEmailRecipient;
 import st.old.isis.extraction.entities.xml.BloombergEmailUserInfo;
 import st.old.isis.extraction.events.publisher.EventPublisher;
 import st.old.isis.extraction.services.internal.NotificationService;
+import st.old.isis.utils.ListUtils;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -121,22 +122,52 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
             .source(SourceType.BLOOMBERG_MAIL.toString())
             .build();
 
-    if (!message.getAttachment().isEmpty()) {
+    final var messageAttachments = message.getAttachment();
+    final var originalSender = message.getOriginalSender();
+    final var sharedMessenger = message.getSharedMessenger();
 
-      final var attachments = new ArrayList<BloombergAttachment>();
+    final var hasMetadata =
+        !ListUtils.isNullOrEmpty(messageAttachments)
+            || originalSender != null
+            || sharedMessenger != null;
 
-      for (final var attachment : message.getAttachment()) {
+    if (hasMetadata) {
 
-        attachments.add(
-            BloombergAttachment.builder()
-                .fileId(attachment.getFileID())
-                .filename(attachment.getFileName())
-                .fileSize(Long.toString(attachment.getFileSize()))
+      final var metadata = BloombergEmailMetadata.builder().build();
+
+      if (originalSender != null && originalSender.getUserInfo() != null) {
+
+        final var user = originalSender.getUserInfo();
+        metadata.setOriginalSender(
+            BloombergEmailOriginalSender.builder().sender(user.getBloombergEmailAddress()).build());
+      }
+
+      if (sharedMessenger != null && sharedMessenger.getUserInfo() != null) {
+
+        final var user = sharedMessenger.getUserInfo();
+        metadata.setSharedMessenger(
+            BloombergEmailSharedMessenger.builder()
+                .sender(user.getBloombergEmailAddress())
                 .build());
       }
 
-      content.setType(MessageType.BLOOMBERG_EMAIL.toString());
-      content.setMetadata(BloombergEmailMetadata.builder().attachments(attachments).build());
+      final var attachments =
+          messageAttachments.stream()
+              .filter(attachment -> !Strings.isEmpty(attachment.getFileName()))
+              .map(attachment -> BloombergAttachment.builder().build())
+              .collect(Collectors.toList());
+
+      if (!attachments.isEmpty()) {
+        metadata.setAttachments(attachments);
+      }
+
+      final var containsMetadata =
+          !attachments.isEmpty() || originalSender != null || sharedMessenger != null;
+
+      if (containsMetadata) {
+        content.setType(MessageType.BLOOMBERG_EMAIL.toString());
+        content.setMetadata(metadata);
+      }
     }
 
     final var subject = message.getSubject();
@@ -257,7 +288,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
 
   private ExternalUserDto mapToExternalUser(@NonNull final BloombergEmailUserInfo userInfo) {
     return ExternalUserDto.builder()
-        .source(SourceType.BLOOMBERG_MAIL.toString())
+        .source(Source.BLOOMBERG.toString())
         .externalId(userInfo.getBloombergEmailAddress())
         .email(userInfo.getBloombergEmailAddress())
         .firstName(userInfo.getFirstName())

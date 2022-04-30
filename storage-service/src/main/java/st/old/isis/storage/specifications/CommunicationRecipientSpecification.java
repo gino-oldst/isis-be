@@ -32,6 +32,10 @@ public class CommunicationRecipientSpecification implements Specification<Commun
             predicates.add(cb.equal(root.get("chainLinkId"), filter.getChainLinkId()));
         }
 
+        if(!ListUtils.isNullOrEmpty(filter.getChains())) {
+            predicates.add(root.get("chainLinkId").in(filter.getChains()));
+        }
+
         if(filter.getRecipient() != null) {
             predicates.add(cb.equal(root.get("recipient"), filter.getRecipient()));
         }
