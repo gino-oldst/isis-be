@@ -38,7 +38,15 @@ public class CommunicationRecipientService {
             .map(CommunicationRecipientDto::getChainLinkId)
             .collect(Collectors.toList());
 
-    final var filter = CommunicationRecipientDto.builder().chains(chains).build();
+    final var recipients =
+            request.stream()
+                    .filter(Objects::nonNull)
+                    .map(CommunicationRecipientDto::getRecipient)
+                    .collect(Collectors.toList());
+
+    final var filter = CommunicationRecipientDto.builder()
+            .recipients(recipients).chains(chains).build();
+
     final var spec = new CommunicationRecipientSpecification(filter);
 
     final var existingRecipients =
