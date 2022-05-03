@@ -120,6 +120,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
             .sender(sender)
             .timeSent(timeSent)
             .source(SourceType.BLOOMBERG_MAIL.toString())
+            .importDate(importDate)
             .build();
 
     final var messageAttachments = message.getAttachment();
