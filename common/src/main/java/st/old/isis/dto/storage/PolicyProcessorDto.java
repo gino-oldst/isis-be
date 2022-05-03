@@ -20,6 +20,8 @@ public class PolicyProcessorDto implements Dto {
 
     private LocalDate importDate;
 
+    private String source;
+
     private LocalDate dateFrom;
 
     private LocalDate dateTo;

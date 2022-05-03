@@ -5,11 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
-import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
-import st.old.isis.enums.AlertPolicyStatus;
+import st.old.isis.dto.storage.PolicyProcessorDto;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
@@ -19,7 +18,6 @@ import st.old.isis.storage.services.DataImportRecordService;
 import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -93,6 +91,8 @@ public class PolicyProcessorService {
 
     public void processPolicy(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
 
+        log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
         final var commMessages= communicationMessageService.search(
@@ -109,6 +109,38 @@ public class PolicyProcessorService {
                     break;
             }
         }
+
+        log.info("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+
+    }
+
+    public void processPolicyIdByFilter(PolicyProcessorDto filter) throws IsisException {
+
+        log.info("STARTED - Processing Policy By Filter {}", filter);
+
+        final var policyRecord = alertPolicyService.getActiveById(filter.getPolicyId());
+
+        final var messageFilter = CommunicationMessageDto.builder()
+                .importDate(filter.getImportDate())
+                .source(filter.getSource())
+                .build();
+
+        final var commMessages= communicationMessageService.search(messageFilter);
+
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
+            log.warn("No communication messages found for date: {}.", filter.getImportDate());
+            throw IsisException.notFound("No communication messages found for date: " + filter.getImportDate(), "NotFoundException");
+        } else {
+            switch (policyRecord.getInternalCode()) {
+                case "INAPPROPRIATE_LANGUAGE":
+                    inappropriateLanguagePolicy.process(commMessages.getData(), policyRecord, filter.getImportDate());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        log.info("COMPLETED - Processing Policy By Filter {}", filter);
     }
 
 }
