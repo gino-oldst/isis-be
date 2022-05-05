@@ -48,7 +48,7 @@ public class AlertLogService {
 
         final var newEntity = mapToEntity(oldEntity, dto);
 
-        if (!oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes())) {
+        if ((oldEntity.getNotes() == null) || (!oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes()))) {
             addActivityLog(newEntity.getCommMessageId(),
                     String.format(
                             "Note was added for alert [%s] : %s",
