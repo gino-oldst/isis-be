@@ -48,11 +48,13 @@ public class AlertLogService {
 
         final var newEntity = mapToEntity(oldEntity, dto);
 
-        if ((oldEntity.getNotes() == null) || (!oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes()))) {
-            addActivityLog(newEntity.getCommMessageId(),
-                    String.format(
-                            "Note was added for alert [%s] : %s",
-                            dto.getPolicyId(), dto.getNotes()));
+        if(newEntity.getNotes() != null) {
+            if((oldEntity.getNotes() == null) || !oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes())){
+                addActivityLog(newEntity.getCommMessageId(),
+                        String.format(
+                                "Note was added for alert [%s] : %s",
+                                dto.getPolicyId(), dto.getNotes()));
+            }
         }
 
         if (oldEntity.getStatus() != newEntity.getStatus()) {
