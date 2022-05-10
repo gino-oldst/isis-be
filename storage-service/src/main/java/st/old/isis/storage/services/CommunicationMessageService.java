@@ -21,10 +21,7 @@ import st.old.isis.storage.specifications.CommunicationMessageSpecification;
 import st.old.isis.storage.specifications.RecentMessageSpecification;
 import st.old.isis.utils.ListUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -137,11 +134,13 @@ public class CommunicationMessageService {
   @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
   @Transactional(timeoutString = "${isis.search.timeout:60}", readOnly = true)
   public ListDto<CommunicationMessageDto> search(
-      @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
+      @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable)
+      throws IsisException {
 
     final long start = System.currentTimeMillis();
 
     var chains = List.<String>of();
+    final Map<String, List<String>> recipientMap;
 
     final var recipients = filter.getRecipients();
 
@@ -150,10 +149,30 @@ public class CommunicationMessageService {
       final var recipientFilter =
           CommunicationRecipientDto.builder().recipients(filter.getRecipients()).build();
 
+      final var results = communicationRecipientService.search(recipientFilter).getData();
+
       chains =
-          communicationRecipientService.search(recipientFilter).getData().stream()
+          results.stream()
               .map(CommunicationRecipientDto::getChainLinkId)
               .collect(Collectors.toList());
+
+      recipientMap =
+          results.stream()
+              .collect(
+                  Collectors.toMap(
+                      CommunicationRecipientDto::getChainLinkId,
+                      (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
+                      (old, latest) -> {
+                        old.addAll(latest);
+                        return old;
+                      }));
+    } else {
+      recipientMap = new HashMap<>();
+    }
+
+    if (chains.size() > 2000) {
+      throw IsisException.badRequest(
+          "Search parameter exceeded. Please modify filter", "SearchFilterException");
     }
 
     final var messageFilter =
@@ -180,6 +199,10 @@ public class CommunicationMessageService {
                 message ->
                     Strings.isEmpty(keyword) || containsIgnoreCase(message.getMessage(), keyword))
             .map(this::mapToResource)
+            .peek(
+                messageDto ->
+                    messageDto.setRecipients(
+                        recipientMap.getOrDefault(messageDto.getChainLinkId(), new ArrayList<>())))
             .collect(Collectors.toList());
 
     final var executionTime = System.currentTimeMillis() - start;
@@ -315,7 +338,12 @@ public class CommunicationMessageService {
           .success();
     }
 
-    final var pagedResults = messages.subList(startingIndex, endingIndex);
+    final var comparator = comparator(pageable);
+
+    final var pagedResults =
+        messages.subList(startingIndex, endingIndex).stream()
+            .sorted(comparator)
+            .collect(Collectors.toList());
 
     return ListDto.<CommunicationMessageDto>builder()
         .data(pagedResults)
@@ -348,5 +376,31 @@ public class CommunicationMessageService {
     }
 
     return false;
+  }
+
+  private Comparator<CommunicationMessageDto> comparator(Pageable pageable) {
+    return pageable
+        .getSort()
+        .get()
+        .map(
+            s -> {
+              final var property = s.getProperty();
+              final var direction = s.getDirection();
+
+              final var com = CommunicationMessageDto.SORT_FIELDS.get(property);
+
+              if (com == null) {
+                return null;
+              }
+
+              if (direction.isDescending()) {
+                return com.reversed();
+              }
+
+              return com;
+            })
+        .filter(Objects::nonNull)
+        .reduce(Comparator::thenComparing)
+        .orElse(CommunicationMessageDto.SORT_FIELDS.get("timeSent"));
   }
 }

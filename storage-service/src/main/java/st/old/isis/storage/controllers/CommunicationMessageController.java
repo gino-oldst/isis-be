@@ -19,35 +19,40 @@ import java.util.List;
 @RequestMapping("/message")
 public class CommunicationMessageController {
 
-    private final CommunicationMessageService service;
+  private final CommunicationMessageService service;
 
-    @PostMapping("/batch")
-    public List<CommunicationMessageDto> batch(@RequestBody final List<CommunicationMessageDto> messages) {
-        return service.batchSave(messages);
-    }
+  @PostMapping("/batch")
+  public List<CommunicationMessageDto> batch(
+      @RequestBody final List<CommunicationMessageDto> messages) {
+    return service.batchSave(messages);
+  }
 
-    @GetMapping("/{id}")
-    public CommunicationMessageDto getById(@PathVariable final String id) throws IsisException {
-        return service.getById(id);
-    }
+  @GetMapping("/{id}")
+  public CommunicationMessageDto getById(@PathVariable final String id) throws IsisException {
+    return service.getById(id);
+  }
 
-    @PostMapping("/search")
-    public ListDto<CommunicationMessageDto> search(@RequestBody final CommunicationMessageDto filter) {
-        return service.search(filter);
-    }
+  @PostMapping("/search")
+  public ListDto<CommunicationMessageDto> search(
+      @RequestBody final CommunicationMessageDto filter) {
+    return service.search(filter);
+  }
 
-    @PostMapping("/search/paged")
-    public ListDto<CommunicationMessageDto> pagedSearch(@RequestBody final CommunicationMessageDto filter, Pageable pageable) {
-        return service.search(filter, pageable);
-    }
+  @PostMapping("/search/paged")
+  public ListDto<CommunicationMessageDto> pagedSearch(
+      @RequestBody final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
+    return service.search(filter, pageable);
+  }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable final String id) throws IsisException {
-        service.delete(id);
-    }
+  @DeleteMapping("/{id}")
+  public void delete(@PathVariable final String id) throws IsisException {
+    service.delete(id);
+  }
 
-    @PostMapping("/search/recent")
-    public RecentMessageDto beforeAfter(@RequestBody @NonNull final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
-        return service.getSurroundingMessages(filter, pageable);
-    }
+  @PostMapping("/search/recent")
+  public RecentMessageDto beforeAfter(
+      @RequestBody @NonNull final CommunicationMessageDto filter, Pageable pageable)
+      throws IsisException {
+    return service.getSurroundingMessages(filter, pageable);
+  }
 }

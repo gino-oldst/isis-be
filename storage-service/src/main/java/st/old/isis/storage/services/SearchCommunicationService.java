@@ -11,6 +11,7 @@ import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.SearchCommunicationDto;
+import st.old.isis.exception.IsisException;
 import st.old.isis.utils.ListUtils;
 
 import java.util.HashSet;
@@ -22,153 +23,155 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SearchCommunicationService {
 
-    private final CommunicationChainService chainService;
-    private final CommunicationMessageService messageService;
-    private final CommunicationRecipientService recipientService;
+  private final CommunicationChainService chainService;
+  private final CommunicationMessageService messageService;
+  private final CommunicationRecipientService recipientService;
 
-    public ListDto<CommunicationMessageDto> search(SearchCommunicationDto filter) {
+  public ListDto<CommunicationMessageDto> search(SearchCommunicationDto filter) {
 
-        Set<String> uniqueRecChainLinkList= new HashSet<>();
-        Set<String> uniqueChainLinkList= new HashSet<>();
+    Set<String> uniqueRecChainLinkList = new HashSet<>();
+    Set<String> uniqueChainLinkList = new HashSet<>();
 
-        // Get unique chains filtered by recipients
-        if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+    // Get unique chains filtered by recipients
+    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
 
-            final var recFilter= CommunicationRecipientDto.builder()
-                    .recipients(filter.getRecipients())
-                    .dateFrom(filter.getDateFrom())
-                    .dateTo(filter.getDateTo())
-                    .build();
+      final var recFilter =
+          CommunicationRecipientDto.builder()
+              .recipients(filter.getRecipients())
+              .dateFrom(filter.getDateFrom())
+              .dateTo(filter.getDateTo())
+              .build();
 
-            final var recListDto = recipientService.search(recFilter);
+      final var recListDto = recipientService.search(recFilter);
 
-            if(recListDto != null && !ListUtils.isNullOrEmpty(recListDto.getData())){
-                recListDto.getData().stream().forEach(x -> uniqueRecChainLinkList.add(x.getChainLinkId()));
-            }
+      if (recListDto != null && !ListUtils.isNullOrEmpty(recListDto.getData())) {
+        recListDto.getData().stream().forEach(x -> uniqueRecChainLinkList.add(x.getChainLinkId()));
+      }
+    }
 
-        }
+    // Get unique chains by subject
+    if (filter.getSubject() != null) {
 
-        // Get unique chains by subject
-        if(filter.getSubject() != null){
+      final var chainFilter =
+          CommunicationChainDto.builder()
+              .subject(filter.getSubject())
+              .filterDateFrom(filter.getDateFrom())
+              .filterDateTo(filter.getDateTo())
+              .build();
 
-            final var chainFilter = CommunicationChainDto.builder()
-                    .subject(filter.getSubject())
-                    .filterDateFrom(filter.getDateFrom())
-                    .filterDateTo(filter.getDateTo())
-                    .build();
+      if (!ListUtils.isNullOrEmpty(uniqueRecChainLinkList)) {
+        chainFilter.setChains(uniqueRecChainLinkList.stream().collect(Collectors.toList()));
+      }
 
-            if(!ListUtils.isNullOrEmpty(uniqueRecChainLinkList)){
-                chainFilter.setChains(uniqueRecChainLinkList.stream().collect(Collectors.toList()));
-            }
+      final var chainListDto = chainService.search(chainFilter);
 
-            final var chainListDto = chainService.search(chainFilter);
+      if (chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())) {
+        chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
+      }
 
-            if(chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())){
-                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
-            }
-
-            //TODO Map Subject and Source
-
-        }
-
-        //Generate message filter
-
-        final var messageFilter = CommunicationMessageDto.builder()
-                .dateFrom(filter.getDateFrom())
-                .dateTo(filter.getDateTo())
-                .build();
-
-        if(!ListUtils.isNullOrEmpty(uniqueChainLinkList)){
-            messageFilter.setChains(uniqueChainLinkList.stream().collect(Collectors.toList()));
-        }
-
-        if(!ListUtils.isNullOrEmpty(filter.getSenders())){
-            messageFilter.setSenders(filter.getSenders());
-        }
-
-        if(filter.getMessage() != null){
-            messageFilter.setMessage(filter.getMessage());
-        }
-
-        final var results = messageService.search(messageFilter);
-
-        if(results == null) return ListDto.emptyList();
-
-        return results;
+      // TODO Map Subject and Source
 
     }
 
-    public ListDto<CommunicationMessageDto> search(@NonNull @Audited SearchCommunicationDto filter, @Audited Pageable pageable) {
+    // Generate message filter
 
-        Set<String> uniqueRecChainLinkList= new HashSet<>();
-        Set<String> uniqueChainLinkList= new HashSet<>();
+    final var messageFilter =
+        CommunicationMessageDto.builder()
+            .dateFrom(filter.getDateFrom())
+            .dateTo(filter.getDateTo())
+            .build();
 
-        // Get unique chains filtered by recipients
-        if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+    if (!ListUtils.isNullOrEmpty(uniqueChainLinkList)) {
+      messageFilter.setChains(uniqueChainLinkList.stream().collect(Collectors.toList()));
+    }
 
-            final var recFilter= CommunicationRecipientDto.builder()
-                    .recipients(filter.getRecipients())
-                    .dateFrom(filter.getDateFrom())
-                    .dateTo(filter.getDateTo())
-                    .build();
+    if (!ListUtils.isNullOrEmpty(filter.getSenders())) {
+      messageFilter.setSenders(filter.getSenders());
+    }
 
-            final var recListDto = recipientService.search(recFilter, pageable);
+    if (filter.getMessage() != null) {
+      messageFilter.setMessage(filter.getMessage());
+    }
 
-            if(recListDto != null && !ListUtils.isNullOrEmpty(recListDto.getData())){
-                recListDto.getData().stream().forEach(x -> uniqueRecChainLinkList.add(x.getChainLinkId()));
-            }
+    final var results = messageService.search(messageFilter);
 
-        }
+    if (results == null) return ListDto.emptyList();
 
-        // Get unique chains by subject
-        if(filter.getSubject() != null){
+    return results;
+  }
 
-            final var chainFilter = CommunicationChainDto.builder()
-                    .subject(filter.getSubject())
-                    .filterDateFrom(filter.getDateFrom())
-                    .filterDateTo(filter.getDateTo())
-                    .build();
+  public ListDto<CommunicationMessageDto> search(
+      @NonNull @Audited SearchCommunicationDto filter, @Audited Pageable pageable)
+      throws IsisException {
 
-            if(!ListUtils.isNullOrEmpty(uniqueRecChainLinkList)){
-                chainFilter.setChains(uniqueRecChainLinkList.stream().collect(Collectors.toList()));
-            }
+    Set<String> uniqueRecChainLinkList = new HashSet<>();
+    Set<String> uniqueChainLinkList = new HashSet<>();
 
-            final var chainListDto = chainService.search(chainFilter, pageable);
+    // Get unique chains filtered by recipients
+    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
 
-            if(chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())){
-                chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
-            }
+      final var recFilter =
+          CommunicationRecipientDto.builder()
+              .recipients(filter.getRecipients())
+              .dateFrom(filter.getDateFrom())
+              .dateTo(filter.getDateTo())
+              .build();
 
-            //TODO Map Subject and Source
+      final var recListDto = recipientService.search(recFilter, pageable);
 
-        }
+      if (recListDto != null && !ListUtils.isNullOrEmpty(recListDto.getData())) {
+        recListDto.getData().stream().forEach(x -> uniqueRecChainLinkList.add(x.getChainLinkId()));
+      }
+    }
 
-        //Generate message filter
+    // Get unique chains by subject
+    if (filter.getSubject() != null) {
 
-        final var messageFilter = CommunicationMessageDto.builder()
-                .dateFrom(filter.getDateFrom())
-                .dateTo(filter.getDateTo())
-                .build();
+      final var chainFilter =
+          CommunicationChainDto.builder()
+              .subject(filter.getSubject())
+              .filterDateFrom(filter.getDateFrom())
+              .filterDateTo(filter.getDateTo())
+              .build();
 
-        if(!ListUtils.isNullOrEmpty(uniqueChainLinkList)){
-            messageFilter.setChains(uniqueChainLinkList.stream().collect(Collectors.toList()));
-        }
+      if (!ListUtils.isNullOrEmpty(uniqueRecChainLinkList)) {
+        chainFilter.setChains(uniqueRecChainLinkList.stream().collect(Collectors.toList()));
+      }
 
-        if(!ListUtils.isNullOrEmpty(filter.getSenders())){
-            messageFilter.setSenders(filter.getSenders());
-        }
+      final var chainListDto = chainService.search(chainFilter, pageable);
 
-        if(filter.getMessage() != null){
-            messageFilter.setMessage(filter.getMessage());
-        }
+      if (chainListDto != null && !ListUtils.isNullOrEmpty(chainListDto.getData())) {
+        chainListDto.getData().stream().forEach(x -> uniqueChainLinkList.add(x.getSourceChainId()));
+      }
 
-        final var results = messageService.search(messageFilter, pageable);
-
-        if(results == null) return ListDto.emptyList();
-
-        return results;
+      // TODO Map Subject and Source
 
     }
 
+    // Generate message filter
 
+    final var messageFilter =
+        CommunicationMessageDto.builder()
+            .dateFrom(filter.getDateFrom())
+            .dateTo(filter.getDateTo())
+            .build();
+
+    if (!ListUtils.isNullOrEmpty(uniqueChainLinkList)) {
+      messageFilter.setChains(uniqueChainLinkList.stream().collect(Collectors.toList()));
+    }
+
+    if (!ListUtils.isNullOrEmpty(filter.getSenders())) {
+      messageFilter.setSenders(filter.getSenders());
+    }
+
+    if (filter.getMessage() != null) {
+      messageFilter.setMessage(filter.getMessage());
+    }
+
+    final var results = messageService.search(messageFilter, pageable);
+
+    if (results == null) return ListDto.emptyList();
+
+    return results;
+  }
 }

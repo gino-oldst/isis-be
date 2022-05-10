@@ -9,7 +9,9 @@ import st.old.isis.dto.metadata.Metadata;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -18,6 +20,15 @@ import java.util.List;
 public class CommunicationMessageDto implements Dto {
 
   private static final long serialVersionUID = 1391943642716682739L;
+
+  public static final Map<String, Comparator<CommunicationMessageDto>> SORT_FIELDS =
+      Map.of(
+          "timeSent",
+          Comparator.comparing(CommunicationMessageDto::getTimeSent),
+          "source",
+          Comparator.comparing(CommunicationMessageDto::getSource),
+          "sender",
+          Comparator.comparing(CommunicationMessageDto::getSender));
 
   private String id;
 

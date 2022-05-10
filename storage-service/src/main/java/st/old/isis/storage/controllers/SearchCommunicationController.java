@@ -19,16 +19,17 @@ import st.old.isis.storage.services.SearchCommunicationService;
 @RequestMapping("/search-communication")
 public class SearchCommunicationController {
 
-    private final SearchCommunicationService service;
+  private final SearchCommunicationService service;
 
-    @PostMapping("/search")
-    public ListDto<CommunicationMessageDto> search(@RequestBody SearchCommunicationDto filter) throws IsisException {
-        return service.search(filter);
-    }
+  @PostMapping("/search")
+  public ListDto<CommunicationMessageDto> search(@RequestBody SearchCommunicationDto filter)
+      throws IsisException {
+    return service.search(filter);
+  }
 
-    @PostMapping("/search/paged")
-    public ListDto<CommunicationMessageDto> pagedSearch(@RequestBody final SearchCommunicationDto filter, Pageable pageable) {
-        return service.search(filter, pageable);
-    }
-
+  @PostMapping("/search/paged")
+  public ListDto<CommunicationMessageDto> pagedSearch(
+      @RequestBody final SearchCommunicationDto filter, Pageable pageable) throws IsisException {
+    return service.search(filter, pageable);
+  }
 }
