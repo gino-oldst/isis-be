@@ -27,4 +27,6 @@ public class PolicyMapDto implements Dto {
     private LocalDateTime dateModified;
 
     private boolean deleted;
+
+    private AlertPolicyDto alertPolicyDto;
 }

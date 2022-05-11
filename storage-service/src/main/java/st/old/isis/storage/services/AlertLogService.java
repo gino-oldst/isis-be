@@ -8,11 +8,15 @@ import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
+import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.MessageActivityLogDto;
 import st.old.isis.enums.ActivityType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
+import st.old.isis.storage.entities.AlertPolicy;
+import st.old.isis.storage.entities.PolicyMap;
 import st.old.isis.storage.repositories.AlertLogRepository;
+import st.old.isis.storage.repositories.PolicyMapRepository;
 import st.old.isis.storage.specifications.AlertLogSpecification;
 import st.old.isis.storage.validators.AlertLogValidator;
 
@@ -26,6 +30,9 @@ public class AlertLogService {
     private final AlertLogRepository repository;
     private final AlertLogValidator validator;
     private final MessageActivityLogService messageActivityLogService;
+
+    private final AlertPolicyService alertPolicyService;
+
 
     @Audited(event = "CREATE_ALERT_LOG")
     public AlertLogDto create(@NonNull @Audited final AlertLogDto dto) {
@@ -134,6 +141,7 @@ public class AlertLogService {
     }
 
     private AlertLog mapToEntity(@NonNull final AlertLogDto dto) {
+
         return AlertLog.builder()
                 .id(dto.getId())
                 .commChainLinkId(dto.getCommChainLinkId())
@@ -153,12 +161,23 @@ public class AlertLogService {
     }
 
     private AlertLogDto mapToResource(@NonNull final AlertLog entity) {
+
+        AlertPolicyDto policy = null;
+
+        try {
+            policy = alertPolicyService.getById(entity.getPolicyId());
+        } catch (IsisException e) {
+            log.error("An error occurred during retrieval of policy {}", e.getMessage());
+        }
+
+
         return AlertLogDto.builder()
                 .id(entity.getId())
                 .commChainLinkId(entity.getCommChainLinkId())
                 .commMessageId(entity.getCommMessageId())
                 .message(entity.getMessage())
                 .policyId(entity.getPolicyId())
+                .policyName(policy != null? policy.getName() : null)
                 .keyword(entity.getKeyword())
                 .keywordId(entity.getKeywordId())
                 .description(entity.getDescription())

@@ -7,6 +7,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.PolicyMapDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.PolicyMap;
@@ -23,6 +24,7 @@ public class PolicyMapService {
 
     private final PolicyMapRepository repository;
     private final PolicyMapValidator validator;
+    private final AlertPolicyService alertPolicyService;
 
     @Audited(event = "CREATE_POLICY_MAP")
     public PolicyMapDto create(@NonNull @Audited final PolicyMapDto dto) throws IsisException {
@@ -141,12 +143,22 @@ public class PolicyMapService {
     }
 
     private PolicyMapDto mapToResource(@NonNull final PolicyMap entity) {
+
+        AlertPolicyDto policy= null;
+
+        try {
+            policy = alertPolicyService.getById(entity.getPolicyId());
+        } catch (IsisException e) {
+            log.error("An error occurred during retrieval of policy {}", e.getMessage());
+        }
+
         return PolicyMapDto.builder()
                 .id(entity.getId())
                 .keywordId(entity.getKeywordId())
                 .policyId(entity.getPolicyId())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
+                .alertPolicyDto(policy != null? policy: null)
                 .deleted(entity.isDeleted())
                 .build();
     }
