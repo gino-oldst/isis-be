@@ -27,7 +27,7 @@ public class SearchCommunicationService {
   private final CommunicationMessageService messageService;
   private final CommunicationRecipientService recipientService;
 
-  public ListDto<CommunicationMessageDto> search(SearchCommunicationDto filter) {
+  public ListDto<CommunicationMessageDto> search(SearchCommunicationDto filter) throws IsisException {
 
     Set<String> uniqueRecChainLinkList = new HashSet<>();
     Set<String> uniqueChainLinkList = new HashSet<>();

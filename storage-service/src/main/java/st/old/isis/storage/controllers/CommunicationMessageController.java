@@ -34,7 +34,7 @@ public class CommunicationMessageController {
 
   @PostMapping("/search")
   public ListDto<CommunicationMessageDto> search(
-      @RequestBody final CommunicationMessageDto filter, Pageable pageable) {
+      @RequestBody final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
     return service.searchList(filter, pageable);
   }
 

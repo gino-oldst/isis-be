@@ -89,35 +89,48 @@ public class CommunicationMessageService {
 
   @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
   public ListDto<CommunicationMessageDto> searchList(
-      @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
+      @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable)
+      throws IsisException {
 
     final var spec = new CommunicationMessageSpecification(filter);
 
-    final var rawResults =
-        repository.findAll(spec).stream().map(this::mapToResource).collect(Collectors.toList());
+    final var rawResults = repository.findAll(spec);
 
-    var filteredResults = rawResults;
+    final List<CommunicationMessageDto> filteredResults;
 
     if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
 
+      final var chains =
+          rawResults.stream()
+              .map(CommunicationMessage::getChainLinkId)
+              .collect(Collectors.toList());
+
+      if (chains.size() > 2000) {
+        throw IsisException.badRequest(
+            "Search parameter exceeded. Please modify filter", "SearchFilterException");
+      }
+
+      final var recFilter = CommunicationRecipientDto.builder().chains(chains).build();
+
+      final var recipientMap =
+          communicationRecipientService.search(recFilter).getData().stream()
+              .collect(
+                  Collectors.toMap(
+                      CommunicationRecipientDto::getChainLinkId,
+                      (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
+                      (old, latest) -> {
+                        old.addAll(latest);
+                        return old;
+                      }));
+
       filteredResults =
           rawResults.stream()
-              .filter(
-                  message -> {
-                    final var recpfilter =
-                        CommunicationRecipientDto.builder()
-                            .chainLinkId(message.getChainLinkId())
-                            .build();
-                    final var commRecpList = communicationRecipientService.search(recpfilter);
-
-                    final var recpList =
-                        commRecpList.getData().stream()
-                            .map(CommunicationRecipientDto::getRecipient)
-                            .collect(Collectors.toList());
-
-                    return recpList.containsAll(filter.getRecipients());
-                  })
+              .filter(message -> recipientMap.containsKey(message.getChainLinkId()))
+              .map(this::mapToResource)
               .collect(Collectors.toList());
+
+    } else {
+      filteredResults = rawResults.stream().map(this::mapToResource).collect(Collectors.toList());
     }
 
     final var size = filteredResults.size();
@@ -129,7 +142,7 @@ public class CommunicationMessageService {
     return ListDto.<CommunicationMessageDto>builder()
         .data(sortedList)
         .totalNoOfRecords(size)
-        .totalPages(1)
+        .totalPages(sortedList.isEmpty() ? 0 : 1)
         .totalCurrentElements(size)
         .build()
         .success();
