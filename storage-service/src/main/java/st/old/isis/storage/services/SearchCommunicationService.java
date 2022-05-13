@@ -93,7 +93,7 @@ public class SearchCommunicationService {
       messageFilter.setMessage(filter.getMessage());
     }
 
-    final var results = messageService.search(messageFilter);
+    final var results = messageService.searchList(messageFilter, Pageable.unpaged());
 
     if (results == null) return ListDto.emptyList();
 

@@ -34,8 +34,8 @@ public class CommunicationMessageController {
 
   @PostMapping("/search")
   public ListDto<CommunicationMessageDto> search(
-      @RequestBody final CommunicationMessageDto filter) {
-    return service.search(filter);
+      @RequestBody final CommunicationMessageDto filter, Pageable pageable) {
+    return service.searchList(filter, pageable);
   }
 
   @PostMapping("/search/paged")

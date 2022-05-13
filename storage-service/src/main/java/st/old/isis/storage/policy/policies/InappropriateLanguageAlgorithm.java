@@ -3,6 +3,7 @@ package st.old.isis.storage.policy.policies;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ahocorasick.trie.Trie;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.*;
 import st.old.isis.enums.AlertStatusType;
@@ -125,8 +126,8 @@ public class InappropriateLanguageAlgorithm {
 
         Trie trie = Trie.builder().onlyWholeWords().ignoreCase().addKeywords(keywords).build();
 
-        final var commMessages= communicationMessageService.search(
-                CommunicationMessageDto.builder().importDate(importDate).build());
+        final var commMessages= communicationMessageService.searchList(
+                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
             log.warn("No communication messages found from import date {}", importDate);

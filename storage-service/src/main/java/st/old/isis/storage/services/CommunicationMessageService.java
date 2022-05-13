@@ -88,8 +88,8 @@ public class CommunicationMessageService {
   }
 
   @Audited(event = "SEARCH_COMMUNICATION_MESSAGE")
-  public ListDto<CommunicationMessageDto> search(
-      @NonNull @Audited final CommunicationMessageDto filter) {
+  public ListDto<CommunicationMessageDto> searchList(
+      @NonNull @Audited final CommunicationMessageDto filter, Pageable pageable) {
 
     final var spec = new CommunicationMessageSpecification(filter);
 
@@ -122,10 +122,14 @@ public class CommunicationMessageService {
 
     final var size = filteredResults.size();
 
+    final var comparator = comparator(pageable);
+
+    final var sortedList = filteredResults.stream().sorted(comparator).collect(Collectors.toList());
+
     return ListDto.<CommunicationMessageDto>builder()
-        .data(filteredResults)
+        .data(sortedList)
         .totalNoOfRecords(size)
-        .totalPages(size)
+        .totalPages(1)
         .totalCurrentElements(size)
         .build()
         .success();
@@ -139,45 +143,12 @@ public class CommunicationMessageService {
 
     final long start = System.currentTimeMillis();
 
-    var chains = List.<String>of();
     final Map<String, List<String>> recipientMap;
 
     final var recipients = filter.getRecipients();
 
-    if (!ListUtils.isNullOrEmpty(recipients)) {
-
-      final var recipientFilter =
-          CommunicationRecipientDto.builder().recipients(filter.getRecipients()).build();
-
-      final var results = communicationRecipientService.search(recipientFilter).getData();
-
-      chains =
-          results.stream()
-              .map(CommunicationRecipientDto::getChainLinkId)
-              .collect(Collectors.toList());
-
-      recipientMap =
-          results.stream()
-              .collect(
-                  Collectors.toMap(
-                      CommunicationRecipientDto::getChainLinkId,
-                      (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
-                      (old, latest) -> {
-                        old.addAll(latest);
-                        return old;
-                      }));
-    } else {
-      recipientMap = new HashMap<>();
-    }
-
-    if (chains.size() > 2000) {
-      throw IsisException.badRequest(
-          "Search parameter exceeded. Please modify filter", "SearchFilterException");
-    }
-
     final var messageFilter =
         CommunicationMessageDto.builder()
-            .chains(chains)
             .dateSentFrom(filter.getDateSentFrom())
             .dateSentTo(filter.getDateSentTo())
             .source(filter.getSource())
@@ -192,20 +163,63 @@ public class CommunicationMessageService {
 
     final var keyword = filter.getMessage();
 
-    final var results =
+    final var chains =
         searchResults.stream()
-            .filter(message -> Objects.nonNull(message.getMessage()))
-            .filter(
-                message ->
-                    Strings.isEmpty(keyword) || containsIgnoreCase(message.getMessage(), keyword))
-            .map(this::mapToResource)
-            .peek(
-                messageDto ->
-                    messageDto.setRecipients(
-                        recipientMap.getOrDefault(messageDto.getChainLinkId(), new ArrayList<>())))
+            .map(CommunicationMessage::getChainLinkId)
+            .distinct()
             .collect(Collectors.toList());
 
-    final var executionTime = System.currentTimeMillis() - start;
+    if (chains.size() > 2000) {
+      throw IsisException.badRequest(
+          "Search parameter exceeded. Please modify filter", "SearchFilterException");
+    }
+
+    if (!ListUtils.isNullOrEmpty(recipients)) {
+
+      final var recipientFilter =
+          CommunicationRecipientDto.builder()
+              .chains(chains)
+              .recipients(filter.getRecipients())
+              .build();
+
+      final var rec = communicationRecipientService.search(recipientFilter).getData();
+
+      recipientMap =
+          rec.stream()
+              .collect(
+                  Collectors.toMap(
+                      CommunicationRecipientDto::getChainLinkId,
+                      (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
+                      (old, latest) -> {
+                        old.addAll(latest);
+                        return old;
+                      }));
+
+      final var filteredResults =
+          searchResults.stream()
+              .filter(message -> recipientMap.containsKey(message.getChainLinkId()))
+              .filter(message -> messageContainsKeyword(message.getMessage(), keyword))
+              .map(this::mapToResource)
+              .peek(
+                  message ->
+                      message.setRecipients(
+                          recipientMap.getOrDefault(message.getChainLinkId(), new ArrayList<>())))
+              .collect(Collectors.toList());
+
+      return returnFilteredResults(filteredResults, pageable, System.currentTimeMillis() - start);
+    }
+
+    final var filteredResults =
+        searchResults.stream()
+            .filter(message -> messageContainsKeyword(message.getMessage(), keyword))
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
+
+    return returnFilteredResults(filteredResults, pageable, System.currentTimeMillis() - start);
+  }
+
+  private ListDto<CommunicationMessageDto> returnFilteredResults(
+      List<CommunicationMessageDto> results, Pageable pageable, long executionTime) {
 
     AuditContext.addEvent(
         AuditEvent.builder()
@@ -351,6 +365,15 @@ public class CommunicationMessageService {
         .totalCurrentElements(pagedResults.size())
         .totalPages(totalPages)
         .build();
+  }
+
+  private boolean messageContainsKeyword(String message, String keyword) {
+
+    if (Objects.isNull(message)) {
+      return false;
+    }
+
+    return Strings.isEmpty(keyword) || containsIgnoreCase(message, keyword);
   }
 
   public static boolean containsIgnoreCase(String source, String word) {

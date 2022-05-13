@@ -3,6 +3,7 @@ package st.old.isis.storage.policy;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.AlertPolicyDto;
@@ -28,7 +29,7 @@ public class PolicyProcessorService {
     private final AlertPolicyService alertPolicyService;
 
     private final InappropriateLanguageAlgorithm inappropriateLanguagePolicy;
-    
+
     private final DataImportRecordService dataImportRecordService;
 
     private final CommunicationMessageService communicationMessageService;
@@ -95,8 +96,8 @@ public class PolicyProcessorService {
 
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
-        final var commMessages= communicationMessageService.search(
-                CommunicationMessageDto.builder().importDate(importDate).build());
+        final var commMessages= communicationMessageService.searchList(
+                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
             log.warn("No communication messages found for date: {}.", importDate);
@@ -125,7 +126,7 @@ public class PolicyProcessorService {
                 .source(filter.getSource())
                 .build();
 
-        final var commMessages= communicationMessageService.search(messageFilter);
+        final var commMessages= communicationMessageService.searchList(messageFilter, Pageable.unpaged());
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
             log.warn("No communication messages found for date: {}.", filter.getImportDate());
