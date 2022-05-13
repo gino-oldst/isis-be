@@ -29,6 +29,8 @@ public class Keyword implements Serializable {
 
     private String word;
 
+    private Long number;
+
     @CreationTimestamp
     private LocalDateTime dateCreated;
 

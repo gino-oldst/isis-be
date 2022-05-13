@@ -11,4 +11,7 @@ public interface KeywordRepository extends JpaRepository<Keyword, String>,
         JpaSpecificationExecutor<Keyword> {
 
     Optional<Keyword> findByWord(@NonNull final String word);
+
+    Keyword findFirstByOrderByNumberDesc();
+
 }

@@ -18,6 +18,8 @@ public class KeywordDto implements Dto {
 
     private String id;
 
+    private Long number;
+
     private String word;
 
     private LocalDateTime dateCreated;

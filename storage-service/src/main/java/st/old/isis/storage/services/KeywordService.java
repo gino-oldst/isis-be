@@ -41,8 +41,17 @@ public class KeywordService {
     public KeywordDto create(@NonNull @Audited final KeywordDto dto) throws IsisException {
 
         validator.validate(dto);
-        
+
+        var latestNumber = repository.findFirstByOrderByNumberDesc().getNumber();
+
+        if(latestNumber == null){
+            latestNumber = Long.valueOf(1);
+        } else {
+            latestNumber += 1;
+        }
+
         final var entity = mapToEntity(dto);
+        entity.setNumber(latestNumber);
 
         final var createdEntity = repository.save(entity);
 
@@ -185,6 +194,7 @@ public class KeywordService {
     private Keyword mapToEntity(@NonNull final KeywordDto dto) {
         return Keyword.builder()
                 .id(dto.getId())
+                .number(dto.getNumber())
                 .word(dto.getWord())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
@@ -195,6 +205,7 @@ public class KeywordService {
     private KeywordDto mapToResource(@NonNull final Keyword entity) {
         return KeywordDto.builder()
                 .id(entity.getId())
+                .number(entity.getNumber())
                 .word(entity.getWord())
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
