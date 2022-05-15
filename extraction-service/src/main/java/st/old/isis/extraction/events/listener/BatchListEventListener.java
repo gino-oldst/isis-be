@@ -30,14 +30,19 @@ public abstract class BatchListEventListener<T extends Dto, B extends BatchListE
 
   protected abstract void persist(ListDto<T> list) throws Throwable;
 
+  protected abstract void finalizeEvent();
+
   @Override
   public void onApplicationEvent(@NonNull B event) {
 
     try {
 
-      if (event.shouldFinalize() && !queue.isEmpty()) {
+      if (event.shouldFinalize()) {
         log.info("Finalize batch persist [{}] remaining objects", queue.size());
-        processBatch(queue.size());
+        if (!queue.isEmpty()) {
+          processBatch(queue.size());
+        }
+        finalizeEvent();
         return;
       }
 

@@ -63,6 +63,11 @@ public class CommunicationChainController {
         }
     }
 
+    @PostMapping("/merge")
+    public void merge() {
+        service.finalizeBatch();
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable final String id) throws IsisException {
         service.delete(id);

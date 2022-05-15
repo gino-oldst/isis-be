@@ -17,30 +17,38 @@ import java.util.List;
 @RequestMapping("/recipient")
 public class CommunicationRecipientController {
 
-    private final CommunicationRecipientService service;
+  private final CommunicationRecipientService service;
 
-    @PostMapping("/batch")
-    public List<CommunicationRecipientDto> batch(@RequestBody final List<CommunicationRecipientDto> recipients) {
-        return service.batchSave(recipients);
-    }
+  @PostMapping("/batch")
+  public List<CommunicationRecipientDto> batch(
+      @RequestBody final List<CommunicationRecipientDto> recipients) {
+    return service.batchSave(recipients);
+  }
 
-    @GetMapping("/{id}")
-    public CommunicationRecipientDto getById(@PathVariable final String id) throws IsisException {
-        return service.getById(id);
-    }
+  @PostMapping("/merge")
+  public void merge() {
+    service.finalizeBatch();
+  }
 
-    @PostMapping("/search")
-    public ListDto<CommunicationRecipientDto> search(@RequestBody final CommunicationRecipientDto filter) {
-        return service.search(filter);
-    }
+  @GetMapping("/{id}")
+  public CommunicationRecipientDto getById(@PathVariable final String id) throws IsisException {
+    return service.getById(id);
+  }
 
-    @PostMapping("/search/paged")
-    public ListDto<CommunicationRecipientDto> pagedSearch(@RequestBody final CommunicationRecipientDto filter, Pageable pageable) {
-        return service.search(filter, pageable);
-    }
+  @PostMapping("/search")
+  public ListDto<CommunicationRecipientDto> search(
+      @RequestBody final CommunicationRecipientDto filter) {
+    return service.search(filter);
+  }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable final String id) throws IsisException {
-        service.delete(id);
-    }
+  @PostMapping("/search/paged")
+  public ListDto<CommunicationRecipientDto> pagedSearch(
+      @RequestBody final CommunicationRecipientDto filter, Pageable pageable) {
+    return service.search(filter, pageable);
+  }
+
+  @DeleteMapping("/{id}")
+  public void delete(@PathVariable final String id) throws IsisException {
+    service.delete(id);
+  }
 }

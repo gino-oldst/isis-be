@@ -54,4 +54,9 @@ public class BatchCommunicationChainListener
       throw e;
     }
   }
+
+  @Override
+  protected void finalizeEvent() {
+    storageService.mergeChain();
+  }
 }

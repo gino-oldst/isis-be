@@ -11,13 +11,14 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationRecipient;
+import st.old.isis.storage.entities.temp.TempCommunicationRecipient;
 import st.old.isis.storage.repositories.CommunicationRecipientRepository;
+import st.old.isis.storage.repositories.temp.TempCommunicationRecipientRepository;
 import st.old.isis.storage.specifications.CommunicationRecipientSpecification;
 import st.old.isis.storage.validators.CommunicationRecipientValidator;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,54 +27,38 @@ import java.util.stream.Collectors;
 public class CommunicationRecipientService {
 
   private final CommunicationRecipientRepository repository;
+  private final TempCommunicationRecipientRepository tempRepository;
   private final CommunicationRecipientValidator validator;
 
   @Audited(event = "BATCH_RECIPIENT_SAVE")
   public List<CommunicationRecipientDto> batchSave(
       @NonNull final List<CommunicationRecipientDto> request) {
 
-    final var chains =
-        request.stream()
-            .filter(Objects::nonNull)
-            .map(CommunicationRecipientDto::getChainLinkId)
-            .collect(Collectors.toList());
-
     final var recipients =
-            request.stream()
-                    .filter(Objects::nonNull)
-                    .map(CommunicationRecipientDto::getRecipient)
-                    .collect(Collectors.toList());
-
-    final var filter = CommunicationRecipientDto.builder()
-            .recipients(recipients).chains(chains).build();
-
-    final var spec = new CommunicationRecipientSpecification(filter);
-
-    final var existingRecipients =
-        repository.findAll(spec).stream()
-            .collect(
-                Collectors.toMap(
-                    CommunicationRecipient::getChainLinkId,
-                    (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
-                    (old, latest) -> {
-                      old.addAll(latest);
-                      return old;
-                    }));
-
-    final var recipientsEntity =
         request.stream()
             .filter(recipient -> !Strings.isEmpty(recipient.getRecipient()))
-            .filter(
-                recipient ->
-                    !existingRecipients
-                        .getOrDefault(recipient.getChainLinkId(), new ArrayList<>())
-                        .contains(recipient.getRecipient()))
-            .map(this::mapToEntity)
+            .collect(Collectors.toMap(this::mapKey, Function.identity()))
+            .values()
+            .stream()
+            .map(this::mapToTempEntity)
             .collect(Collectors.toList());
 
-    return repository.saveAll(recipientsEntity).stream()
+    return tempRepository.saveAll(recipients).stream()
         .map(this::mapToResource)
         .collect(Collectors.toList());
+  }
+
+  @Audited(event = "FINALIZE_BATCH_SAVE_RECIPIENTS")
+  public void finalizeBatch() {
+
+    log.info("Start merging recipients...");
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Recipients added: {}", repository.merge());
+    tempRepository.deleteAllInBatch();
+
+    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")
@@ -177,6 +162,16 @@ public class CommunicationRecipientService {
         .build();
   }
 
+  private TempCommunicationRecipient mapToTempEntity(@NonNull final CommunicationRecipientDto dto) {
+    return TempCommunicationRecipient.builder()
+        .id(dto.getId())
+        .chainLinkId(dto.getChainLinkId())
+        .recipient(dto.getRecipient())
+        .dateImported(dto.getDateImported())
+        .metadata(dto.getMetadata())
+        .build();
+  }
+
   private CommunicationRecipientDto mapToResource(@NonNull final CommunicationRecipient entity) {
     return CommunicationRecipientDto.builder()
         .id(entity.getId())
@@ -185,5 +180,22 @@ public class CommunicationRecipientService {
         .dateImported(entity.getDateImported())
         .metadata(entity.getMetadata())
         .build();
+  }
+
+  private CommunicationRecipientDto mapToResource(
+      @NonNull final TempCommunicationRecipient entity) {
+    return CommunicationRecipientDto.builder()
+        .id(entity.getId())
+        .chainLinkId(entity.getChainLinkId())
+        .recipient(entity.getRecipient())
+        .dateImported(entity.getDateImported())
+        .metadata(entity.getMetadata())
+        .build();
+  }
+
+  private String mapKey(@NonNull final CommunicationRecipientDto recipient) {
+
+    return String.format("%s-%s", recipient.getChainLinkId(), recipient.getRecipient())
+        .toLowerCase();
   }
 }

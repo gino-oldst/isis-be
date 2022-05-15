@@ -54,4 +54,9 @@ public class BatchCommunicationMessageListener
       throw e;
     }
   }
+
+  @Override
+  protected void finalizeEvent() {
+    // do nothing
+  }
 }

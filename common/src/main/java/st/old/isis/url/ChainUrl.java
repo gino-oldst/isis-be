@@ -24,4 +24,8 @@ public class ChainUrl extends UrlRepository {
   public String importChain() {
     return init().pathSegment("import").toUriString();
   }
+
+  public String merge() {
+    return init().pathSegment("merge").toUriString();
+  }
 }

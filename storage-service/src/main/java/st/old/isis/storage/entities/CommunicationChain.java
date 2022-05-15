@@ -20,6 +20,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Table(
     indexes = {
+      @Index(
+          name = "idx_communication_chain_unique",
+          columnList = "sourceChainId,source",
+          unique = true),
       @Index(name = "idx_communication_chain_source_chain_id", columnList = "sourceChainId"),
       @Index(name = "idx_communication_chain_source", columnList = "source")
     })

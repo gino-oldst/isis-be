@@ -19,6 +19,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Table(
     indexes = {
+      @Index(name = "idx_communication_recipient_unique", columnList = "recipient,chainLinkId"),
       @Index(name = "idx_communication_recipient_recipient", columnList = "recipient"),
       @Index(name = "idx_communication_recipient_chain_link_id", columnList = "chainLinkId")
     })

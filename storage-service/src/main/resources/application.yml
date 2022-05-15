@@ -19,6 +19,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.SQLServer2012Dialect
         jdbc:
+          batch_size: 10000
+          order_inserts: true
+          order_updates: true
           time_zone: UTC
     hibernate:
       naming:

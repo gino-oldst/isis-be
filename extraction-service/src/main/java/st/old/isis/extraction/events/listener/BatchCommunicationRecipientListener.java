@@ -2,6 +2,7 @@ package st.old.isis.extraction.events.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
@@ -35,6 +36,7 @@ public class BatchCommunicationRecipientListener
     return false;
   }
 
+  @Async
   @Override
   protected void persist(ListDto<CommunicationRecipientDto> list) throws Throwable {
 
@@ -51,5 +53,10 @@ public class BatchCommunicationRecipientListener
       log.error("Error persisting recipients: {}", objectUtils.toString(list));
       throw e;
     }
+  }
+
+  @Override
+  protected void finalizeEvent() {
+    storageService.mergeCommunicationRecipients();
   }
 }

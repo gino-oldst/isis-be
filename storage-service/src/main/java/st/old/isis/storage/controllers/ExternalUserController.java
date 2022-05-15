@@ -2,7 +2,9 @@ package st.old.isis.storage.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.StaleStateException;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
@@ -23,7 +25,17 @@ public class ExternalUserController {
 
   @PostMapping("/batch")
   public ListDto<ExternalUserDto> batchedSave(@RequestBody List<ExternalUserDto> users) {
+    try {
       return service.batchedSave(users);
+    } catch (ObjectOptimisticLockingFailureException | StaleStateException ex) {
+      log.error("Persistence error: {} - {}", users.size(), ex.getMessage());
+    }
+    return ListDto.emptyList();
+  }
+
+  @PostMapping("/merge")
+  public void merge() {
+    service.finalizeBatch();
   }
 
   @PostMapping("/search")

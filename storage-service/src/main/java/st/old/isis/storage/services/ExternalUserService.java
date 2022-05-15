@@ -11,12 +11,12 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.ExternalUser;
+import st.old.isis.storage.entities.temp.TempExternalUser;
 import st.old.isis.storage.repositories.ExternalUserRepository;
+import st.old.isis.storage.repositories.temp.TempExternalUserRepository;
 import st.old.isis.storage.specifications.ExternalUserSpecification;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,35 +26,47 @@ import java.util.stream.Collectors;
 public class ExternalUserService {
 
   private final ExternalUserRepository repository;
+  private final TempExternalUserRepository tempRepository;
 
   @Audited(event = "BATCH_SAVE_EXTERNAL_USER")
   public ListDto<ExternalUserDto> batchedSave(@NonNull final List<ExternalUserDto> list) {
 
-    final var existingUserMap = getExistingUserMap(list);
-
-    final List<ExternalUser> users =
+    final var users =
         list.stream()
             .filter(user -> !Strings.isEmpty(user.getEmail()))
-            .map(this::mapToEntity)
-            .peek(user -> user.setExternalId(user.getExternalId().toLowerCase()))
-            .peek(
-                user ->
-                    Optional.ofNullable(existingUserMap.get(mapKey(user)))
-                        .ifPresent(externalUser -> user.setId(externalUser.getId())))
+            .collect(Collectors.toMap(this::mapKey, Function.identity()))
+            .values()
+            .stream()
+            .map(this::mapToTempEntity)
             .collect(Collectors.toList());
 
     final List<ExternalUserDto> createdUsers =
-        repository.saveAll(users).stream().map(this::mapToResource).collect(Collectors.toList());
+        tempRepository.saveAll(users).stream()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
 
     final int size = createdUsers.size();
 
     return ListDto.<ExternalUserDto>builder()
         .data(createdUsers)
         .totalNoOfRecords(size)
-        .totalPages(size)
+        .totalPages(1)
         .totalCurrentElements(size)
         .build()
         .success();
+  }
+
+  @Audited(event = "FINALIZE_BATCH_SAVE_EXTERNAL_USER")
+  public void finalizeBatch() {
+
+    log.info("Start merging users...");
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Users added: {}", repository.merge());
+    tempRepository.deleteAllInBatch();
+
+    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "DELETE_EXTERNAL_USER")
@@ -63,18 +75,6 @@ public class ExternalUserService {
     final var user = findById(id);
 
     repository.delete(user);
-  }
-
-  private Map<String, ExternalUser> getExistingUserMap(@NonNull final List<ExternalUserDto> list) {
-
-    final var extIds =
-        list.stream().map(ExternalUserDto::getExternalId).distinct().collect(Collectors.toList());
-
-    final var filter = ExternalUserDto.builder().externalIds(extIds).build();
-
-    final var results = findAll(filter);
-
-    return results.stream().collect(Collectors.toMap(this::mapKey, Function.identity()));
   }
 
   @Audited(event = "GET_EXTERNAL_USER_BY_ID")
@@ -163,6 +163,20 @@ public class ExternalUserService {
         .build();
   }
 
+  private TempExternalUser mapToTempEntity(@NonNull final ExternalUserDto dto) {
+    return TempExternalUser.builder()
+        .id(dto.getId())
+        .externalId(dto.getExternalId())
+        .email(dto.getEmail())
+        .phoneNumber(dto.getPhoneNumber())
+        .firstName(dto.getFirstName())
+        .lastName(dto.getLastName())
+        .source(dto.getSource())
+        .type(dto.getType())
+        .deleted(dto.isDeleted())
+        .build();
+  }
+
   private ExternalUserDto mapToResource(@NonNull final ExternalUser entity) {
     return ExternalUserDto.builder()
         .id(entity.getId())
@@ -177,7 +191,21 @@ public class ExternalUserService {
         .build();
   }
 
-  private String mapKey(@NonNull final ExternalUser user) {
-    return String.format("%s-%s", user.getExternalId(), user.getSource());
+  private ExternalUserDto mapToResource(@NonNull final TempExternalUser entity) {
+    return ExternalUserDto.builder()
+        .id(entity.getId())
+        .externalId(entity.getExternalId())
+        .email(entity.getEmail())
+        .phoneNumber(entity.getPhoneNumber())
+        .firstName(entity.getFirstName())
+        .lastName(entity.getLastName())
+        .source(entity.getSource())
+        .type(entity.getType())
+        .deleted(entity.isDeleted())
+        .build();
+  }
+
+  private String mapKey(@NonNull final ExternalUserDto user) {
+    return String.format("%s-%s", user.getExternalId(), user.getSource()).toLowerCase();
   }
 }

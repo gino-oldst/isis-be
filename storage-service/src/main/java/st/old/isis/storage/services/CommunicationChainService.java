@@ -11,14 +11,15 @@ import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.enums.ProcessedStatus;
-import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationChain;
+import st.old.isis.storage.entities.temp.TempCommunicationChain;
 import st.old.isis.storage.repositories.CommunicationChainRepository;
+import st.old.isis.storage.repositories.temp.TempCommunicationChainRepository;
 import st.old.isis.storage.specifications.CommunicationChainSpecification;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,160 +27,219 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommunicationChainService {
 
-    private final CommunicationChainRepository repository;
+  private final CommunicationChainRepository repository;
+  private final TempCommunicationChainRepository tempRepository;
+  private final DataImportRecordService dataImportRecordService;
 
-    private final DataImportRecordService dataImportRecordService;
+  @Audited(event = "IMPORT_COMMUNICATION_CHAIN_DATA")
+  public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request)
+      throws IsisException {
 
-    @Audited(event = "IMPORT_COMMUNICATION_CHAIN_DATA")
-    public ListDto<CommunicationChainDto> importData(ListDto<CommunicationChainDto> request) throws IsisException {
+    final var chains =
+        request.getData().stream()
+            .collect(Collectors.toMap(this::mapKey, Function.identity()))
+            .values()
+            .stream()
+            .map(this::mapToTempEntity)
+            .collect(Collectors.toList());
 
-        final var chains = request.getData()
-                        .stream().map(this::mapToEntity)
-                        .collect(Collectors.toList());
+    final var results =
+        tempRepository.saveAll(chains).stream()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
 
-        final var results = repository.saveAll(chains)
-                .stream().map(this::mapToResource)
-                .collect(Collectors.toList());
+    // TODO When factory pattern is implemented,
+    // we can include post factory call instead of calling from inside individual services
+    // ex. Import Reuters then Bloomberg then ... then create data import record
 
-        //TODO When factory pattern is implemented,
-        // we can include post factory call instead of calling from inside individual services
-        // ex. Import Reuters then Bloomberg then ... then create data import record
+    DataImportRecordDto dataImportRecordDto =
+        DataImportRecordDto.builder()
+            .importDate(results.get(0).getDateImported())
+            .processedStatus(ProcessedStatus.PENDING_PROCESS)
+            .source(results.get(0).getSource())
+            .build();
 
-        DataImportRecordDto dataImportRecordDto= DataImportRecordDto.builder()
-                .importDate(results.get(0).getDateImported())
-                .processedStatus(ProcessedStatus.PENDING_PROCESS)
-                .source(results.get(0).getSource())
-                .build();
+    dataImportRecordService.create(dataImportRecordDto);
 
-        dataImportRecordService.create(dataImportRecordDto);
+    return ListDto.<CommunicationChainDto>builder()
+        .data(results)
+        .totalNoOfRecords(results.size())
+        .build()
+        .success();
+  }
 
-        return ListDto.<CommunicationChainDto>builder()
-                .data(results)
-                .totalNoOfRecords(results.size())
-                .build().success();
-    }
+  public void finalizeBatch() {
 
-    @Audited(event = "GET_COMMUNICATION_CHAIN_BY_ID")
-    public CommunicationChainDto getById(@NonNull @Audited final String id) throws IsisException {
+    log.info("Start merging chain...");
 
-        final var entity = findById(id);
+    final long start = System.currentTimeMillis();
 
-        return mapToResource(entity);
-    }
+    log.info("Chains added: {}", repository.merge());
+    tempRepository.deleteAllInBatch();
 
-    @Audited(event = "DELETE_COMMUNICATION_CHAIN")
-    public void delete(@NonNull @Audited final String id) throws IsisException {
+    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
+  }
 
-        final var entity = findById(id);
+  @Audited(event = "GET_COMMUNICATION_CHAIN_BY_ID")
+  public CommunicationChainDto getById(@NonNull @Audited final String id) throws IsisException {
 
-        repository.delete(entity);
-    }
+    final var entity = findById(id);
 
-    @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
-    public ListDto<CommunicationChainDto> search(@NonNull @Audited final CommunicationChainDto filter) {
+    return mapToResource(entity);
+  }
 
-        final var spec = new CommunicationChainSpecification(filter);
+  @Audited(event = "DELETE_COMMUNICATION_CHAIN")
+  public void delete(@NonNull @Audited final String id) throws IsisException {
 
-        final var results = repository.findAll(spec)
-                .stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+    final var entity = findById(id);
 
-        final var size = results.size();
+    repository.delete(entity);
+  }
 
-        return ListDto.<CommunicationChainDto>builder()
-                .data(results)
-                .totalNoOfRecords(size)
-                .totalPages(size)
-                .totalCurrentElements(size)
-                .build()
-                .success();
-    }
+  @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
+  public ListDto<CommunicationChainDto> search(
+      @NonNull @Audited final CommunicationChainDto filter) {
 
-    @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
-    public ListDto<CommunicationChainDto> search(@NonNull @Audited final CommunicationChainDto filter,@Audited Pageable pageable) {
+    final var spec = new CommunicationChainSpecification(filter);
 
-        final var spec = new CommunicationChainSpecification(filter);
+    final var results =
+        repository.findAll(spec).stream().map(this::mapToResource).collect(Collectors.toList());
 
-        final var searchResults = repository.findAll(spec, pageable);
+    final var size = results.size();
 
-        final var results = searchResults.stream()
-                .map(this::mapToResource)
-                .collect(Collectors.toList());
+    return ListDto.<CommunicationChainDto>builder()
+        .data(results)
+        .totalNoOfRecords(size)
+        .totalPages(size)
+        .totalCurrentElements(size)
+        .build()
+        .success();
+  }
 
-        return ListDto.<CommunicationChainDto>builder()
-                .data(results)
-                .totalNoOfRecords(searchResults.getTotalElements())
-                .totalPages(searchResults.getTotalPages())
-                .totalCurrentElements(searchResults.getNumberOfElements())
-                .build()
-                .success();
-    }
+  @Audited(event = "SEARCH_COMMUNICATION_CHAIN")
+  public ListDto<CommunicationChainDto> search(
+      @NonNull @Audited final CommunicationChainDto filter, @Audited Pageable pageable) {
 
-    private CommunicationChain findById(@NonNull final String id) throws IsisException {
-        return repository.findById(id)
-                .orElseThrow(() -> IsisException.notFound(
-                        String.format("Cannot find communication chain with id: [%s]", id),
-                        "NotFoundException"));
-    }
+    final var spec = new CommunicationChainSpecification(filter);
 
-    private CommunicationChain mapToEntity(@NonNull final CommunicationChainDto dto) {
-        return CommunicationChain.builder()
-                .id(dto.getId())
-                .source(dto.getSource())
-                .sourceChainId(dto.getSourceChainId())
-                .subject(dto.getSubject())
-                .datePeriod(dto.getDatePeriod())
-                .dateImported(dto.getDateImported())
-                .dateFrom(dto.getDateFrom())
-                .dateTo(dto.getDateTo())
-                .dateCreated(dto.getDateCreated())
-                .dateModified(dto.getDateModified())
-                .deleted(dto.isDeleted())
-                .build();
-    }
+    final var searchResults = repository.findAll(spec, pageable);
 
-    private CommunicationChainDto mapToResource(@NonNull final CommunicationChain entity) {
-        return CommunicationChainDto.builder()
-                .id(entity.getId())
-                .source(entity.getSource())
-                .sourceChainId(entity.getSourceChainId())
-                .subject(entity.getSubject())
-                .datePeriod(entity.getDatePeriod())
-                .dateImported(entity.getDateImported())
-                .dateFrom(entity.getDateFrom())
-                .dateTo(entity.getDateTo())
-                .dateCreated(entity.getDateCreated())
-                .dateModified(entity.getDateModified())
-                .deleted(entity.isDeleted())
-                .build();
-    }
+    final var results =
+        searchResults.stream().map(this::mapToResource).collect(Collectors.toList());
 
-    private CommunicationChainDto mapToResource(@NonNull final CommunicationChain entity,
-                                                @NonNull final List<CommunicationRecipientDto> recipients) {
-        return CommunicationChainDto.builder()
-                .id(entity.getId())
-                .source(entity.getSource())
-                .sourceChainId(entity.getSourceChainId())
-                .subject(entity.getSubject())
-                .datePeriod(entity.getDatePeriod())
-                .dateImported(entity.getDateImported())
-                .dateFrom(entity.getDateFrom())
-                .dateTo(entity.getDateTo())
-                .dateCreated(entity.getDateCreated())
-                .dateModified(entity.getDateModified())
-                .deleted(entity.isDeleted())
-                .build();
-    }
+    return ListDto.<CommunicationChainDto>builder()
+        .data(results)
+        .totalNoOfRecords(searchResults.getTotalElements())
+        .totalPages(searchResults.getTotalPages())
+        .totalCurrentElements(searchResults.getNumberOfElements())
+        .build()
+        .success();
+  }
 
-    //map read-only properties from old entity to new entity
-    private CommunicationChain mapToEntity(@NonNull CommunicationChain oldEntity,
-                                           @NonNull CommunicationChainDto newDto) {
+  private CommunicationChain findById(@NonNull final String id) throws IsisException {
+    return repository
+        .findById(id)
+        .orElseThrow(
+            () ->
+                IsisException.notFound(
+                    String.format("Cannot find communication chain with id: [%s]", id),
+                    "NotFoundException"));
+  }
 
-        final var entity = mapToEntity(newDto);
-        entity.setDateCreated(oldEntity.getDateCreated());
+  private CommunicationChain mapToEntity(@NonNull final CommunicationChainDto dto) {
+    return CommunicationChain.builder()
+        .id(dto.getId())
+        .source(dto.getSource())
+        .sourceChainId(dto.getSourceChainId())
+        .subject(dto.getSubject())
+        .datePeriod(dto.getDatePeriod())
+        .dateImported(dto.getDateImported())
+        .dateFrom(dto.getDateFrom())
+        .dateTo(dto.getDateTo())
+        .dateCreated(dto.getDateCreated())
+        .dateModified(dto.getDateModified())
+        .deleted(dto.isDeleted())
+        .build();
+  }
 
-        return entity;
-    }
+  private TempCommunicationChain mapToTempEntity(@NonNull final CommunicationChainDto dto) {
+    return TempCommunicationChain.builder()
+        .id(dto.getId())
+        .source(dto.getSource())
+        .sourceChainId(dto.getSourceChainId())
+        .subject(dto.getSubject())
+        .datePeriod(dto.getDatePeriod())
+        .dateImported(dto.getDateImported())
+        .dateFrom(dto.getDateFrom())
+        .dateTo(dto.getDateTo())
+        .dateCreated(dto.getDateCreated())
+        .dateModified(dto.getDateModified())
+        .deleted(dto.isDeleted())
+        .build();
+  }
 
+  private CommunicationChainDto mapToResource(@NonNull final CommunicationChain entity) {
+    return CommunicationChainDto.builder()
+        .id(entity.getId())
+        .source(entity.getSource())
+        .sourceChainId(entity.getSourceChainId())
+        .subject(entity.getSubject())
+        .datePeriod(entity.getDatePeriod())
+        .dateImported(entity.getDateImported())
+        .dateFrom(entity.getDateFrom())
+        .dateTo(entity.getDateTo())
+        .dateCreated(entity.getDateCreated())
+        .dateModified(entity.getDateModified())
+        .deleted(entity.isDeleted())
+        .build();
+  }
+
+  private CommunicationChainDto mapToResource(@NonNull final TempCommunicationChain entity) {
+    return CommunicationChainDto.builder()
+        .id(entity.getId())
+        .source(entity.getSource())
+        .sourceChainId(entity.getSourceChainId())
+        .subject(entity.getSubject())
+        .datePeriod(entity.getDatePeriod())
+        .dateImported(entity.getDateImported())
+        .dateFrom(entity.getDateFrom())
+        .dateTo(entity.getDateTo())
+        .dateCreated(entity.getDateCreated())
+        .dateModified(entity.getDateModified())
+        .deleted(entity.isDeleted())
+        .build();
+  }
+
+  private CommunicationChainDto mapToResource(
+      @NonNull final CommunicationChain entity,
+      @NonNull final List<CommunicationRecipientDto> recipients) {
+    return CommunicationChainDto.builder()
+        .id(entity.getId())
+        .source(entity.getSource())
+        .sourceChainId(entity.getSourceChainId())
+        .subject(entity.getSubject())
+        .datePeriod(entity.getDatePeriod())
+        .dateImported(entity.getDateImported())
+        .dateFrom(entity.getDateFrom())
+        .dateTo(entity.getDateTo())
+        .dateCreated(entity.getDateCreated())
+        .dateModified(entity.getDateModified())
+        .deleted(entity.isDeleted())
+        .build();
+  }
+
+  // map read-only properties from old entity to new entity
+  private CommunicationChain mapToEntity(
+      @NonNull CommunicationChain oldEntity, @NonNull CommunicationChainDto newDto) {
+
+    final var entity = mapToEntity(newDto);
+    entity.setDateCreated(oldEntity.getDateCreated());
+
+    return entity;
+  }
+
+  private String mapKey(@NonNull final CommunicationChainDto chain) {
+
+    return String.format("%s-%s", chain.getSource(), chain.getSourceChainId()).toLowerCase();
+  }
 }
