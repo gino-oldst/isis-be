@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.TempDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationRecipientService;
 
@@ -26,8 +27,8 @@ public class CommunicationRecipientController {
   }
 
   @PostMapping("/merge")
-  public void merge() {
-    service.finalizeBatch();
+  public void merge(@RequestBody TempDto dto) {
+    service.finalizeBatch(dto.getFileSource());
   }
 
   @GetMapping("/{id}")

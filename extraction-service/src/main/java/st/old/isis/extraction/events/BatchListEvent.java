@@ -11,11 +11,13 @@ public abstract class BatchListEvent<T extends Dto> extends ApplicationEvent {
 
   private final List<T> dto;
   private final boolean finalize;
+  private final String fileSource;
 
-  public BatchListEvent(Object source, List<T> dto, boolean finalize) {
+  public BatchListEvent(Object source, List<T> dto, boolean finalize, String fileSource) {
     super(source);
     this.finalize = finalize;
     this.dto = dto;
+    this.fileSource = fileSource;
   }
 
   public List<T> getList() {
@@ -24,5 +26,9 @@ public abstract class BatchListEvent<T extends Dto> extends ApplicationEvent {
 
   public boolean shouldFinalize() {
     return this.finalize;
+  }
+
+  public String getFileSource() {
+    return this.fileSource;
   }
 }

@@ -2,10 +2,11 @@ package st.old.isis.extraction.events.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.dto.storage.TempDto;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchCommunicationMessageEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
@@ -36,7 +37,6 @@ public class BatchCommunicationMessageListener
     return false;
   }
 
-  @Async
   @Override
   protected void persist(ListDto<CommunicationMessageDto> list) throws Throwable {
 
@@ -56,7 +56,7 @@ public class BatchCommunicationMessageListener
   }
 
   @Override
-  protected void finalizeEvent() {
-    // do nothing
+  protected void finalizeEvent(String fileSource) throws IsisException {
+    storageService.mergeMessages(TempDto.builder().fileSource(fileSource).build());
   }
 }

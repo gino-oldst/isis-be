@@ -45,6 +45,8 @@ public class TempExternalUser implements Serializable {
 
   private String source;
 
+  private String fileSource;
+
   @CreationTimestamp private LocalDateTime dateCreated;
 
   @UpdateTimestamp private LocalDateTime dateModified;

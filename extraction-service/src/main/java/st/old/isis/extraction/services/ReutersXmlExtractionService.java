@@ -11,10 +11,7 @@ import st.old.isis.constants.ReutersConstants;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
-import st.old.isis.dto.storage.CommunicationChainDto;
-import st.old.isis.dto.storage.CommunicationMessageDto;
-import st.old.isis.dto.storage.CommunicationRecipientDto;
-import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.dto.storage.*;
 import st.old.isis.entities.generated.ComplianceActivity;
 import st.old.isis.enums.Source;
 import st.old.isis.enums.SourceType;
@@ -41,10 +38,11 @@ public class ReutersXmlExtractionService {
   private final NotificationService notificationService;
 
   @Audited(event = "PARSE_XML_STREAM")
-  public ListDto<CommunicationChainDto> processXml(@NonNull final InputStream inputStream)
+  public ListDto<CommunicationChainDto> processXml(
+      @NonNull final InputStream inputStream, @NonNull final String fileSource)
       throws JAXBException, IsisException {
     try {
-      return processXml(new InputStreamReader(inputStream), LocalDate.now());
+      return processXml(new InputStreamReader(inputStream), LocalDate.now(), fileSource);
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
@@ -56,15 +54,18 @@ public class ReutersXmlExtractionService {
       MultipartFile multipartFile, LocalDate importDate)
       throws IOException, JAXBException, IsisException {
     try {
-      return processXml(new InputStreamReader(multipartFile.getInputStream()), importDate);
+      return processXml(
+          new InputStreamReader(multipartFile.getInputStream()),
+          importDate,
+          multipartFile.getName());
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
     }
   }
 
-  public ListDto<CommunicationChainDto> processXml(Reader reader, LocalDate importDate)
-      throws JAXBException, IsisException {
+  public ListDto<CommunicationChainDto> processXml(
+      Reader reader, LocalDate importDate, String fileSource) throws JAXBException, IsisException {
 
     log.info("START - Processing Reuters XML File for date {}", importDate);
 
@@ -74,11 +75,11 @@ public class ReutersXmlExtractionService {
         (ComplianceActivity) context.createUnmarshaller().unmarshal(new BufferedReader(reader));
 
     // Process userLink entries
-    final var communicationRecipients = parseCommunicationRecipients(activity);
+    final var communicationRecipients = parseCommunicationRecipients(activity, fileSource);
     storageService.saveExternalUsers(communicationRecipients);
 
     // Process communication logs
-    final var communicationChains = parseCommunicationChains(activity, importDate);
+    final var communicationChains = parseCommunicationChains(activity, importDate, fileSource);
 
     // Calls storage service to persist chain into the database
     final var importedChains = storageService.importChain(communicationChains);
@@ -86,11 +87,17 @@ public class ReutersXmlExtractionService {
 
     log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 
+    final var tempRequest = TempDto.builder().fileSource(fileSource).build();
+    storageService.mergeChain(tempRequest);
+    storageService.mergeMessages(tempRequest);
+    storageService.mergeCommunicationRecipients(tempRequest);
+    storageService.mergeExternalUsers(tempRequest);
+
     return communicationChains;
   }
 
   private ListDto<CommunicationChainDto> parseCommunicationChains(
-      ComplianceActivity activity, LocalDate importDate) throws IsisException {
+      ComplianceActivity activity, LocalDate importDate, String fileSource) throws IsisException {
 
     log.info("START - Parsing Communication Chains");
 
@@ -109,7 +116,7 @@ public class ReutersXmlExtractionService {
 
         final var sourceChainId = chat.getIdentifier();
         final var recipients =
-            parseChatParticipants(chat.getParticipants(), sourceChainId, importDate);
+            parseChatParticipants(chat.getParticipants(), sourceChainId, importDate, fileSource);
 
         if (null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
 
@@ -131,15 +138,17 @@ public class ReutersXmlExtractionService {
               final var timeSent =
                   event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
 
-                            final var commMessage = CommunicationMessageDto.builder()
-                                    .chainLinkId(sourceChainId)
-                                    .message(message.getContent())
-                                    .sourceMessageId(String.valueOf(message.getMessageID()))
-                                    .timeSent(timeSent)
-                                    .sender(eventUser)
-                                    .importDate(importDate)
-                                    .source(SourceType.REUTERS.toString())
-                                    .build();
+              final var commMessage =
+                  CommunicationMessageDto.builder()
+                      .chainLinkId(sourceChainId)
+                      .message(message.getContent())
+                      .sourceMessageId(String.valueOf(message.getMessageID()))
+                      .timeSent(timeSent)
+                      .sender(eventUser)
+                      .importDate(importDate)
+                      .source(SourceType.REUTERS.toString())
+                      .fileSource(fileSource)
+                      .build();
 
               commMessageList.add(commMessage);
             }
@@ -154,6 +163,7 @@ public class ReutersXmlExtractionService {
                   .sourceChainId(sourceChainId)
                   .datePeriod(datePeriod)
                   .dateImported(importDate)
+                  .fileSource(fileSource)
                   .build();
 
           commLogList.add(commLog);
@@ -181,7 +191,8 @@ public class ReutersXmlExtractionService {
   private List<CommunicationRecipientDto> parseChatParticipants(
       ComplianceActivity.Chats.Chat.Participants participants,
       String sourceChainId,
-      LocalDate importDate) {
+      LocalDate importDate,
+      String fileSource) {
 
     if (null != participants.getUser() && !participants.getUser().isEmpty()) {
 
@@ -195,6 +206,7 @@ public class ReutersXmlExtractionService {
                       .chainLinkId(sourceChainId)
                       .recipient(user)
                       .dateImported(importDate)
+                      .fileSource(fileSource)
                       .build())
           .collect(Collectors.toList());
     }
@@ -202,7 +214,8 @@ public class ReutersXmlExtractionService {
     return Collections.emptyList();
   }
 
-  private List<ExternalUserDto> parseCommunicationRecipients(@NonNull ComplianceActivity activity) {
+  private List<ExternalUserDto> parseCommunicationRecipients(
+      @NonNull ComplianceActivity activity, @NonNull String fileSource) {
 
     if (null != activity.getUsers() && !activity.getUsers().getUserInfo().isEmpty()) {
 
@@ -210,7 +223,7 @@ public class ReutersXmlExtractionService {
 
       return new ArrayList<>(
           userInfoList.stream()
-              .map(this::mapToUserDto)
+              .map(user -> mapToUserDto(user, fileSource))
               .collect(
                   Collectors.toMap(
                       ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
@@ -220,7 +233,8 @@ public class ReutersXmlExtractionService {
     return new ArrayList<>();
   }
 
-  public ExternalUserDto mapToUserDto(ComplianceActivity.Users.UserInfo userInfo) {
+  public ExternalUserDto mapToUserDto(
+      ComplianceActivity.Users.UserInfo userInfo, String fileSource) {
 
     return ExternalUserDto.builder()
         .source(Source.REUTERS.toString())
@@ -228,6 +242,7 @@ public class ReutersXmlExtractionService {
         .email(userInfo.getEmail())
         .firstName(userInfo.getFirstName())
         .lastName(userInfo.getLastName())
+        .fileSource(fileSource)
         .build();
   }
 

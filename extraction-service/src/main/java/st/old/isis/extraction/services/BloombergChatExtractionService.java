@@ -59,30 +59,32 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
   @Override
   protected void processReader(
-      @NonNull final XMLStreamReader reader, @NonNull final LocalDate importDate)
+      @NonNull final XMLStreamReader reader,
+      @NonNull final LocalDate importDate,
+      @NonNull final String fileSource)
       throws JAXBException {
 
     if (reader.getName().getLocalPart().equals("Conversation")) {
       final var conversation = unmarshaller.unmarshal(reader, BloombergChatConversation.class);
 
-      Optional.ofNullable(parseConversation(conversation.getValue(), importDate))
+      Optional.ofNullable(parseConversation(conversation.getValue(), importDate, fileSource))
           .ifPresent(eventPublisher::addToCommunicationChainBatch);
     }
   }
 
   @Override
-  protected void finalizeParsing() {
-    eventPublisher.finalizeBatchCommunication(true);
-    eventPublisher.finalizeBatchExternalUsers(true);
-    eventPublisher.finalizeBatchMessages(true);
-    eventPublisher.finalizeBatchRecipients(true);
+  protected void finalizeParsing(String fileSource) {
+    eventPublisher.finalizeBatchCommunication(true, fileSource);
+    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
+    eventPublisher.finalizeBatchMessages(true, fileSource);
+    eventPublisher.finalizeBatchRecipients(true, fileSource);
   }
 
   @Audited(event = "BLOOMBERG_PARSE_CHAT_XML_STREAM")
-  public void processXml(@NonNull final InputStream inputStream)
+  public void processXml(@NonNull final InputStream inputStream, String fileSource)
       throws JAXBException, XMLStreamException {
     try {
-      parse(inputStream, LocalDate.now());
+      parse(inputStream, LocalDate.now(), fileSource);
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
@@ -93,7 +95,10 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   public void processXml(MultipartFile multipartFile, LocalDate importDate)
       throws IOException, JAXBException, XMLStreamException {
     try {
-      parse(new BufferedInputStream(multipartFile.getInputStream()), importDate);
+      parse(
+          new BufferedInputStream(multipartFile.getInputStream()),
+          importDate,
+          multipartFile.getName());
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
@@ -101,12 +106,15 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   }
 
   private CommunicationChainDto parseConversation(
-      @NonNull final BloombergChatConversation conversation, @NonNull final LocalDate importDate) {
+      @NonNull final BloombergChatConversation conversation,
+      @NonNull final LocalDate importDate,
+      @NonNull final String fileSource) {
 
     final var roomId = conversation.getRoomID();
 
-    final var mappedMessages = parseMessages(conversation.getMessage(), importDate);
-    final var attachmentMessages = parseAttachments(conversation.getAttachment(), importDate);
+    final var mappedMessages = parseMessages(conversation.getMessage(), importDate, fileSource);
+    final var attachmentMessages =
+        parseAttachments(conversation.getAttachment(), importDate, fileSource);
 
     final var mappedMessagesCommunications = mappedMessages.get("communication");
     final var mappedAttachmentCommunications = attachmentMessages.get("communication");
@@ -117,7 +125,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
             .map(message -> (CommunicationMessageDto) message)
             .collect(Collectors.toList());
 
-    final var mappedEntryEvents = parseEntryEvents(conversation.getParticipantEntered());
+    final var mappedEntryEvents =
+        parseEntryEvents(conversation.getParticipantEntered(), fileSource);
 
     final var mappedMessagesRecipients = mappedMessages.get("recipient");
     final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
@@ -175,11 +184,14 @@ public class BloombergChatExtractionService extends XmlExtractionService {
         .dateFrom(timeStarted)
         .dateTo(timeEnded)
         .dateImported(importDate)
+        .fileSource(fileSource)
         .build();
   }
 
   private Map<String, List<? extends Dto>> parseMessages(
-      @NonNull final List<BloombergChatMessage> messages, @NonNull final LocalDate importDate) {
+      @NonNull final List<BloombergChatMessage> messages,
+      @NonNull final LocalDate importDate,
+      @NonNull final String fileSource) {
 
     final var communications = new ArrayList<CommunicationMessageDto>();
     final var recipients = new ArrayList<CommunicationRecipientDto>();
@@ -203,6 +215,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .chainLinkId(chainLinkId)
               .sender(user.getEmailAddress())
               .source(SourceType.BLOOMBERG_CHAT.toString())
+              .fileSource(fileSource)
               .build();
 
       final var recipient =
@@ -210,6 +223,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .chainLinkId(chainLinkId)
               .recipient(user.getEmailAddress())
               .dateImported(importDate)
+              .fileSource(fileSource)
               .build();
 
       final var externalUser =
@@ -219,6 +233,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
               .source(Source.BLOOMBERG.toString())
+              .fileSource(fileSource)
               .build();
 
       communications.add(communication);
@@ -231,7 +246,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
   private Map<String, List<? extends Dto>> parseAttachments(
       @NonNull final List<BloombergChatAttachment> attachments,
-      @NonNull final LocalDate importDate) {
+      @NonNull final LocalDate importDate,
+      @NonNull final String fileSource) {
 
     final var communications = new ArrayList<CommunicationMessageDto>();
     final var recipients = new ArrayList<CommunicationRecipientDto>();
@@ -264,6 +280,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
                               .fileSize(Long.toString(attachment.getFileSize()))
                               .build())
                       .build())
+              .fileSource(fileSource)
               .build();
 
       final var recipient =
@@ -271,6 +288,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .chainLinkId(chainLinkId)
               .recipient(user.getEmailAddress())
               .dateImported(importDate)
+              .fileSource(fileSource)
               .build();
 
       final var externalUser =
@@ -280,6 +298,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
               .source(Source.BLOOMBERG.toString())
+              .fileSource(fileSource)
               .build();
 
       communications.add(communication);
@@ -291,7 +310,8 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   }
 
   private Map<String, List<? extends Dto>> parseEntryEvents(
-      @NonNull final List<BloombergChatParticipantEntered> entryEvents) {
+      @NonNull final List<BloombergChatParticipantEntered> entryEvents,
+      @NonNull final String fileSource) {
 
     final var recipients = new ArrayList<CommunicationRecipientDto>();
     final var users = new ArrayList<ExternalUserDto>();
@@ -306,6 +326,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
           CommunicationRecipientDto.builder()
               .chainLinkId(chainLinkId)
               .recipient(user.getEmailAddress())
+              .fileSource(fileSource)
               .build();
 
       final var externalUser =
@@ -315,6 +336,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .firstName(user.getFirstName())
               .lastName(user.getLastName())
               .source(Source.BLOOMBERG.toString())
+              .fileSource(fileSource)
               .build();
 
       recipients.add(recipient);

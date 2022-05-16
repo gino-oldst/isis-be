@@ -8,6 +8,7 @@ import st.old.isis.dto.Dto;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchListEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
@@ -30,7 +31,7 @@ public abstract class BatchListEventListener<T extends Dto, B extends BatchListE
 
   protected abstract void persist(ListDto<T> list) throws Throwable;
 
-  protected abstract void finalizeEvent();
+  protected abstract void finalizeEvent(String fileSource) throws IsisException;
 
   @Override
   public void onApplicationEvent(@NonNull B event) {
@@ -42,7 +43,7 @@ public abstract class BatchListEventListener<T extends Dto, B extends BatchListE
         if (!queue.isEmpty()) {
           processBatch(queue.size());
         }
-        finalizeEvent();
+        finalizeEvent(event.getFileSource());
         return;
       }
 

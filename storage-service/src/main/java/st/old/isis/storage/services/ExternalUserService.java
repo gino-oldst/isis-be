@@ -57,14 +57,14 @@ public class ExternalUserService {
   }
 
   @Audited(event = "FINALIZE_BATCH_SAVE_EXTERNAL_USER")
-  public void finalizeBatch() {
+  public void finalizeBatch(@Audited String fileSource) {
 
     log.info("Start merging users...");
 
     final long start = System.currentTimeMillis();
 
-    log.info("Users added: {}", repository.merge());
-    tempRepository.deleteAllInBatch();
+    log.info("Users added: {}", repository.merge(fileSource));
+    log.info("Temporary users deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
@@ -174,6 +174,7 @@ public class ExternalUserService {
         .source(dto.getSource())
         .type(dto.getType())
         .deleted(dto.isDeleted())
+        .fileSource(dto.getFileSource())
         .build();
   }
 

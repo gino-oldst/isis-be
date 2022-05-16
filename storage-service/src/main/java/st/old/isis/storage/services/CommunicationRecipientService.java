@@ -49,14 +49,14 @@ public class CommunicationRecipientService {
   }
 
   @Audited(event = "FINALIZE_BATCH_SAVE_RECIPIENTS")
-  public void finalizeBatch() {
+  public void finalizeBatch(@Audited String fileSource) {
 
     log.info("Start merging recipients...");
 
     final long start = System.currentTimeMillis();
 
-    log.info("Recipients added: {}", repository.merge());
-    tempRepository.deleteAllInBatch();
+    log.info("Recipients added: {}", repository.merge(fileSource));
+    log.info("Temporary recipients deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
@@ -169,6 +169,7 @@ public class CommunicationRecipientService {
         .recipient(dto.getRecipient())
         .dateImported(dto.getDateImported())
         .metadata(dto.getMetadata())
+        .fileSource(dto.getFileSource())
         .build();
   }
 

@@ -46,11 +46,11 @@ public class TempCommunicationChain implements Serializable {
 
   private LocalDateTime dateTo;
 
-  @CreationTimestamp
-  private LocalDateTime dateCreated;
+  private String fileSource;
 
-  @UpdateTimestamp
-  private LocalDateTime dateModified;
+  @CreationTimestamp private LocalDateTime dateCreated;
+
+  @UpdateTimestamp private LocalDateTime dateModified;
 
   private boolean deleted;
 }

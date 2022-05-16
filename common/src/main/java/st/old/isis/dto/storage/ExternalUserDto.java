@@ -35,6 +35,8 @@ public class ExternalUserDto implements Dto {
 
   private LocalDateTime dateCreated;
 
+  private String fileSource;
+
   private boolean deleted;
 
   private List<String> ids;

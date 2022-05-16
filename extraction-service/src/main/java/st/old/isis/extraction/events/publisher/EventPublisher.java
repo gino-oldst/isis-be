@@ -51,30 +51,30 @@ public class EventPublisher {
     applicationEventPublisher.publishEvent(batchRecipientsEvent);
   }
 
-  public void finalizeBatchCommunication(@NonNull final boolean finalize) {
+  public void finalizeBatchCommunication(@NonNull final boolean finalize, String fileSource) {
 
-    final var finalizeParseEvent = new BatchCommunicationChainEvent(this, finalize);
-
-    applicationEventPublisher.publishEvent(finalizeParseEvent);
-  }
-
-  public void finalizeBatchExternalUsers(@NonNull final boolean finalize) {
-
-    final var finalizeParseEvent = new BatchExternalUsersEvent(this, finalize);
+    final var finalizeParseEvent = new BatchCommunicationChainEvent(this, finalize, fileSource);
 
     applicationEventPublisher.publishEvent(finalizeParseEvent);
   }
 
-  public void finalizeBatchMessages(@NonNull final boolean finalize) {
+  public void finalizeBatchExternalUsers(@NonNull final boolean finalize, String fileSource) {
 
-    final var finalizeParseEvent = new BatchCommunicationMessageEvent(this, finalize);
+    final var finalizeParseEvent = new BatchExternalUsersEvent(this, finalize, fileSource);
 
     applicationEventPublisher.publishEvent(finalizeParseEvent);
   }
 
-  public void finalizeBatchRecipients(@NonNull final boolean finalize) {
+  public void finalizeBatchMessages(@NonNull final boolean finalize, String fileSource) {
 
-    final var finalizeParseEvent = new BatchCommunicationRecipientEvent(this, finalize);
+    final var finalizeParseEvent = new BatchCommunicationMessageEvent(this, finalize, fileSource);
+
+    applicationEventPublisher.publishEvent(finalizeParseEvent);
+  }
+
+  public void finalizeBatchRecipients(@NonNull final boolean finalize, String fileSource) {
+
+    final var finalizeParseEvent = new BatchCommunicationRecipientEvent(this, finalize, fileSource);
 
     applicationEventPublisher.publishEvent(finalizeParseEvent);
   }

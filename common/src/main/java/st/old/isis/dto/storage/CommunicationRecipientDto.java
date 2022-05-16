@@ -16,24 +16,26 @@ import java.util.List;
 @AllArgsConstructor
 public class CommunicationRecipientDto implements Dto {
 
-    private static final long serialVersionUID = 8815849146610375028L;
+  private static final long serialVersionUID = 8815849146610375028L;
 
-    private String id;
+  private String id;
 
-    private String chainLinkId;
+  private String chainLinkId;
 
-    private String recipient;
+  private String recipient;
 
-    private List<String> recipients;
+  private List<String> recipients;
 
-    private LocalDate dateImported;
+  private LocalDate dateImported;
 
-    // Used for search function
-    private LocalDate dateFrom;
+  // Used for search function
+  private LocalDate dateFrom;
 
-    private LocalDate dateTo;
+  private LocalDate dateTo;
 
-    private Metadata metadata;
+  private Metadata metadata;
 
-    private List<String> chains;
+  private List<String> chains;
+
+  private String fileSource;
 }

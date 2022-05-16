@@ -74,4 +74,6 @@ public class CommunicationMessageDto implements Dto {
   private List<String> recipients;
 
   private List<String> sources;
+
+  private String fileSource;
 }

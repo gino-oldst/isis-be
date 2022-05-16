@@ -16,7 +16,9 @@ import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
+import st.old.isis.storage.entities.temp.TempCommunicationMessage;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
+import st.old.isis.storage.repositories.temp.TempCommunicationMessageRepository;
 import st.old.isis.storage.specifications.CommunicationMessageSpecification;
 import st.old.isis.storage.specifications.RecentMessageSpecification;
 import st.old.isis.utils.ListUtils;
@@ -30,7 +32,7 @@ import java.util.stream.Collectors;
 public class CommunicationMessageService {
 
   private final CommunicationMessageRepository repository;
-
+  private final TempCommunicationMessageRepository tempRepository;
   private final CommunicationRecipientService communicationRecipientService;
 
   @Audited(event = "BATCH_MESSAGE_SAVE")
@@ -40,12 +42,25 @@ public class CommunicationMessageService {
     final var messages =
         request.stream()
             .filter(message -> !Strings.isEmpty(message.getSender()))
-            .map(this::mapToEntity)
+            .map(this::mapToTempEntity)
             .collect(Collectors.toList());
 
-    return repository.saveAll(messages).stream()
+    return tempRepository.saveAll(messages).stream()
         .map(this::mapToResource)
         .collect(Collectors.toList());
+  }
+
+  @Audited(event = "FINALIZE_BATCH_SAVE_MESSAGES")
+  public void finalizeBatch(String fileSource) {
+
+    log.info("Start merging messages...");
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Messages added: {}", repository.merge(fileSource));
+    log.info("Temporary messages deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
+
+    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
@@ -305,7 +320,40 @@ public class CommunicationMessageService {
         .build();
   }
 
+  private TempCommunicationMessage mapToTempEntity(@NonNull final CommunicationMessageDto dto) {
+    return TempCommunicationMessage.builder()
+        .id(dto.getId())
+        .chainLinkId(dto.getChainLinkId())
+        .message(dto.getMessage())
+        .sourceMessageId(dto.getSourceMessageId())
+        .timeSent(dto.getTimeSent())
+        .importDate(dto.getImportDate())
+        .sender(dto.getSender())
+        .subject(dto.getSubject())
+        .source(dto.getSource())
+        .type(dto.getType())
+        .metadata(dto.getMetadata())
+        .fileSource(dto.getFileSource())
+        .build();
+  }
+
   public CommunicationMessageDto mapToResource(@NonNull final CommunicationMessage entity) {
+    return CommunicationMessageDto.builder()
+        .id(entity.getId())
+        .chainLinkId(entity.getChainLinkId())
+        .message(entity.getMessage())
+        .sourceMessageId(entity.getSourceMessageId())
+        .timeSent(entity.getTimeSent())
+        .importDate(entity.getImportDate())
+        .sender(entity.getSender())
+        .subject(entity.getSubject())
+        .source(entity.getSource())
+        .type(entity.getType())
+        .metadata(entity.getMetadata())
+        .build();
+  }
+
+  public CommunicationMessageDto mapToResource(@NonNull final TempCommunicationMessage entity) {
     return CommunicationMessageDto.builder()
         .id(entity.getId())
         .chainLinkId(entity.getChainLinkId())

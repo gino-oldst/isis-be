@@ -37,6 +37,8 @@ public class TempCommunicationRecipient implements Serializable {
 
   private LocalDate dateImported;
 
+  private String fileSource;
+
   @Lob
   @Convert(converter = MetadataConverter.class)
   private Metadata metadata;

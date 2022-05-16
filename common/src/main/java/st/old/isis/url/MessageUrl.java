@@ -24,4 +24,8 @@ public class MessageUrl extends UrlRepository {
   public String batch() {
     return init().pathSegment("batch").toUriString();
   }
+
+  public String merge() {
+    return init().pathSegment("merge").toUriString();
+  }
 }

@@ -2,10 +2,11 @@ package st.old.isis.extraction.events.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.dto.storage.TempDto;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchExternalUsersEvent;
 import st.old.isis.extraction.services.internal.NotificationService;
@@ -36,7 +37,6 @@ public class BatchExternalUserListener
     return obj.getExternalId().equals(newObj.getExternalId());
   }
 
-  @Async
   @Override
   protected void persist(ListDto<ExternalUserDto> list) throws Throwable {
 
@@ -56,13 +56,7 @@ public class BatchExternalUserListener
   }
 
   @Override
-  protected void finalizeEvent() {
-    try {
-      storageService.mergeExternalUsers();
-    } catch (Throwable e) {
-      // todo: save failed requests to a file for retrying or do an immediate retry
-      log.error("Error finalizing persistence of external users: {}", e.getMessage());
-      throw e;
-    }
+  protected void finalizeEvent(String fileSource) throws IsisException {
+    storageService.mergeExternalUsers(TempDto.builder().fileSource(fileSource).build());
   }
 }

@@ -10,10 +10,10 @@ public class BatchCommunicationMessageEvent extends BatchListEvent<Communication
   private static final long serialVersionUID = -2249708530685876479L;
 
   public BatchCommunicationMessageEvent(Object source, List<CommunicationMessageDto> users) {
-    super(source, users, false);
+    super(source, users, false, "");
   }
 
-  public BatchCommunicationMessageEvent(Object source, boolean finalize) {
-    super(source, new ArrayList<>(), finalize);
+  public BatchCommunicationMessageEvent(Object source, boolean finalize, String fileSource) {
+    super(source, new ArrayList<>(), finalize, fileSource);
   }
 }

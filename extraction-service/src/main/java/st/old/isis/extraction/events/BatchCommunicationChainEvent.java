@@ -9,11 +9,11 @@ public class BatchCommunicationChainEvent extends BatchEvent<CommunicationChainD
 
   public BatchCommunicationChainEvent(
       @NonNull final Object source, @NonNull final CommunicationChainDto dto) {
-    super(source, dto, false);
+    super(source, dto, false, "");
   }
 
   public BatchCommunicationChainEvent(
-      @NonNull final Object source, @NonNull final boolean finalize) {
-    super(source, null, finalize);
+      @NonNull final Object source, @NonNull final boolean finalize, String fileSource) {
+    super(source, null, finalize, fileSource);
   }
 }

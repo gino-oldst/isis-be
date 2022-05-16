@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.RecentMessageDto;
+import st.old.isis.dto.storage.TempDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationMessageService;
 
@@ -25,6 +26,11 @@ public class CommunicationMessageController {
   public List<CommunicationMessageDto> batch(
       @RequestBody final List<CommunicationMessageDto> messages) {
     return service.batchSave(messages);
+  }
+
+  @PostMapping("/merge")
+  public void merge(@RequestBody TempDto dto) {
+    service.finalizeBatch(dto.getFileSource());
   }
 
   @GetMapping("/{id}")

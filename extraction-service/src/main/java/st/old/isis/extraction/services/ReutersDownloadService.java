@@ -86,7 +86,7 @@ public class ReutersDownloadService extends AzureDownloadService {
 
     final var inputStream = client.openInputStream();
 
-    unzipFile(inputStream);
+    unzipFile(inputStream, client.getFilePath());
   }
 
   private List<String> directoryFilenamePrefixes() {
@@ -97,7 +97,7 @@ public class ReutersDownloadService extends AzureDownloadService {
     return List.of("messages.xml");
   }
 
-  private void unzipFile(@NonNull final InputStream inputStream) {
+  private void unzipFile(@NonNull final InputStream inputStream, @NonNull final String fileSource) {
 
     try {
 
@@ -118,7 +118,7 @@ public class ReutersDownloadService extends AzureDownloadService {
 
           auditUtil.audit("REUTERS_UNZIP_FILE", Map.of("filename", filename));
 
-          processXml(clone);
+          processXml(clone, fileSource);
 
         } else {
           log.info("Ignore unzipped file: {}", zipEntry.getName());
@@ -139,9 +139,10 @@ public class ReutersDownloadService extends AzureDownloadService {
     return new ByteArrayInputStream(baos.toByteArray());
   }
 
-  private void processXml(@NonNull final InputStream inputStream) {
+  private void processXml(
+      @NonNull final InputStream inputStream, @NonNull final String fileSource) {
     try {
-      extractionService.processXml(inputStream);
+      extractionService.processXml(inputStream, fileSource);
     } catch (JAXBException | IsisException e) {
       log.error("Error processing xml file: {}", e.getMessage());
       e.printStackTrace();

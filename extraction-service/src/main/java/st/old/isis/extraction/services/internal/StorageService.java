@@ -5,10 +5,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.CommunicationChainDto;
-import st.old.isis.dto.storage.CommunicationMessageDto;
-import st.old.isis.dto.storage.CommunicationRecipientDto;
-import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.dto.storage.*;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.builder.StorageUrl;
 import st.old.isis.utils.HttpEntityBuilder;
@@ -104,33 +101,60 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  public void mergeExternalUsers() {
+  public void mergeExternalUsers(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.externalUser().merge();
 
-    final var entity = HttpEntityBuilder.transactionalBuilder().jsonContent().build();
+    final var entity =
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
 
     final var typeReference = new ParameterizedTypeReference<Void>() {};
 
     restService.post(url, entity, typeReference);
   }
 
-  public void mergeCommunicationRecipients() {
+  public void mergeCommunicationRecipients(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.recipient().merge();
 
-    final var entity = HttpEntityBuilder.transactionalBuilder().jsonContent().build();
+    final var entity =
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
 
     final var typeReference = new ParameterizedTypeReference<Void>() {};
 
     restService.post(url, entity, typeReference);
   }
 
-  public void mergeChain() {
+  public void mergeChain(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.chain().merge();
 
-    final var entity = HttpEntityBuilder.transactionalBuilder().jsonContent().build();
+    final var entity =
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
+
+    final var typeReference = new ParameterizedTypeReference<Void>() {};
+
+    restService.post(url, entity, typeReference);
+  }
+
+  public void mergeMessages(@NonNull final TempDto request) throws IsisException {
+
+    final var url = storageUrl.message().merge();
+
+    final var entity =
+        HttpEntityBuilder.transactionalBuilder()
+            .jsonContent()
+            .body(objectUtils.toString(request))
+            .build();
 
     final var typeReference = new ParameterizedTypeReference<Void>() {};
 

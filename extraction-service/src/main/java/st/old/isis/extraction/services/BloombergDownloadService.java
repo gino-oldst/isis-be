@@ -94,11 +94,11 @@ public class BloombergDownloadService extends AzureDownloadService {
       final var now = LocalDate.now();
 
       if (isChat(filename)) {
-        chatExtractionService.parse(inputStream, now);
+        chatExtractionService.parse(inputStream, now, client.getFilePath());
       }
 
       if (isEmail(filename)) {
-        emailExtractionService.parse(inputStream, now);
+        emailExtractionService.parse(inputStream, now, client.getFilePath());
       }
 
     } catch (JAXBException | XMLStreamException e) {

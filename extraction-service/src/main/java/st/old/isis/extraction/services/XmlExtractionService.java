@@ -23,12 +23,12 @@ public abstract class XmlExtractionService {
   private final NotificationService notificationService;
 
   protected abstract void processReader(
-      @NonNull final XMLStreamReader reader, @NonNull final LocalDate importDate)
+      @NonNull final XMLStreamReader reader, @NonNull final LocalDate importDate, String fileSource)
       throws JAXBException;
 
-  protected abstract void finalizeParsing();
+  protected abstract void finalizeParsing(String fileSource);
 
-  public void parse(InputStream inputStream, LocalDate importDate)
+  public void parse(InputStream inputStream, LocalDate importDate, String fileSource)
       throws XMLStreamException, JAXBException {
 
     final var xmlInputFactory = XMLInputFactory.newInstance();
@@ -41,11 +41,11 @@ public abstract class XmlExtractionService {
       eventType = reader.next();
 
       if (eventType == XMLEvent.START_ELEMENT) {
-        processReader(reader, importDate);
+        processReader(reader, importDate, fileSource);
       }
 
       if (eventType == XMLEvent.END_DOCUMENT) {
-        finalizeParsing();
+        finalizeParsing(fileSource);
       }
     }
   }

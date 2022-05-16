@@ -8,6 +8,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
+import st.old.isis.dto.storage.TempDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.ExternalUserService;
 import st.old.isis.utils.ObjectUtils;
@@ -34,8 +35,8 @@ public class ExternalUserController {
   }
 
   @PostMapping("/merge")
-  public void merge() {
-    service.finalizeBatch();
+  public void merge(@RequestBody TempDto dto) {
+    service.finalizeBatch(dto.getFileSource());
   }
 
   @PostMapping("/search")

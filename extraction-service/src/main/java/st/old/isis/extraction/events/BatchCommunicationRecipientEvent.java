@@ -10,10 +10,10 @@ public class BatchCommunicationRecipientEvent extends BatchListEvent<Communicati
   private static final long serialVersionUID = -7303233405883575413L;
 
   public BatchCommunicationRecipientEvent(Object source, List<CommunicationRecipientDto> users) {
-    super(source, users, false);
+    super(source, users, false, "");
   }
 
-  public BatchCommunicationRecipientEvent(Object source, boolean finalize) {
-    super(source, new ArrayList<>(), finalize);
+  public BatchCommunicationRecipientEvent(Object source, boolean finalize, String fileSource) {
+    super(source, new ArrayList<>(), finalize, fileSource);
   }
 }

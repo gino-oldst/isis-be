@@ -20,7 +20,7 @@ public interface ExternalUserRepository
               + "\tSELECT *\n"
               + "    FROM (\n"
               + "        SELECT *, ROW_NUMBER() OVER (PARTITION BY external_id, source ORDER BY date_modified DESC) AS rowNum\n"
-              + "        FROM temp_external_user\n"
+              + "        FROM temp_external_user where file_source = ?1\n"
               + "    ) t\n"
               + "    WHERE t.rowNum = 1) AS temp ON (main.external_id = temp.external_id and main.source = temp.source)\n"
               + "WHEN NOT MATCHED BY TARGET\n"
@@ -28,5 +28,5 @@ public interface ExternalUserRepository
               + "INSERT (id, date_created, date_modified, deleted, email, external_id, first_name, last_name, phone_number, source, type)\n"
               + "VALUES (temp.id, temp.date_created, temp.date_modified, temp.deleted, temp.email, temp.external_id, temp.first_name, temp.last_name, temp.phone_number, temp.source, temp.type); SELECT @@ROWCOUNT AS mergedItems",
       nativeQuery = true)
-  int merge();
+  int merge(String fileSource);
 }

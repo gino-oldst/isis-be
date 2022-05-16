@@ -10,10 +10,10 @@ public class BatchExternalUsersEvent extends BatchListEvent<ExternalUserDto> {
   private static final long serialVersionUID = -3804315348376640601L;
 
   public BatchExternalUsersEvent(Object source, List<ExternalUserDto> users) {
-    super(source, users, false);
+    super(source, users, false, "");
   }
 
-  public BatchExternalUsersEvent(Object source, boolean finalize) {
-    super(source, new ArrayList<>(), finalize);
+  public BatchExternalUsersEvent(Object source, boolean finalize, String fileSource) {
+    super(source, new ArrayList<>(), finalize, fileSource);
   }
 }

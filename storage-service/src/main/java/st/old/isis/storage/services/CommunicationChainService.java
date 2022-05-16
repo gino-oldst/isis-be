@@ -68,14 +68,15 @@ public class CommunicationChainService {
         .success();
   }
 
-  public void finalizeBatch() {
+  @Audited(event = "FINALIZE_BATCH_SAVE_CHAINS")
+  public void finalizeBatch(String fileSource) {
 
     log.info("Start merging chain...");
 
     final long start = System.currentTimeMillis();
 
-    log.info("Chains added: {}", repository.merge());
-    tempRepository.deleteAllInBatch();
+    log.info("Chains added: {}", repository.merge(fileSource));
+    log.info("Temporary chains deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
   }
@@ -175,6 +176,7 @@ public class CommunicationChainService {
         .dateCreated(dto.getDateCreated())
         .dateModified(dto.getDateModified())
         .deleted(dto.isDeleted())
+        .fileSource(dto.getFileSource())
         .build();
   }
 
