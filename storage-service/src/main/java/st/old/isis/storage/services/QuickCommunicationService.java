@@ -54,7 +54,7 @@ public class QuickCommunicationService {
         final var filterDateTimeFrom= filter.getDateFrom();
         final var filterDateTimeTo= filter.getDateTo();
 
-        distinctMessageIds.forEach(messageId ->clea {
+        distinctMessageIds.forEach(messageId -> {
 
             try {
 
