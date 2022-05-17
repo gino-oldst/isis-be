@@ -394,7 +394,10 @@ public class CommunicationMessageService {
       return ListDto.emptyList();
     }
 
-    final var totalSize = messages.size();
+    final var comparator = comparator(pageable);
+    final var sortedMessages = messages.stream().sorted(comparator).collect(Collectors.toList());
+
+    final var totalSize = sortedMessages.size();
     final var pageSize = pageable.getPageSize();
     final var pageNum = pageable.getPageNumber();
 
@@ -413,12 +416,7 @@ public class CommunicationMessageService {
           .success();
     }
 
-    final var comparator = comparator(pageable);
-
-    final var pagedResults =
-        messages.subList(startingIndex, endingIndex).stream()
-            .sorted(comparator)
-            .collect(Collectors.toList());
+    final var pagedResults = new ArrayList<>(sortedMessages.subList(startingIndex, endingIndex));
 
     return ListDto.<CommunicationMessageDto>builder()
         .data(pagedResults)
