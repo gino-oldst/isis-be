@@ -55,6 +55,12 @@ public class AlertLog implements Serializable {
 
     private LocalDate importDate;
 
+    private LocalDateTime timeSent;
+
+    private String sender;
+
+    private String source;
+
     @Enumerated(EnumType.STRING)
     private AlertStatusType status;
 

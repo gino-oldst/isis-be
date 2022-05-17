@@ -25,6 +25,8 @@ public class AlertLogDto implements Dto {
 
     private String commMessageId;
 
+    private List<String> commMessageIds;
+
     private String message;
 
     private String policyId;
@@ -45,6 +47,12 @@ public class AlertLogDto implements Dto {
 
     private LocalDate importDate;
 
+    private LocalDateTime timeSent;
+
+    private String sender;
+
+    private String source;
+
     private LocalDateTime dateCreated;
 
     private LocalDateTime dateModified;
@@ -53,9 +61,17 @@ public class AlertLogDto implements Dto {
 
     private LocalDateTime dateCreatedToRange;
 
+    private LocalDateTime timeSentFromRange;
+
+    private LocalDateTime timeSentToRange;
+
     private List<String> keywordIds;
 
     private List<AlertStatusType> statusTypes;
+
+    private List<String> senders;
+
+    private List<String> sources;
 
     private boolean deleted;
 }

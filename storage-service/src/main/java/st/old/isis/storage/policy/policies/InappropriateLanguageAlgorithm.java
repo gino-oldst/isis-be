@@ -89,6 +89,9 @@ public class InappropriateLanguageAlgorithm {
                                     .keyword(emit.getKeyword())
                                     .keywordId(keywordDto.getId())
                                     .importDate(importDate)  // For internal use only
+                                    .timeSent(message.getTimeSent())
+                                    .sender(message.getSender())
+                                    .source(message.getSource())
                                     .build();
 
                             log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());

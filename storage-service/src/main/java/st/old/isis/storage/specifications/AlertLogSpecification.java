@@ -34,6 +34,10 @@ public class AlertLogSpecification implements Specification<AlertLog> {
             predicates.add(cb.equal(root.get("commMessageId"), filter.getCommMessageId()));
         }
 
+        if (!ListUtils.isNullOrEmpty(filter.getCommMessageIds())) {
+            predicates.add(root.get("commMessageId").in(filter.getCommMessageIds()));
+        }
+
         if (filter.getKeyword() != null) {
             predicates.add(cb.like(root.get("keyword"), "%"+filter.getKeyword()+"%"));
         }
@@ -57,6 +61,28 @@ public class AlertLogSpecification implements Specification<AlertLog> {
         if (filter.getDateCreatedFromRange() != null && filter.getDateCreatedToRange() != null) {
             predicates.add(cb.between(root.get("dateCreated"), filter.getDateCreatedFromRange(), filter.getDateCreatedToRange()));
         }
+
+        if (filter.getSender() != null) {
+            predicates.add(cb.equal(root.get("sender"), filter.getSender()));
+        }
+
+        if (filter.getSource() != null) {
+            predicates.add(cb.equal(root.get("source"), filter.getSource()));
+        }
+
+        if (!ListUtils.isNullOrEmpty(filter.getSources())) {
+            predicates.add(root.get("source").in(filter.getSources()));
+        }
+
+        if (!ListUtils.isNullOrEmpty(filter.getSenders())) {
+            predicates.add(root.get("sender").in(filter.getSenders()));
+        }
+
+        if (filter.getTimeSentFromRange() != null && filter.getTimeSentToRange() != null) {
+            predicates.add(cb.between(root.get("timeSent"), filter.getTimeSentFromRange(), filter.getTimeSentToRange()));
+        }
+
+
 
         return cb.and(predicates.toArray(Predicate[]::new));
     }

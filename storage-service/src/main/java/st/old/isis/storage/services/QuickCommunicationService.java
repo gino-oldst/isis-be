@@ -54,38 +54,7 @@ public class QuickCommunicationService {
         final var filterDateTimeFrom= filter.getDateFrom();
         final var filterDateTimeTo= filter.getDateTo();
 
-        // Filter messages using message fields
-
-        distinctMessageIds =  distinctMessageIds.stream().filter(m -> {
-                    try {
-                        final var commMessage = communicationMessageService.getById(m);
-
-                        if((filterDateTimeFrom != null && filterDateTimeTo != null) &&
-                                (commMessage.getTimeSent().isBefore(filterDateTimeFrom) || commMessage.getTimeSent().isAfter(filterDateTimeTo))) {
-                            return false;
-                        }
-
-                        if(!ListUtils.isNullOrEmpty(filter.getSenders()) && !filter.getSenders().contains(commMessage.getSender())) {
-                            return false;
-                        }
-
-                        if(!ListUtils.isNullOrEmpty(filter.getSources()) && !filter.getSources().contains(commMessage.getSource())) {
-                            return false;
-                        }
-
-                        return true;
-
-                    } catch (IsisException e) {
-                        log.error(e.getMessage());
-                        return false;
-                    }}).collect(Collectors.toList());
-
-
-        final var keywordIds = filter.getKeywordIds();
-
-        // TODO Filter for alerts
-
-        distinctMessageIds.forEach(messageId -> {
+        distinctMessageIds.forEach(messageId ->clea {
 
             try {
 
@@ -93,6 +62,10 @@ public class QuickCommunicationService {
                 final var alerts = alertLogService.search(AlertLogDto.builder()
                                 .keywordIds(filter.getKeywordIds())
                                 .statusTypes(filter.getStatusTypes())
+                                .sources(filter.getSources())
+                                .senders(filter.getSenders())
+                                .timeSentFromRange(filterDateTimeFrom)
+                                .timeSentToRange(filterDateTimeTo)
                                 .commMessageId(messageId).build());
 
                 if(!ListUtils.isNullOrEmpty(alerts.getData())) {
