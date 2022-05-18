@@ -56,8 +56,6 @@ public class QuickCommunicationService {
 
         distinctMessageIds.forEach(messageId -> {
 
-            try {
-
                 // Retrieve alerts for that specific message
                 final var alerts = alertLogService.search(AlertLogDto.builder()
                                 .keywordIds(filter.getKeywordIds())
@@ -69,24 +67,19 @@ public class QuickCommunicationService {
                                 .commMessageId(messageId).build());
 
                 if(!ListUtils.isNullOrEmpty(alerts.getData())) {
-                    // Retrieve message
-                    final var message= communicationMessageService.getById(messageId);
+
+                    final var chainLinkId = alerts.getData().get(0).getCommChainLinkId();
 
                     // Retrieve the recipients
-                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
+                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(chainLinkId).build());
 
                     final var quickComm = QuickCommunicationDto.builder()
-                            .message(message)
                             .alerts(alerts)
                             .recipients(recipients)
                             .build();
 
                     quickCommList.add(quickComm);
                 }
-
-            } catch (IsisException e) {
-                log.error("An error occurred during generation of quick communication object: {}", e.getMessage());
-            }
 
         });
 
