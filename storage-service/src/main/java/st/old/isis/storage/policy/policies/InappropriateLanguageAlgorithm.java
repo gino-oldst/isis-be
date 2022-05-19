@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.*;
 import st.old.isis.enums.AlertStatusType;
+import st.old.isis.enums.MessageType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.AlertLogService;
 import st.old.isis.storage.services.CommunicationMessageService;
@@ -66,38 +67,47 @@ public class InappropriateLanguageAlgorithm {
 
         for(CommunicationMessageDto message: commMessages){
 
-            final var emits= trie.parseText(message.getMessage());
+            log.info("Processing inappropriate algorithm for message id {}", message.getId());
 
-            if(!emits.isEmpty()) {
-                emits.stream()
-                        .forEach( emit -> {
+            if(message.getMessage() == null) {
+                if(message.getType() != null || !message.getType().equals(MessageType.BLOOMBERG_CHAT_ATTACHMENT)){
+                    log.error("Message Id {} has a message of NULL value but is from source {}. ", message.getId(), message.getSource());
+                }
+            } else {
+                final var emits= trie.parseText(message.getMessage());
 
-                            final var keywordDto= keywordsMap.get(emit.getKeyword());
+                if(!emits.isEmpty()) {
+                    emits.stream()
+                            .forEach( emit -> {
 
-                            if(keywordDto == null){
-                                log.warn("No keywords found in keywords map for {}", emit.getKeyword());
-                                return;
-                            }
+                                final var keywordDto= keywordsMap.get(emit.getKeyword());
 
-                            final var alert= AlertLogDto.builder()
-                                    .commChainLinkId(message.getChainLinkId())
-                                    .commMessageId(message.getId())
-                                    .message(message.getMessage())
-                                    .policyId(policyId)
-                                    .description(null) // TODO Generated alert description
-                                    .status(AlertStatusType.OPEN)
-                                    .keyword(emit.getKeyword())
-                                    .keywordId(keywordDto.getId())
-                                    .importDate(importDate)  // For internal use only
-                                    .timeSent(message.getTimeSent())
-                                    .sender(message.getSender())
-                                    .source(message.getSource())
-                                    .build();
+                                if(keywordDto == null){
+                                    log.warn("No keywords found in keywords map for {}", emit.getKeyword());
+                                    return;
+                                }
 
-                            log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
-                            alertLogService.create(alert);
-                        });
+                                final var alert= AlertLogDto.builder()
+                                        .commChainLinkId(message.getChainLinkId())
+                                        .commMessageId(message.getId())
+                                        .message(message.getMessage())
+                                        .policyId(policyId)
+                                        .description(null) // TODO Generated alert description
+                                        .status(AlertStatusType.OPEN)
+                                        .keyword(emit.getKeyword())
+                                        .keywordId(keywordDto.getId())
+                                        .importDate(importDate)  // For internal use only
+                                        .timeSent(message.getTimeSent())
+                                        .sender(message.getSender())
+                                        .source(message.getSource())
+                                        .build();
+
+                                log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
+                                alertLogService.create(alert);
+                            });
+                }
             }
+
         }
 
 
