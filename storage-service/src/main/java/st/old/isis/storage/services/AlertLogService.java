@@ -1,5 +1,6 @@
 package st.old.isis.storage.services;
 
+import antlr.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -199,10 +200,17 @@ public class AlertLogService {
     //map read-only properties from old entity to new entity
     private AlertLog mapToEntity(@NonNull AlertLog oldEntity, @NonNull AlertLogDto newDto) {
 
-        final var entity = mapToEntity(newDto);
-        entity.setDateCreated(oldEntity.getDateCreated());
+        final var updatedEntity= mapToResource(oldEntity);
 
-        return entity;
+        if(newDto.getStatus() != null){
+            updatedEntity.setStatus(newDto.getStatus());
+        }
+
+        if(newDto.getNotes() != null && !newDto.getNotes().isEmpty()){
+            updatedEntity.setNotes(newDto.getNotes());
+        }
+
+        return mapToEntity(updatedEntity);
     }
 
     private void addActivityLog(@NonNull final String messageId, @NonNull final String message) {
