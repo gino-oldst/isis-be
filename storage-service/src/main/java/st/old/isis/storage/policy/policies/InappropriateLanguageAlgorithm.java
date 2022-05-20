@@ -56,7 +56,7 @@ public class InappropriateLanguageAlgorithm {
                 .map(k -> k.getValue().getWord())
                 .collect(Collectors.toSet());
 
-        Trie trie = Trie.builder().onlyWholeWords().ignoreCase().addKeywords(keywords).build();
+        Trie trie = Trie.builder().ignoreCase().addKeywords(keywords).build();
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
             log.warn("No communication messages found.");
