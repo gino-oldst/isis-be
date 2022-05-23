@@ -177,6 +177,7 @@ public class CommunicationMessageService {
 
     final var messageFilter =
         CommunicationMessageDto.builder()
+            .id(filter.getId())
             .dateSentFrom(filter.getDateSentFrom())
             .dateSentTo(filter.getDateSentTo())
             .source(filter.getSource())
