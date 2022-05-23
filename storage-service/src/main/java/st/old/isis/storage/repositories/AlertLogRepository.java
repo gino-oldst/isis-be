@@ -2,6 +2,7 @@ package st.old.isis.storage.repositories;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,10 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, String>,
     @Query("SELECT DISTINCT a.commMessageId FROM AlertLog a")
     public Page<String> findDistinctMessagesPaged(Pageable pageable);
 
-    @Query("SELECT DISTINCT a.commMessageId FROM AlertLog a")
-    public List<String> findDistinctMessages();
+    @Query("SELECT DISTINCT a.commMessageId, a.timeSent FROM AlertLog a ORDER BY a.timeSent DESC")
+    List<Object[]> findDistinctMessages();
+
+    @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.sender FROM AlertLog a")
+    List<Object[]> findDistinctMessagesOrderBy(Sort sort);
 
 }

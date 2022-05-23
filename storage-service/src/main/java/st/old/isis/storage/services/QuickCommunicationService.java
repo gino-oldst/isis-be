@@ -43,9 +43,9 @@ public class QuickCommunicationService {
     @Audited(event = "SEARCH_PAGED_QUICK_COMMUNICATION")
     public ListDto<QuickCommunicationDto> search(@NonNull @Audited final QuickCommunicationDto filter, @Audited Pageable pageable) throws IsisException {
 
-        var distinctMessageIds = alertLogRepository.findDistinctMessages();
+        List<Object[]> distinctMessageIds = alertLogRepository.findDistinctMessagesOrderBy(pageable.getSort());
 
-        if(distinctMessageIds.isEmpty()){
+        if(ListUtils.isNullOrEmpty(distinctMessageIds)){
             throw IsisException.notFound("No messages found for indicated filter", "NotFoundException");
         }
 
@@ -54,7 +54,9 @@ public class QuickCommunicationService {
         final var filterDateTimeFrom= filter.getDateFrom();
         final var filterDateTimeTo= filter.getDateTo();
 
-        distinctMessageIds.forEach(messageId -> {
+        distinctMessageIds.forEach(obj -> {
+
+                String messageId = (String) obj[0];
 
                 // Retrieve alerts for that specific message
                 final var alerts = alertLogService.search(AlertLogDto.builder()
