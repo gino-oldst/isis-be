@@ -17,12 +17,17 @@ import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.entities.temp.TempCommunicationMessage;
+import st.old.isis.storage.processors.MessageSearchProcessor;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
+import st.old.isis.storage.repositories.StreamedCommunicationMessageRepository;
 import st.old.isis.storage.repositories.temp.TempCommunicationMessageRepository;
 import st.old.isis.storage.specifications.CommunicationMessageSpecification;
 import st.old.isis.storage.specifications.RecentMessageSpecification;
 import st.old.isis.utils.ListUtils;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,8 +37,10 @@ import java.util.stream.Collectors;
 public class CommunicationMessageService {
 
   private final CommunicationMessageRepository repository;
+  private final StreamedCommunicationMessageRepository streamedRepository;
   private final TempCommunicationMessageRepository tempRepository;
   private final CommunicationRecipientService communicationRecipientService;
+  private final MessageSearchProcessor messageSearchProcessor;
 
   @Audited(event = "BATCH_MESSAGE_SAVE")
   public List<CommunicationMessageDto> batchSave(
@@ -141,11 +148,14 @@ public class CommunicationMessageService {
       filteredResults =
           rawResults.stream()
               .filter(message -> recipientMap.containsKey(message.getChainLinkId()))
-              .map(this::mapToResource)
+              .map(CommunicationMessageService::mapToResource)
               .collect(Collectors.toList());
 
     } else {
-      filteredResults = rawResults.stream().map(this::mapToResource).collect(Collectors.toList());
+      filteredResults =
+          rawResults.stream()
+              .map(CommunicationMessageService::mapToResource)
+              .collect(Collectors.toList());
     }
 
     final var size = filteredResults.size();
@@ -170,10 +180,10 @@ public class CommunicationMessageService {
       throws IsisException {
 
     final long start = System.currentTimeMillis();
-
-    final Map<String, List<String>> recipientMap;
-
-    final var recipients = filter.getRecipients();
+    log.info(
+        "Start Time: {} Search Filter: {}",
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(start), ZoneId.systemDefault()),
+        filter);
 
     final var messageFilter =
         CommunicationMessageDto.builder()
@@ -188,63 +198,23 @@ public class CommunicationMessageService {
 
     final var spec = new CommunicationMessageSpecification(messageFilter);
 
-    final var searchResults = repository.findAll(spec);
-
     final var keyword = filter.getMessage();
+    final var recipients = filter.getRecipients();
 
-    final var chains =
-        searchResults.stream()
-            .map(CommunicationMessage::getChainLinkId)
-            .distinct()
-            .collect(Collectors.toList());
+    final List<CommunicationMessageDto> filteredResults;
 
-    if (chains.size() > 2000) {
-      throw IsisException.badRequest(
-          "Search parameter exceeded. Please modify filter", "SearchFilterException");
+    messageSearchProcessor.init(keyword, recipients);
+
+    try (final var searchResults = streamedRepository.findAll(spec)) {
+      searchResults.forEach(messageSearchProcessor::addToQueue);
     }
 
-    if (!ListUtils.isNullOrEmpty(recipients)) {
+    filteredResults = messageSearchProcessor.getFilteredMessages();
 
-      final var recipientFilter =
-          CommunicationRecipientDto.builder()
-              .chains(chains)
-              .recipients(filter.getRecipients())
-              .build();
+    final var endTime = System.currentTimeMillis() - start;
 
-      final var rec = communicationRecipientService.search(recipientFilter).getData();
-
-      recipientMap =
-          rec.stream()
-              .collect(
-                  Collectors.toMap(
-                      CommunicationRecipientDto::getChainLinkId,
-                      (recipient) -> new ArrayList<>(List.of(recipient.getRecipient())),
-                      (old, latest) -> {
-                        old.addAll(latest);
-                        return old;
-                      }));
-
-      final var filteredResults =
-          searchResults.stream()
-              .filter(message -> recipientMap.containsKey(message.getChainLinkId()))
-              .filter(message -> messageContainsKeyword(message.getMessage(), keyword))
-              .map(this::mapToResource)
-              .peek(
-                  message ->
-                      message.setRecipients(
-                          recipientMap.getOrDefault(message.getChainLinkId(), new ArrayList<>())))
-              .collect(Collectors.toList());
-
-      return returnFilteredResults(filteredResults, pageable, System.currentTimeMillis() - start);
-    }
-
-    final var filteredResults =
-        searchResults.stream()
-            .filter(message -> messageContainsKeyword(message.getMessage(), keyword))
-            .map(this::mapToResource)
-            .collect(Collectors.toList());
-
-    return returnFilteredResults(filteredResults, pageable, System.currentTimeMillis() - start);
+    log.info("Elapsed Time: {}ms Search Filter: {}", filter, endTime);
+    return returnFilteredResults(filteredResults, pageable, endTime);
   }
 
   private ListDto<CommunicationMessageDto> returnFilteredResults(
@@ -277,14 +247,14 @@ public class CommunicationMessageService {
         repository
             .findAll(beforeSpec, pageable)
             .get()
-            .map(this::mapToResource)
+            .map(CommunicationMessageService::mapToResource)
             .collect(Collectors.toList());
 
     final var afterResults =
         repository
             .findAll(afterSpec, pageable)
             .get()
-            .map(this::mapToResource)
+            .map(CommunicationMessageService::mapToResource)
             .collect(Collectors.toList());
 
     Collections.reverse(beforeResults);
@@ -338,7 +308,7 @@ public class CommunicationMessageService {
         .build();
   }
 
-  public CommunicationMessageDto mapToResource(@NonNull final CommunicationMessage entity) {
+  public static CommunicationMessageDto mapToResource(@NonNull final CommunicationMessage entity) {
     return CommunicationMessageDto.builder()
         .id(entity.getId())
         .chainLinkId(entity.getChainLinkId())
@@ -425,40 +395,6 @@ public class CommunicationMessageService {
         .totalCurrentElements(pagedResults.size())
         .totalPages(totalPages)
         .build();
-  }
-
-  private boolean messageContainsKeyword(String message, String keyword) {
-
-    if (Objects.isNull(message)) {
-      return false;
-    }
-
-    return Strings.isEmpty(keyword) || containsIgnoreCase(message, keyword);
-  }
-
-  public static boolean containsIgnoreCase(String source, String word) {
-    final var length = word.length();
-    if (length == 0) {
-      return true;
-    }
-
-    final var firstLo = Character.toLowerCase(word.charAt(0));
-    final var firstUp = Character.toUpperCase(word.charAt(0));
-
-    for (int i = source.length() - length; i >= 0; i--) {
-
-      final var ch = source.charAt(i);
-
-      if (ch != firstLo && ch != firstUp) {
-        continue;
-      }
-
-      if (source.regionMatches(true, i, word, 0, length)) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private Comparator<CommunicationMessageDto> comparator(Pageable pageable) {

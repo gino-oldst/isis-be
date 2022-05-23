@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
+import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.dto.storage.TempDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.processors.MessageSearchProcessor;
 import st.old.isis.storage.services.CommunicationMessageService;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
 public class CommunicationMessageController {
 
   private final CommunicationMessageService service;
+  private final MessageSearchProcessor messageSearchProcessor;
 
   @PostMapping("/batch")
   public List<CommunicationMessageDto> batch(
@@ -47,7 +50,15 @@ public class CommunicationMessageController {
   @PostMapping("/search/paged")
   public ListDto<CommunicationMessageDto> pagedSearch(
       @RequestBody final CommunicationMessageDto filter, Pageable pageable) throws IsisException {
-    return service.search(filter, pageable);
+    try {
+      return service.search(filter, pageable);
+    } catch (TransactionTimedOutException e) {
+      throw IsisException.timeout(
+          "Search reached timeout. Modify filters to generate smaller result",
+          "RequestTimeoutException");
+    } finally {
+      messageSearchProcessor.destroy();
+    }
   }
 
   @DeleteMapping("/{id}")

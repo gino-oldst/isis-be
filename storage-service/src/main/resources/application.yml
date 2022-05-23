@@ -56,3 +56,5 @@ isis:
         lock-time: ${SCHEDULER_PROCESSOR_ALL_PENDING_LOCK_TIME}
   search:
     timeout: ${SEARCH_TIMEOUT}
+  database:
+    batch-size: ${DATABASE_BATCH_SIZE}

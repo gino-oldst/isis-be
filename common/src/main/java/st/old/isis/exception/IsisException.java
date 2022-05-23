@@ -73,4 +73,9 @@ public class IsisException extends Exception {
       @NonNull final String message, @NonNull final String exception) {
     return new IsisException(HttpStatus.CONFLICT, message, exception);
   }
+
+  public static IsisException timeout(
+          @NonNull final String message, @NonNull final String exception) {
+    return new IsisException(HttpStatus.REQUEST_TIMEOUT, message, exception);
+  }
 }
