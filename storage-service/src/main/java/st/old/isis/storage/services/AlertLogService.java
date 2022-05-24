@@ -4,6 +4,7 @@ import antlr.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
@@ -130,6 +131,24 @@ public class AlertLogService {
                 .totalNoOfRecords(searchResults.getTotalElements())
                 .totalPages(searchResults.getTotalPages())
                 .totalCurrentElements(searchResults.getNumberOfElements())
+                .build()
+                .success();
+    }
+
+    @Audited(event = "SEARCH_SORT_ALERT_LOG")
+    public ListDto<AlertLogDto> search(@NonNull @Audited final AlertLogDto filter, @Audited Sort sort) {
+
+        final var spec = new AlertLogSpecification(filter);
+
+        final var searchResults = repository.findAll(spec, sort);
+
+        final var results = searchResults.stream()
+                .map(this::mapToResource)
+                .collect(Collectors.toList());
+
+        return ListDto.<AlertLogDto>builder()
+                .data(results)
+                .totalNoOfRecords(searchResults.size())
                 .build()
                 .success();
     }

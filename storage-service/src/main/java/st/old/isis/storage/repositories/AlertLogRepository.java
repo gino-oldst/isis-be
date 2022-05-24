@@ -17,10 +17,10 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, String>,
     @Query("SELECT DISTINCT a.commMessageId FROM AlertLog a")
     public Page<String> findDistinctMessagesPaged(Pageable pageable);
 
-    @Query("SELECT DISTINCT a.commMessageId, a.timeSent FROM AlertLog a ORDER BY a.timeSent DESC")
+    @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.source, a.sender FROM AlertLog a ORDER BY a.timeSent DESC")
     List<Object[]> findDistinctMessages();
 
-    @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.sender FROM AlertLog a")
+    @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.source, a.sender FROM AlertLog a")
     List<Object[]> findDistinctMessagesOrderBy(Sort sort);
 
 }
