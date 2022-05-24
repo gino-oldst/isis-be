@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
@@ -86,10 +87,15 @@ public class ExternalUserService {
   }
 
   @Audited(event = "SEARCH_EXTERNAL_USER")
-  public ListDto<ExternalUserDto> search(@NonNull @Audited final ExternalUserDto filter) {
+  public ListDto<ExternalUserDto> search(
+      @NonNull @Audited final ExternalUserDto filter, Sort sort) {
+
+    final var spec = new ExternalUserSpecification(filter);
 
     final var results =
-        findAll(filter).stream().map(this::mapToResource).collect(Collectors.toList());
+        repository.findAll(spec, sort).stream()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
 
     final var size = results.size();
 

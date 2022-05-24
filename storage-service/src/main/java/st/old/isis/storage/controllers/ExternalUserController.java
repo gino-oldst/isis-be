@@ -40,8 +40,9 @@ public class ExternalUserController {
   }
 
   @PostMapping("/search")
-  public ListDto<ExternalUserDto> search(@RequestBody final ExternalUserDto filter) {
-    return service.search(filter);
+  public ListDto<ExternalUserDto> search(
+      @RequestBody final ExternalUserDto filter, Pageable pageable) {
+    return service.search(filter, pageable.getSort());
   }
 
   @PostMapping("/search/paged")

@@ -67,7 +67,8 @@ public class ExternalUserSpecification implements Specification<ExternalUser> {
     final var likeFirstname = filter.getLikeFirstName();
 
     if (likeFirstname != null) {
-      sortPredicates.add(cb.like(root.get("firstName"), likeFirstname + "%"));
+      final var concatExp = cb.concat(cb.concat(root.get("firstName"), " "), root.get("lastName"));
+      sortPredicates.add(cb.like(concatExp, likeFirstname + "%"));
     }
 
     final var likeLastname = filter.getLikeLastName();
