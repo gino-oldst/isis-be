@@ -213,7 +213,7 @@ public class CommunicationMessageService {
 
     final var endTime = System.currentTimeMillis() - start;
 
-    log.info("Elapsed Time: {}ms Search Filter: {}", filter, endTime);
+    log.info("Elapsed Time: {}ms Search Filter: {}", endTime, filter);
     return returnFilteredResults(filteredResults, pageable, endTime);
   }
 

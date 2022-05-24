@@ -74,8 +74,6 @@ public class MessageSearchProcessor {
     final var batchSize = dbConfiguration.getBatchSize();
 
     if (getThreadQueue().size() >= batchSize) {
-      log.info("Filtering [{} of {}] messages", batchSize, queue.size());
-
       final var cycle = queue.size() / batchSize;
 
       for (int x = 0; x < cycle; x++) {

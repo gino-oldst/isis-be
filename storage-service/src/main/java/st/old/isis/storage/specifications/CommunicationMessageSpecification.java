@@ -1,5 +1,6 @@
 package st.old.isis.storage.specifications;
 
+import antlr.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,7 +30,7 @@ public class CommunicationMessageSpecification implements Specification<Communic
 
     final List<Predicate> predicates = new ArrayList<>();
 
-    if (filter.getId() != null) {
+    if (filter.getId() != null && !filter.getId().isEmpty()) {
       predicates.add(cb.like(root.get("id"), "%" + filter.getId() + "%"));
     }
 
@@ -51,11 +52,6 @@ public class CommunicationMessageSpecification implements Specification<Communic
 
     if (!ListUtils.isNullOrEmpty(filter.getSenders())) {
       predicates.add(root.get("sender").in(filter.getSenders()));
-    }
-
-    if (filter.getMessage() != null) {
-      predicates.add(
-          cb.like(cb.upper(root.get("message")), "%" + filter.getMessage().toUpperCase() + "%"));
     }
 
     if (filter.getImportDate() != null) {
