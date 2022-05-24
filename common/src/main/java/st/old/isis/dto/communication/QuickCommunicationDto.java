@@ -26,7 +26,7 @@ public class QuickCommunicationDto implements Dto {
 
     private ListDto<AlertLogDto> alerts;
 
-    private ListDto<CommunicationRecipientDto> recipients;
+//    private ListDto<CommunicationRecipientDto> recipients;
 
     private LocalDateTime dateFrom;
 
@@ -39,6 +39,8 @@ public class QuickCommunicationDto implements Dto {
     private List<String> keywordIds;
 
     private List<String> sources;
+
+    private List<String> recipients;
 
     private List<AlertStatusType> statusTypes;
 

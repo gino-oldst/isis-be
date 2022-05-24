@@ -73,5 +73,7 @@ public class AlertLogDto implements Dto {
 
     private List<String> sources;
 
+    private List<String> recipients;
+
     private boolean deleted;
 }

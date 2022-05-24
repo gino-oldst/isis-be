@@ -59,6 +59,8 @@ public class AlertLog implements Serializable {
 
     private String sender;
 
+    private String recipients;
+
     private String source;
 
     @Enumerated(EnumType.STRING)

@@ -9,10 +9,7 @@ import st.old.isis.dto.storage.*;
 import st.old.isis.enums.AlertStatusType;
 import st.old.isis.enums.MessageType;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.services.AlertLogService;
-import st.old.isis.storage.services.CommunicationMessageService;
-import st.old.isis.storage.services.KeywordService;
-import st.old.isis.storage.services.PolicyMapService;
+import st.old.isis.storage.services.*;
 import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
@@ -33,6 +30,8 @@ public class InappropriateLanguageAlgorithm {
     private final KeywordService keywordService;
 
     private final CommunicationMessageService communicationMessageService;
+
+    private final CommunicationRecipientService communicationRecipientService;
 
     public void process(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 
@@ -80,6 +79,8 @@ public class InappropriateLanguageAlgorithm {
                     emits.stream()
                             .forEach( emit -> {
 
+                                final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
+
                                 final var keywordDto= keywordsMap.get(emit.getKeyword());
 
                                 if(keywordDto == null){
@@ -100,6 +101,7 @@ public class InappropriateLanguageAlgorithm {
                                         .timeSent(message.getTimeSent())
                                         .sender(message.getSender())
                                         .source(message.getSource())
+                                        .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
                                         .build();
 
                                 log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());

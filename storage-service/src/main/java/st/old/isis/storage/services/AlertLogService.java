@@ -1,6 +1,5 @@
 package st.old.isis.storage.services;
 
-import antlr.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -15,14 +14,13 @@ import st.old.isis.dto.storage.MessageActivityLogDto;
 import st.old.isis.enums.ActivityType;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
-import st.old.isis.storage.entities.AlertPolicy;
-import st.old.isis.storage.entities.PolicyMap;
 import st.old.isis.storage.repositories.AlertLogRepository;
-import st.old.isis.storage.repositories.PolicyMapRepository;
 import st.old.isis.storage.specifications.AlertLogSpecification;
 import st.old.isis.storage.validators.AlertLogValidator;
+import st.old.isis.utils.ListUtils;
 
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -176,6 +174,7 @@ public class AlertLogService {
                 .importDate(dto.getImportDate())
                 .timeSent(dto.getTimeSent())
                 .sender(dto.getSender())
+                .recipients(!ListUtils.isNullOrEmpty(dto.getRecipients())? String.join(",",dto.getRecipients()): null)
                 .source(dto.getSource())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
@@ -210,6 +209,7 @@ public class AlertLogService {
                 .timeSent(entity.getTimeSent())
                 .sender(entity.getSender())
                 .source(entity.getSource())
+                .recipients(entity.getRecipients() != null? Stream.of(entity.getRecipients().split(",", -1)).collect(Collectors.toList()) : null)
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())

@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
@@ -43,7 +45,15 @@ public class QuickCommunicationService {
     @Audited(event = "SEARCH_PAGED_QUICK_COMMUNICATION")
     public ListDto<QuickCommunicationDto> search(@NonNull @Audited final QuickCommunicationDto filter, @Audited Pageable pageable) throws IsisException {
 
-        List<Object[]> distinctMessageIds = alertLogRepository.findDistinctMessagesOrderBy(pageable.getSort());
+        // Remove status sorting for now
+        final var sortByStatus = pageable.getSort().by("status");
+
+        Sort newSort = Sort.by(pageable.getSort()
+                .get()
+                .filter(order -> !order.getProperty().equals("status"))
+                .collect(Collectors.toList()));
+
+        List<Object[]> distinctMessageIds = alertLogRepository.findDistinctMessagesOrderBy(newSort);
 
         if(ListUtils.isNullOrEmpty(distinctMessageIds)){
             throw IsisException.notFound("No messages found for indicated filter", "NotFoundException");
@@ -66,18 +76,32 @@ public class QuickCommunicationService {
                                 .senders(filter.getSenders())
                                 .timeSentFromRange(filterDateTimeFrom)
                                 .timeSentToRange(filterDateTimeTo)
-                                .commMessageId(messageId).build());
+                                .commMessageId(messageId).build(), sortByStatus);
 
-                if(!ListUtils.isNullOrEmpty(alerts.getData())) {
+                var filteredAlerts = alerts.getData();
 
-                    final var chainLinkId = alerts.getData().get(0).getCommChainLinkId();
+                if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+                    filteredAlerts = alerts.getData().stream().filter(alert -> {
+                        String joinString = String.join(",", alert.getRecipients());
+                        return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
+                    }).collect(Collectors.toList());
+                }
+
+                if(!ListUtils.isNullOrEmpty(filteredAlerts)) {
+
+//                    final var chainLinkId = alerts.getData().get(0).getCommChainLinkId();
 
                     // Retrieve the recipients
-                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(chainLinkId).build());
+//                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(chainLinkId).build());
+
+                    final var filteredListDto = ListDto.<AlertLogDto>builder()
+                            .data(filteredAlerts)
+                            .totalNoOfRecords(filteredAlerts.size())
+                            .build();
 
                     final var quickComm = QuickCommunicationDto.builder()
-                            .alerts(alerts)
-                            .recipients(recipients)
+                            .alerts(filteredListDto)
+//                            .recipients(recipients)
                             .build();
 
                     quickCommList.add(quickComm);
@@ -112,6 +136,5 @@ public class QuickCommunicationService {
                 .build().success();
 
     }
-
 
 }
