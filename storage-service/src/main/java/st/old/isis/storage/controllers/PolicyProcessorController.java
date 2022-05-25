@@ -33,6 +33,7 @@ public class PolicyProcessorController {
     @PostMapping("/all/filter")
     public void processPolicyIdByFilter(@RequestBody PolicyProcessorDto dto) throws IsisException {
         service.processPolicyIdByFilter(dto);
+        log.info("processPolicyIdByFilter COMPLETED");
     }
 
 }

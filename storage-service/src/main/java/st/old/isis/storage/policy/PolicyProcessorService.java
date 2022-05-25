@@ -141,7 +141,7 @@ public class PolicyProcessorService {
             }
         }
 
-        log.info("COMPLETED - Processing Policy By Filter {}", filter);
+        log.info("COMPLETED - Processing Policy By Filter {} for {} of messages", filter, commMessages.getData().size());
     }
 
 }
