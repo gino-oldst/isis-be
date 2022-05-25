@@ -31,7 +31,6 @@ public class CommunicationMessageRepositoryImpl implements StreamedCommunication
 
     return em.createQuery(query)
         .setHint(QueryHints.HINT_FETCH_SIZE, dbConfiguration.getBatchSize())
-        .setMaxResults(50000)
         .getResultStream();
   }
 }
