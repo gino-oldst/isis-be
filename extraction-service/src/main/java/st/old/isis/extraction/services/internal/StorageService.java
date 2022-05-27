@@ -3,6 +3,7 @@ package st.old.isis.extraction.services.internal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.*;
@@ -101,6 +102,7 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
+  @Async
   public void mergeExternalUsers(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.externalUser().merge();
@@ -116,6 +118,7 @@ public class StorageService {
     restService.post(url, entity, typeReference);
   }
 
+  @Async
   public void mergeCommunicationRecipients(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.recipient().merge();
@@ -131,6 +134,7 @@ public class StorageService {
     restService.post(url, entity, typeReference);
   }
 
+  @Async
   public void mergeChain(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.chain().merge();
@@ -146,6 +150,7 @@ public class StorageService {
     restService.post(url, entity, typeReference);
   }
 
+  @Async
   public void mergeMessages(@NonNull final TempDto request) throws IsisException {
 
     final var url = storageUrl.message().merge();

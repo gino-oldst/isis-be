@@ -56,7 +56,6 @@ public class BatchExternalUserListener
     }
   }
 
-  @Async
   @Override
   protected void finalizeEvent(String fileSource) throws IsisException {
     storageService.mergeExternalUsers(TempDto.builder().fileSource(fileSource).build());

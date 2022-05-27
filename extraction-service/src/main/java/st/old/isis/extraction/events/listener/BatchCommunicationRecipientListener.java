@@ -56,7 +56,6 @@ public class BatchCommunicationRecipientListener
     }
   }
 
-  @Async
   @Override
   protected void finalizeEvent(String fileSource) throws IsisException {
     storageService.mergeCommunicationRecipients(TempDto.builder().fileSource(fileSource).build());
