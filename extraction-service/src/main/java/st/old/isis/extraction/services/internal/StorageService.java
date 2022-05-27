@@ -38,7 +38,6 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  @Async
   public ListDto<CommunicationChainDto> importChain(
       @NonNull final ListDto<CommunicationChainDto> request) throws IsisException {
 
@@ -55,7 +54,6 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  @Async
   public ListDto<ExternalUserDto> saveExternalUsers(@NonNull final List<ExternalUserDto> request)
       throws IsisException {
 
@@ -72,7 +70,6 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  @Async
   public List<CommunicationMessageDto> saveMessages(
       @NonNull final List<CommunicationMessageDto> request) throws IsisException {
 
@@ -89,7 +86,6 @@ public class StorageService {
     return restService.post(url, entity, typeReference);
   }
 
-  @Async
   public List<CommunicationRecipientDto> saveRecipients(
       @NonNull final List<CommunicationRecipientDto> request) throws IsisException {
 
