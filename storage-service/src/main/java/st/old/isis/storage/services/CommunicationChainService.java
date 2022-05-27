@@ -80,7 +80,7 @@ public class CommunicationChainService {
     log.info("Chains added: {}", repository.merge(fileSource));
     log.info("Temporary chains deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
-    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
+    log.info("Merge chains time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "GET_COMMUNICATION_CHAIN_BY_ID")

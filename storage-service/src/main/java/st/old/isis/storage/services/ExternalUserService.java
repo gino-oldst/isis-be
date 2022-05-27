@@ -69,7 +69,7 @@ public class ExternalUserService {
     log.info("Users added: {}", repository.merge(fileSource));
     log.info("Temporary users deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
-    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
+    log.info("Merge users time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "DELETE_EXTERNAL_USER")

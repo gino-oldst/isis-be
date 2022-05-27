@@ -60,7 +60,7 @@ public class CommunicationRecipientService {
     log.info("Recipients added: {}", repository.merge(fileSource));
     log.info("Temporary recipients deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
-    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
+    log.info("Merge recipients time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")

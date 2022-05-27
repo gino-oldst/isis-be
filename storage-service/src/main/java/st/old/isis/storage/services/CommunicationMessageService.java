@@ -69,7 +69,7 @@ public class CommunicationMessageService {
     log.info("Messages added: {}", repository.merge(fileSource));
     log.info("Temporary messages deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
-    log.info("Merge time elapsed: {} ms", System.currentTimeMillis() - start);
+    log.info("Merge messages time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
