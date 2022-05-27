@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.enums.Source;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.utils.DownloadUtils;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipInputStream;
 
 @Slf4j
@@ -82,11 +84,11 @@ public class ReutersDownloadService extends AzureDownloadService {
 
   @Override
   protected void processFile(
-      @NonNull final ShareFileClient client, @NonNull final String filename) {
+      @NonNull final ShareFileClient client,
+      @NonNull final String filename,
+      @NonNull final String fileId) {
 
-    final var inputStream = client.openInputStream();
-
-    unzipFile(inputStream, client.getFilePath());
+    unzipFile(client, fileId);
   }
 
   private List<String> directoryFilenamePrefixes() {
@@ -97,7 +99,10 @@ public class ReutersDownloadService extends AzureDownloadService {
     return List.of("messages.xml");
   }
 
-  private void unzipFile(@NonNull final InputStream inputStream, @NonNull final String fileSource) {
+  private void unzipFile(@NonNull final ShareFileClient client, @NonNull final String fileId) {
+
+    final var inputStream = client.openInputStream();
+    final var fileSource = client.getFilePath();
 
     try {
 
@@ -118,7 +123,7 @@ public class ReutersDownloadService extends AzureDownloadService {
 
           auditUtil.audit("REUTERS_UNZIP_FILE", Map.of("filename", filename));
 
-          processXml(clone, fileSource);
+          processXml(clone, fileSource, filename, fileId);
 
         } else {
           log.info("Ignore unzipped file: {}", zipEntry.getName());
@@ -129,6 +134,15 @@ public class ReutersDownloadService extends AzureDownloadService {
       zis.closeEntry();
       zis.close();
     } catch (IOException e) {
+      final var event =
+          auditUtil.auditEvent("REUTERS_UNZIP_FILE_ERROR", Map.of("filename", fileSource));
+      auditService.recordEvent(
+          EventLogDto.builder()
+              .txnId(UUID.randomUUID().toString())
+              .events(List.of(event))
+              .source("Extraction Service")
+              .build());
+      log.error("Error unzipping file: {} - {}", fileSource, e.getMessage());
       e.printStackTrace();
     }
   }
@@ -140,11 +154,25 @@ public class ReutersDownloadService extends AzureDownloadService {
   }
 
   private void processXml(
-      @NonNull final InputStream inputStream, @NonNull final String fileSource) {
+      @NonNull final InputStream inputStream,
+      @NonNull final String fileSource,
+      @NonNull final String filename,
+      @NonNull final String fileId) {
     try {
       extractionService.processXml(inputStream, fileSource);
+
+      saveToHistory(fileId, fileSource);
+
     } catch (JAXBException | IsisException e) {
-      log.error("Error processing xml file: {}", e.getMessage());
+      final var event =
+          auditUtil.auditEvent("REUTERS_FILE_PARSING_ERROR", Map.of("filename", filename));
+      auditService.recordEvent(
+          EventLogDto.builder()
+              .txnId(UUID.randomUUID().toString())
+              .events(List.of(event))
+              .source("Extraction Service")
+              .build());
+      log.error("Error processing file: {} - {}", filename, e.getMessage());
       e.printStackTrace();
     }
   }

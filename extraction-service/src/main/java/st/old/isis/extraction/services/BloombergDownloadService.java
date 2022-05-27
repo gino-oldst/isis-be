@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.enums.Source;
 import st.old.isis.extraction.utils.DownloadUtils;
 
@@ -15,6 +16,8 @@ import javax.xml.stream.XMLStreamException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -87,7 +90,9 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   @Override
   protected void processFile(
-      @NonNull final ShareFileClient client, @NonNull final String filename) {
+      @NonNull final ShareFileClient client,
+      @NonNull final String filename,
+      @NonNull final String fileId) {
     try {
 
       final var inputStream = client.openInputStream();
@@ -101,9 +106,18 @@ public class BloombergDownloadService extends AzureDownloadService {
         emailExtractionService.parse(inputStream, now, client.getFilePath());
       }
 
+      saveToHistory(fileId, client.getFilePath());
+
     } catch (JAXBException | XMLStreamException e) {
-      log.error("Error processing xml file: {}", e.getMessage());
-      e.printStackTrace();
+      final var event =
+          auditUtil.auditEvent("BLOOMBERG_FILE_PARSING_ERROR", Map.of("filename", filename));
+      auditService.recordEvent(
+          EventLogDto.builder()
+              .txnId(UUID.randomUUID().toString())
+              .events(List.of(event))
+              .source("Extraction Service")
+              .build());
+      log.error("Error processing xml file: {} - {}", filename, e.getMessage());
     }
   }
 

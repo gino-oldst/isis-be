@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -48,6 +49,7 @@ public class CommunicationRecipientService {
         .collect(Collectors.toList());
   }
 
+  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_RECIPIENTS")
   public void finalizeBatch(@Audited String fileSource) {
 

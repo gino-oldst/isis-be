@@ -30,6 +30,23 @@ public class AuditUtil {
     audit(event, "", metadata);
   }
 
+  public AuditEvent auditEvent(
+      @NonNull final String event, @NonNull final Map<String, Object> metadata) {
+
+    final var auditEvent = AuditEvent.builder().event(event).build();
+
+    if (!metadata.isEmpty()) {
+      try {
+        auditEvent.setMetadata(objectUtils.toString(metadata));
+      } catch (IsisException e) {
+        log.error("Error converting metadata to string: {}", e.getMessage());
+        e.printStackTrace();
+      }
+    }
+
+    return auditEvent;
+  }
+
   public void audit(
       @NonNull final String event,
       @NonNull final String description,

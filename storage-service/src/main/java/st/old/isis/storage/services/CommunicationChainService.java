@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -68,6 +69,7 @@ public class CommunicationChainService {
         .success();
   }
 
+  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_CHAINS")
   public void finalizeBatch(String fileSource) {
 

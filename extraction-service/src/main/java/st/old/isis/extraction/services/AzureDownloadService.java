@@ -17,6 +17,7 @@ import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.extraction.entities.DownloadVersionControl;
 import st.old.isis.extraction.entities.FileDownloadHistory;
+import st.old.isis.extraction.services.internal.AuditService;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.utils.DownloadUtils;
 import st.old.isis.utils.AuditUtil;
@@ -39,6 +40,7 @@ public abstract class AzureDownloadService {
   @Autowired private DownloadUtils downloadUtils;
   @Autowired private NotificationService notificationService;
   @Autowired protected AuditUtil auditUtil;
+  @Autowired protected AuditService auditService;
 
   protected abstract String source();
 
@@ -47,7 +49,9 @@ public abstract class AzureDownloadService {
   protected abstract boolean skipFile(@NonNull final String filename);
 
   protected abstract void processFile(
-      @NonNull final ShareFileClient client, @NonNull final String filename);
+      @NonNull final ShareFileClient client,
+      @NonNull final String filename,
+      @NonNull final String fileId);
 
   @Async
   public void sync() {
@@ -88,7 +92,7 @@ public abstract class AzureDownloadService {
         log.info("Cannot find any items on directory: {}", source);
       }
 
-      items.forEach(item -> inspectItem(rootDirectory, item, source));
+      items.forEach(item -> inspectItem(rootDirectory, item));
 
     } catch (Throwable err) {
       sendDownloadingError(err);
@@ -116,7 +120,7 @@ public abstract class AzureDownloadService {
         log.info("Cannot find any items on directory: {}", source);
       }
 
-      items.forEach(item -> inspectItem(rootDirectory, item, source));
+      items.forEach(item -> inspectItem(rootDirectory, item));
 
     } catch (Throwable err) {
       sendDownloadingError(err);
@@ -125,14 +129,12 @@ public abstract class AzureDownloadService {
   }
 
   private void inspectItem(
-      @NonNull final ShareDirectoryClient directory,
-      @NonNull final ShareFileItem item,
-      @NonNull final String directoryName) {
+      @NonNull final ShareDirectoryClient directory, @NonNull final ShareFileItem item) {
 
     if (item.isDirectory()) {
       enterSubdirectory(directory, item.getName());
     } else {
-      processFile(directory, item, directoryName);
+      processFile(directory, item);
     }
   }
 
@@ -149,14 +151,12 @@ public abstract class AzureDownloadService {
       log.info("Cannot find any items on directory: {}", directory);
     }
 
-    items.forEach(item -> inspectItem(subdirectory, item, directory));
+    items.forEach(item -> inspectItem(subdirectory, item));
     saveToVersionControl(directory);
   }
 
   private void processFile(
-      @NonNull final ShareDirectoryClient client,
-      @NonNull final ShareFileItem item,
-      @NonNull final String directoryName) {
+      @NonNull final ShareDirectoryClient client, @NonNull final ShareFileItem item) {
 
     final var filename = item.getName();
 
@@ -178,9 +178,7 @@ public abstract class AzureDownloadService {
 
     final var fileClient = client.getFileClient(filename);
 
-    processFile(fileClient, filename);
-
-    saveToHistory(fileId, fileClient.getFilePath());
+    processFile(fileClient, filename, fileId);
 
     log.info("Elapsed " + (System.currentTimeMillis() - start) + " ms");
   }
@@ -237,7 +235,7 @@ public abstract class AzureDownloadService {
     return resultStringBuilder.toString();
   }
 
-  private void saveToHistory(@NonNull final String sha1, @NonNull final String filePath) {
+  protected void saveToHistory(@NonNull final String sha1, @NonNull final String filePath) {
 
     final var history = FileDownloadHistory.builder().id(sha1).filePath(filePath).build();
 

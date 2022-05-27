@@ -6,6 +6,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -57,6 +58,7 @@ public class ExternalUserService {
         .success();
   }
 
+  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_EXTERNAL_USER")
   public void finalizeBatch(@Audited String fileSource) {
 
