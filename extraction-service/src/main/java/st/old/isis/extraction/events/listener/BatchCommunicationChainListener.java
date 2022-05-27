@@ -2,6 +2,7 @@ package st.old.isis.extraction.events.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationChainDto;
@@ -55,6 +56,7 @@ public class BatchCommunicationChainListener
     }
   }
 
+  @Async
   @Override
   protected void finalizeEvent(String fileSource) throws IsisException {
     storageService.mergeChain(TempDto.builder().fileSource(fileSource).build());
