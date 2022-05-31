@@ -1,9 +1,14 @@
 package st.old.isis.storage.repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import st.old.isis.storage.entities.CommunicationMessage;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public interface CommunicationMessageRepository
     extends JpaRepository<CommunicationMessage, String>,
@@ -25,4 +30,8 @@ public interface CommunicationMessageRepository
               + "VALUES (temp.id, temp.chain_link_id, temp.date_created, temp.date_modified, temp.deleted, temp.import_date, temp.message, temp.metadata, temp.sender, temp.source, temp.source_message_id, temp.subject, temp.time_sent, temp.type); SELECT @@ROWCOUNT AS mergedItems",
       nativeQuery = true)
   int merge(String fileSource);
+
+
+  Page<CommunicationMessage> findAllBySourceAndImportDateBetween(String source, LocalDate dateFrom, LocalDate dateTo, Pageable pageable);
+
 }

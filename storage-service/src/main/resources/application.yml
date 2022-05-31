@@ -3,6 +3,10 @@ server:
   servlet:
     contextPath: /storage-service
 spring:
+  batch:
+    job:
+      enabled: false
+    initialize-schema: ALWAYS
   datasource:
     url: ${DATABASE_URL}
     username: ${DB_USERNAME}
@@ -27,6 +31,7 @@ spring:
       naming:
         physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
       ddl-auto: update
+    generate-ddl: true
   flyway:
     locations:
       - classpath:db/migration
