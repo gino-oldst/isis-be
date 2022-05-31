@@ -52,7 +52,8 @@ public class SymphonyDownloadService extends AzureDownloadService {
   protected void processFile(
       @NonNull final ShareFileClient client,
       @NonNull final String filename,
-      @NonNull final String fileId) {
+      @NonNull final String fileId,
+      @NonNull final String directoryName) {
     // todo: implement symphony file processing
   }
 }

@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Table(
     indexes = {
+      @Index(name = "idx_temp_external_user_file_source", columnList = "fileSource"),
       @Index(name = "idx_temp_external_user_email", columnList = "email"),
       @Index(name = "idx_temp_external_user_source", columnList = "source")
     })

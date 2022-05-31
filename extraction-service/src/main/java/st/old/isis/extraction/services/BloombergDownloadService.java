@@ -92,18 +92,19 @@ public class BloombergDownloadService extends AzureDownloadService {
   protected void processFile(
       @NonNull final ShareFileClient client,
       @NonNull final String filename,
-      @NonNull final String fileId) {
+      @NonNull final String fileId,
+      @NonNull final String directoryName) {
     try {
 
       final var inputStream = client.openInputStream();
-      final var now = LocalDate.now();
+      final var importDate = LocalDate.parse(directoryName, DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
 
       if (isChat(filename)) {
-        chatExtractionService.parse(inputStream, now, client.getFilePath());
+        chatExtractionService.parse(inputStream, importDate, client.getFilePath());
       }
 
       if (isEmail(filename)) {
-        emailExtractionService.parse(inputStream, now, client.getFilePath());
+        emailExtractionService.parse(inputStream, importDate, client.getFilePath());
       }
 
       saveToHistory(fileId, client.getFilePath());

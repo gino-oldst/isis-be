@@ -86,9 +86,12 @@ public class ReutersDownloadService extends AzureDownloadService {
   protected void processFile(
       @NonNull final ShareFileClient client,
       @NonNull final String filename,
-      @NonNull final String fileId) {
+      @NonNull final String fileId,
+      @NonNull final String directoryName) {
 
-    unzipFile(client, fileId);
+    LocalDate dateImported = LocalDate.parse(directoryName, DownloadUtils.REUTERS_FILENAME_FORMAT);
+
+    unzipFile(client, fileId, dateImported);
   }
 
   private List<String> directoryFilenamePrefixes() {
@@ -99,7 +102,10 @@ public class ReutersDownloadService extends AzureDownloadService {
     return List.of("messages.xml");
   }
 
-  private void unzipFile(@NonNull final ShareFileClient client, @NonNull final String fileId) {
+  private void unzipFile(
+      @NonNull final ShareFileClient client,
+      @NonNull final String fileId,
+      @NonNull LocalDate dateImported) {
 
     final var inputStream = client.openInputStream();
     final var fileSource = client.getFilePath();
@@ -123,7 +129,7 @@ public class ReutersDownloadService extends AzureDownloadService {
 
           auditUtil.audit("REUTERS_UNZIP_FILE", Map.of("filename", filename));
 
-          processXml(clone, fileSource, filename, fileId);
+          processXml(clone, fileSource, filename, fileId, dateImported);
 
         } else {
           log.info("Ignore unzipped file: {}", zipEntry.getName());
@@ -157,9 +163,10 @@ public class ReutersDownloadService extends AzureDownloadService {
       @NonNull final InputStream inputStream,
       @NonNull final String fileSource,
       @NonNull final String filename,
-      @NonNull final String fileId) {
+      @NonNull final String fileId,
+      @NonNull final LocalDate dateImported) {
     try {
-      extractionService.processXml(inputStream, fileSource);
+      extractionService.processXml(inputStream, fileSource, dateImported);
 
       saveToHistory(fileId, fileSource);
 

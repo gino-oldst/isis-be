@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Table(
     indexes = {
+      @Index(name = "idx_temp_communication_message_file_source", columnList = "fileSource"),
       @Index(name = "idx_communication_message_time_sent", columnList = "timeSent"),
       @Index(name = "idx_communication_message_source", columnList = "source"),
       @Index(name = "idx_communication_message_sender", columnList = "sender"),

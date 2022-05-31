@@ -51,7 +51,8 @@ public class IceChatDownloadService extends AzureDownloadService {
   protected void processFile(
       @NonNull final ShareFileClient client,
       @NonNull final String filename,
-      @NonNull final String fileId) {
+      @NonNull final String fileId,
+      @NonNull final String directoryName) {
     // todo: implement ICE Chat file processing
   }
 }

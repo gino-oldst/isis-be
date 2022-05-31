@@ -39,10 +39,10 @@ public class ReutersXmlExtractionService {
 
   @Audited(event = "PARSE_XML_STREAM")
   public ListDto<CommunicationChainDto> processXml(
-      @NonNull final InputStream inputStream, @NonNull final String fileSource)
+      @NonNull final InputStream inputStream, @NonNull final String fileSource, LocalDate localDate)
       throws JAXBException, IsisException {
     try {
-      return processXml(new InputStreamReader(inputStream), LocalDate.now(), fileSource);
+      return processXml(new InputStreamReader(inputStream), localDate, fileSource);
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;

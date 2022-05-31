@@ -51,7 +51,8 @@ public abstract class AzureDownloadService {
   protected abstract void processFile(
       @NonNull final ShareFileClient client,
       @NonNull final String filename,
-      @NonNull final String fileId);
+      @NonNull final String fileId,
+      @NonNull final String directoryName);
 
   @Async
   public void sync() {
@@ -92,7 +93,7 @@ public abstract class AzureDownloadService {
         log.info("Cannot find any items on directory: {}", source);
       }
 
-      items.forEach(item -> inspectItem(rootDirectory, item));
+      items.forEach(item -> inspectItem(rootDirectory, item, source));
 
     } catch (Throwable err) {
       sendDownloadingError(err);
@@ -120,7 +121,7 @@ public abstract class AzureDownloadService {
         log.info("Cannot find any items on directory: {}", source);
       }
 
-      items.forEach(item -> inspectItem(rootDirectory, item));
+      items.forEach(item -> inspectItem(rootDirectory, item, source));
 
     } catch (Throwable err) {
       sendDownloadingError(err);
@@ -129,12 +130,14 @@ public abstract class AzureDownloadService {
   }
 
   private void inspectItem(
-      @NonNull final ShareDirectoryClient directory, @NonNull final ShareFileItem item) {
+      @NonNull final ShareDirectoryClient directory,
+      @NonNull final ShareFileItem item,
+      @NonNull final String directoryName) {
 
     if (item.isDirectory()) {
       enterSubdirectory(directory, item.getName());
     } else {
-      processFile(directory, item);
+      processFile(directory, item, directoryName);
     }
   }
 
@@ -151,12 +154,14 @@ public abstract class AzureDownloadService {
       log.info("Cannot find any items on directory: {}", directory);
     }
 
-    items.forEach(item -> inspectItem(subdirectory, item));
+    items.forEach(item -> inspectItem(subdirectory, item, directory));
     saveToVersionControl(directory);
   }
 
   private void processFile(
-      @NonNull final ShareDirectoryClient client, @NonNull final ShareFileItem item) {
+      @NonNull final ShareDirectoryClient client,
+      @NonNull final ShareFileItem item,
+      @NonNull final String directoryName) {
 
     final var filename = item.getName();
 
@@ -178,7 +183,7 @@ public abstract class AzureDownloadService {
 
     final var fileClient = client.getFileClient(filename);
 
-    processFile(fileClient, filename, fileId);
+    processFile(fileClient, filename, fileId, directoryName);
 
     log.info("Elapsed " + (System.currentTimeMillis() - start) + " ms");
   }
