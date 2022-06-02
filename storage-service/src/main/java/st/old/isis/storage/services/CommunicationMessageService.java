@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import st.old.isis.annotations.Audited;
@@ -58,11 +57,10 @@ public class CommunicationMessageService {
         .collect(Collectors.toList());
   }
 
-  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_MESSAGES")
   public void finalizeBatch(String fileSource) {
 
-    log.info("Start merging messages...");
+    log.info("Start merging messages from [{}]", fileSource);
 
     final long start = System.currentTimeMillis();
 
@@ -70,6 +68,18 @@ public class CommunicationMessageService {
     log.info("Temporary messages deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge messages time elapsed: {} ms", System.currentTimeMillis() - start);
+  }
+
+  @Audited(event = "DELETE_TEMP_COMMUNICATION_MESSAGE")
+  public void deleteTempMessages(@Audited String fileSource) {
+
+    log.info("Start deleting temp messages from [{}]", fileSource);
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Temporary messages deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
+
+    log.info("Delete temp messages time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_MESSAGE")
@@ -403,15 +413,15 @@ public class CommunicationMessageService {
 
   private List<CommunicationMessageDto> filterMessages(CommunicationMessageDto filter) {
     final var messageFilter =
-            CommunicationMessageDto.builder()
-                    .id(filter.getId())
-                    .dateSentFrom(filter.getDateSentFrom())
-                    .dateSentTo(filter.getDateSentTo())
-                    .source(filter.getSource())
-                    .sources(filter.getSources())
-                    .sender(filter.getSender())
-                    .senders(filter.getSenders())
-                    .build();
+        CommunicationMessageDto.builder()
+            .id(filter.getId())
+            .dateSentFrom(filter.getDateSentFrom())
+            .dateSentTo(filter.getDateSentTo())
+            .source(filter.getSource())
+            .sources(filter.getSources())
+            .sender(filter.getSender())
+            .senders(filter.getSenders())
+            .build();
 
     final var spec = new CommunicationMessageSpecification(messageFilter);
 

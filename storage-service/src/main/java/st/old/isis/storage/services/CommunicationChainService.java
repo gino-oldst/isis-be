@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -69,11 +68,10 @@ public class CommunicationChainService {
         .success();
   }
 
-  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_CHAINS")
   public void finalizeBatch(String fileSource) {
 
-    log.info("Start merging chain...");
+    log.info("Start merging chains from [{}]", fileSource);
 
     final long start = System.currentTimeMillis();
 
@@ -81,6 +79,18 @@ public class CommunicationChainService {
     log.info("Temporary chains deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge chains time elapsed: {} ms", System.currentTimeMillis() - start);
+  }
+
+  @Audited(event = "DELETE_TEMP_COMMUNICATION_CHAIN")
+  public void deleteTempChains(@Audited String fileSource) {
+
+    log.info("Start deleting temp chains from [{}]", fileSource);
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Temporary chains deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
+
+    log.info("Delete temp chains time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "GET_COMMUNICATION_CHAIN_BY_ID")

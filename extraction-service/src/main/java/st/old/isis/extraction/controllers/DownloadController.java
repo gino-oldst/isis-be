@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import st.old.isis.annotations.Audited;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.*;
 
 @Slf4j
@@ -24,43 +25,44 @@ public class DownloadController {
 
   @GetMapping("/bloomberg")
   @Audited(event = "MANUAL_SYNC_BLOOMBERG")
-  public void downloadBloomberg() {
+  public void downloadBloomberg() throws IsisException {
     bloombergDownloadService.sync();
   }
 
   @GetMapping("/bloomberg/search")
   @Audited(event = "MANUAL_SPECIFIC_SYNC_BLOOMBERG")
-  public void downloadBloomberg(@Audited @RequestParam @NonNull final String prefix) {
+  public void downloadBloomberg(@Audited @RequestParam @NonNull final String prefix)
+      throws IsisException {
     bloombergDownloadService.sync(prefix);
   }
 
   @GetMapping("/icechat")
   @Audited(event = "MANUAL_SYNC_ICE_CHAT")
-  public void downloadIceChat() {
+  public void downloadIceChat() throws IsisException {
     iceChatDownloadService.sync();
   }
 
   @GetMapping("/reuters")
   @Audited(event = "MANUAL_SYNC_REUTERS")
-  public void downloadReuters() {
+  public void downloadReuters() throws IsisException {
     reutersDownloadService.sync();
   }
 
   @GetMapping("/reuters/search")
   @Audited(event = "MANUAL_SPECIFIC_SYNC_REUTERS")
-  public void downloadReuters(@RequestParam @NonNull final String prefix) {
+  public void downloadReuters(@RequestParam @NonNull final String prefix) throws IsisException {
     reutersDownloadService.sync(prefix);
   }
 
   @GetMapping("/symphony")
   @Audited(event = "MANUAL_SYNC_SYMPHONY")
-  public void downloadSymphony() {
+  public void downloadSymphony() throws IsisException {
     symphonyDownloadService.sync();
   }
 
   @GetMapping("/whatsapp")
   @Audited(event = "MANUAL_SYNC_WHATSAPP")
-  public void downloadWhatsapp() {
+  public void downloadWhatsapp() throws IsisException {
     whatsappDownloadService.sync();
   }
 }

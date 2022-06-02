@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
-import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.enums.Source;
+import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.utils.DownloadUtils;
 
 import javax.xml.bind.JAXBException;
@@ -17,7 +18,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -41,13 +41,13 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   @Override
   @Audited(event = "DOWNLOAD_BLOOMBERG_RAW_DATA")
-  public void sync() {
+  public void sync() throws IsisException {
     super.sync();
   }
 
   @Override
   @Audited(event = "DOWNLOAD_SPECIFIC_BLOOMBERG_RAW_DATA")
-  public void sync(@NonNull @Audited final String prefix) {
+  public void sync(@NonNull @Audited final String prefix) throws IsisException {
     super.sync(prefix);
   }
 
@@ -94,34 +94,37 @@ public class BloombergDownloadService extends AzureDownloadService {
       @NonNull final String filename,
       @NonNull final String fileId,
       @NonNull final String directoryName) {
+
+    final var filePath = client.getFilePath();
+
     try {
 
       final var inputStream = client.openInputStream();
-      final var importDate = LocalDate.parse(directoryName, DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
+      final var importDate =
+          LocalDate.parse(directoryName, DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
 
       if (isChat(filename)) {
-        chatExtractionService.parse(inputStream, importDate, client.getFilePath());
+        chatExtractionService.parse(inputStream, importDate, filePath);
       }
 
       if (isEmail(filename)) {
-        emailExtractionService.parse(inputStream, importDate, client.getFilePath());
+        emailExtractionService.parse(inputStream, importDate, filePath);
       }
 
-      saveToHistory(fileId, client.getFilePath());
+      saveToHistory(fileId, filePath);
 
     } catch (JAXBException | XMLStreamException e) {
 
-      finalizeDownload(filename, client.getFilePath());
+      DownloadContext.addFailedFile(filePath);
 
-      final var event =
-          auditUtil.auditEvent("BLOOMBERG_FILE_PARSING_ERROR", Map.of("filename", filename));
       auditService.recordEvent(
-          EventLogDto.builder()
-              .txnId(UUID.randomUUID().toString())
-              .events(List.of(event))
-              .source("Extraction Service")
-              .build());
-      log.error("Error processing xml file: {} - {}", filename, e.getMessage());
+          "Extraction Service", "BLOOMBERG_FILE_PARSING_ERROR", Map.of("filename", filePath));
+
+      log.error(
+          "Error processing xml file: {} - {} - {}",
+          filePath,
+          e.getClass().getSimpleName(),
+          e.getCause().getMessage());
     }
   }
 
@@ -131,15 +134,5 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   private boolean isEmail(@NonNull final String filename) {
     return EMAIL_FILE_PATTERN.matcher(filename).find();
-  }
-
-  private void finalizeDownload(String filename,String fileSource) {
-    if (isChat(filename)) {
-      chatExtractionService.finalizeParsing(fileSource);
-    }
-
-    if (isEmail(filename)) {
-      emailExtractionService.finalizeParsing(fileSource);
-    }
   }
 }

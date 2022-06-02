@@ -11,11 +11,15 @@ import st.old.isis.constants.ReutersConstants;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
-import st.old.isis.dto.storage.*;
+import st.old.isis.dto.storage.CommunicationChainDto;
+import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.entities.generated.ComplianceActivity;
 import st.old.isis.enums.Source;
 import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
 
@@ -87,11 +91,7 @@ public class ReutersXmlExtractionService {
 
     log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 
-    final var tempRequest = TempDto.builder().fileSource(fileSource).build();
-    storageService.mergeChain(tempRequest);
-    storageService.mergeMessages(tempRequest);
-    storageService.mergeCommunicationRecipients(tempRequest);
-    storageService.mergeExternalUsers(tempRequest);
+    DownloadContext.addCompletedFile(fileSource);
 
     return communicationChains;
   }
@@ -261,6 +261,6 @@ public class ReutersXmlExtractionService {
             // .recipients() todo: recipients
             .build();
 
-    notificationService.sendNotification(List.of(request));
+    //    notificationService.sendNotification(List.of(request));
   }
 }

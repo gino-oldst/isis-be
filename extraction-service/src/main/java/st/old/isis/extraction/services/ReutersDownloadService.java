@@ -10,6 +10,7 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.enums.Source;
 import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.utils.DownloadUtils;
 
 import javax.xml.bind.JAXBException;
@@ -39,13 +40,13 @@ public class ReutersDownloadService extends AzureDownloadService {
 
   @Override
   @Audited(event = "DOWNLOAD_REUTERS_RAW_DATA")
-  public void sync() {
+  public void sync() throws IsisException {
     super.sync();
   }
 
   @Override
   @Audited(event = "DOWNLOAD_SPECIFIC_REUTERS_RAW_DATA")
-  public void sync(@NonNull @Audited final String prefix) {
+  public void sync(@NonNull @Audited final String prefix) throws IsisException {
     super.sync(prefix);
   }
 
@@ -171,16 +172,14 @@ public class ReutersDownloadService extends AzureDownloadService {
       saveToHistory(fileId, fileSource);
 
     } catch (JAXBException | IsisException e) {
-      final var event =
-          auditUtil.auditEvent("REUTERS_FILE_PARSING_ERROR", Map.of("filename", filename));
+      DownloadContext.addFailedFile(fileSource);
       auditService.recordEvent(
-          EventLogDto.builder()
-              .txnId(UUID.randomUUID().toString())
-              .events(List.of(event))
-              .source("Extraction Service")
-              .build());
-      log.error("Error processing file: {} - {}", filename, e.getMessage());
-      e.printStackTrace();
+          "Extraction Service", "REUTERS_FILE_PARSING_ERROR", Map.of("filename", fileSource));
+      log.error(
+          "Error processing xml file: {} - {} - {}",
+          fileSource,
+          e.getClass().getSimpleName(),
+          e.getCause().getMessage());
     }
   }
 }

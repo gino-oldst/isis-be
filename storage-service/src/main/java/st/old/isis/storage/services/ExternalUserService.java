@@ -6,7 +6,6 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -58,11 +57,10 @@ public class ExternalUserService {
         .success();
   }
 
-  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_EXTERNAL_USER")
   public void finalizeBatch(@Audited String fileSource) {
 
-    log.info("Start merging users...");
+    log.info("Start merging users from [{}]", fileSource);
 
     final long start = System.currentTimeMillis();
 
@@ -70,6 +68,18 @@ public class ExternalUserService {
     log.info("Temporary users deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge users time elapsed: {} ms", System.currentTimeMillis() - start);
+  }
+
+  @Audited(event = "DELETE_TEMP_EXTERNAL_USER")
+  public void deleteTempExternalUser(@Audited String fileSource) {
+
+    log.info("Start deleting temp users from [{}]", fileSource);
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Temporary users deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
+
+    log.info("Delete temp users time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "DELETE_EXTERNAL_USER")

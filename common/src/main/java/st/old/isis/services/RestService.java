@@ -20,7 +20,7 @@ public class RestService {
 
   public <T> T get(@NonNull String uri, @NonNull HttpEntity<?> entity, Class<T> returnedClass) {
 
-    log.info("Sending GET request to {} ", uri);
+    log.debug("Sending GET request to {} ", uri);
 
     final var response = restTemplate.exchange(uri, HttpMethod.GET, entity, returnedClass);
     return response.getBody();
@@ -28,7 +28,7 @@ public class RestService {
 
   public <T> T get(@NonNull String uri, Class<T> returnedClass) throws IsisException {
 
-    log.info("Sending GET request to {} ", uri);
+    log.debug("Sending GET request to {} ", uri);
 
     try {
 
@@ -45,7 +45,7 @@ public class RestService {
       @Nullable HttpEntity<?> entity,
       ParameterizedTypeReference<T> responseType) {
 
-    log.info("Sending POST request to {} ", uri);
+    log.debug("Sending POST request to {} ", uri);
 
     final var response = restTemplate.exchange(uri, HttpMethod.POST, entity, responseType);
     return response.getBody();
@@ -53,7 +53,7 @@ public class RestService {
 
   public <T> T post(@NonNull String uri, @Nullable HttpEntity<?> entity, Class<T> returnedClass) {
 
-    log.info("Sending POST request to {} ", uri);
+    log.debug("Sending POST request to {} ", uri);
 
     final var response = restTemplate.exchange(uri, HttpMethod.POST, entity, returnedClass);
     return response.getBody();
@@ -61,7 +61,7 @@ public class RestService {
 
   public <T> T put(@NonNull String uri, @Nullable HttpEntity<?> entity, Class<T> returnedClass) {
 
-    log.info("Sending PUT request to {} ", uri);
+    log.debug("Sending PUT request to {} ", uri);
 
     final var response = restTemplate.exchange(uri, HttpMethod.PUT, entity, returnedClass);
     return response.getBody();

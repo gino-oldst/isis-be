@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
@@ -49,11 +48,10 @@ public class CommunicationRecipientService {
         .collect(Collectors.toList());
   }
 
-  @Async
   @Audited(event = "FINALIZE_BATCH_SAVE_RECIPIENTS")
   public void finalizeBatch(@Audited String fileSource) {
 
-    log.info("Start merging recipients...");
+    log.info("Start merging recipients from [{}]", fileSource);
 
     final long start = System.currentTimeMillis();
 
@@ -61,6 +59,18 @@ public class CommunicationRecipientService {
     log.info("Temporary recipients deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
 
     log.info("Merge recipients time elapsed: {} ms", System.currentTimeMillis() - start);
+  }
+
+  @Audited(event = "DELETE_TEMP_COMMUNICATION_RECIPIENT")
+  public void deleteTempRecipients(@Audited String fileSource) {
+
+    log.info("Start deleting temp recipients from [{}]", fileSource);
+
+    final long start = System.currentTimeMillis();
+
+    log.info("Temporary recipients deleted: {}", tempRepository.deleteAllByFileSource(fileSource));
+
+    log.info("Delete temp recipients time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
   @Audited(event = "CREATE_COMMUNICATION_RECIPIENT")

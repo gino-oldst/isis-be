@@ -27,4 +27,8 @@ public abstract class StorageUrlRepository {
   public RecipientUrl recipient() {
     return new RecipientUrl(this);
   }
+
+  public MergeUrl merge() {
+    return new MergeUrl(this);
+  }
 }

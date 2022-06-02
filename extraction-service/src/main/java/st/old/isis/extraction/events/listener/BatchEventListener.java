@@ -41,7 +41,7 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
     try {
 
       if (event.shouldFinalize()) {
-        log.info("Finalize batch persist [{}] remaining objects", queue.size());
+        log.debug("Finalize batch persist [{}] remaining objects", queue.size());
         if (!queue.isEmpty()) {
           processBatch(queue.size());
         }
@@ -57,7 +57,7 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
       }
 
       if (queue.size() >= batchConfiguration.getBatchSize()) {
-        log.info(
+        log.debug(
             "Batch persist [{} of {}] objects", batchConfiguration.getBatchSize(), queue.size());
         processBatch(batchConfiguration.getBatchSize());
       }
@@ -103,6 +103,6 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
             // .recipients() todo: recipients
             .build();
 
-//    notificationService.sendNotification(List.of(request));
+    //    notificationService.sendNotification(List.of(request));
   }
 }

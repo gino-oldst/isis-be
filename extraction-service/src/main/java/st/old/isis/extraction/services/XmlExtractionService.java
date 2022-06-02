@@ -14,7 +14,6 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.events.XMLEvent;
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -63,6 +62,6 @@ public abstract class XmlExtractionService {
             // .recipients() todo: recipients
             .build();
 
-    notificationService.sendNotification(List.of(request));
+    //    notificationService.sendNotification(List.of(request));
   }
 }

@@ -8,6 +8,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.enums.Source;
+import st.old.isis.exception.IsisException;
 
 @Slf4j
 @Service
@@ -22,13 +23,13 @@ public class SymphonyDownloadService extends AzureDownloadService {
 
   @Override
   @Audited(event = "DOWNLOAD_SYMPHONY_RAW_DATA")
-  public void sync() {
+  public void sync() throws IsisException {
     super.sync();
   }
 
   @Override
   @Audited(event = "DOWNLOAD_SPECIFIC_SYMPHONY_RAW_DATA")
-  public void sync(@NonNull @Audited final String prefix) {
+  public void sync(@NonNull @Audited final String prefix) throws IsisException {
     super.sync(prefix);
   }
 

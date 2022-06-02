@@ -15,10 +15,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
+import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.entities.DownloadVersionControl;
 import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.services.internal.AuditService;
 import st.old.isis.extraction.services.internal.NotificationService;
+import st.old.isis.extraction.services.internal.StorageService;
 import st.old.isis.extraction.utils.DownloadUtils;
 import st.old.isis.utils.AuditUtil;
 
@@ -27,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -41,6 +43,7 @@ public abstract class AzureDownloadService {
   @Autowired private NotificationService notificationService;
   @Autowired protected AuditUtil auditUtil;
   @Autowired protected AuditService auditService;
+  @Autowired private StorageService storageService;
 
   protected abstract String source();
 
@@ -55,7 +58,7 @@ public abstract class AzureDownloadService {
       @NonNull final String directoryName);
 
   @Async
-  public void sync() {
+  public void sync() throws IsisException {
 
     try {
 
@@ -98,11 +101,13 @@ public abstract class AzureDownloadService {
     } catch (Throwable err) {
       sendDownloadingError(err);
       throw err;
+    } finally {
+      storageService.merge(DownloadContext.getBatchFilesMap());
     }
   }
 
   @Async
-  public void sync(@NonNull final String prefix) {
+  public void sync(@NonNull final String prefix) throws IsisException {
 
     try {
 
@@ -126,6 +131,8 @@ public abstract class AzureDownloadService {
     } catch (Throwable err) {
       sendDownloadingError(err);
       throw err;
+    } finally {
+      storageService.merge(DownloadContext.getBatchFilesMap());
     }
   }
 
@@ -270,6 +277,6 @@ public abstract class AzureDownloadService {
             // .recipients() todo: recipients
             .build();
 
-    notificationService.sendNotification(List.of(request));
+    //    notificationService.sendNotification(List.of(request));
   }
 }

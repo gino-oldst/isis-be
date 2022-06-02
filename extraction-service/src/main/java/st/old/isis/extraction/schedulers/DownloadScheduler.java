@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.BloombergDownloadService;
 import st.old.isis.extraction.services.ReutersDownloadService;
 
@@ -20,7 +21,7 @@ public class DownloadScheduler {
   @SchedulerLock(
       name = "downloadReutersRawFiles",
       lockAtLeastFor = "${isis.download.scheduler.reuters.lock-time}")
-  public void downloadReutersRawFiles() {
+  public void downloadReutersRawFiles() throws IsisException {
 
     log.info("Downloading Reuters raw files from azure...");
 
@@ -29,9 +30,9 @@ public class DownloadScheduler {
 
   @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
   @SchedulerLock(
-          name = "downloadBloombergRawFiles",
-          lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
-  public void downloadBloombergRawFiles() {
+      name = "downloadBloombergRawFiles",
+      lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
+  public void downloadBloombergRawFiles() throws IsisException {
 
     log.info("Downloading Bloomberg raw files from azure...");
 
