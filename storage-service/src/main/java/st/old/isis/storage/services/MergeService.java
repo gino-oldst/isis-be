@@ -3,6 +3,7 @@ package st.old.isis.storage.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.enums.BatchResultType;
@@ -21,6 +22,7 @@ public class MergeService {
   private final CommunicationMessageService communicationMessageService;
   private final CommunicationRecipientService communicationRecipientService;
 
+  @Async
   @Audited(event = "MERGING_TEMP_FILES")
   public void merge(@Audited @NonNull final Map<BatchResultType, List<String>> files) {
     log.info("Merging all processed files...");

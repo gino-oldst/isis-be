@@ -35,7 +35,7 @@ public class ExternalUserService {
     final var users =
         list.stream()
             .filter(user -> !Strings.isEmpty(user.getEmail()))
-            .collect(Collectors.toMap(this::mapKey, Function.identity()))
+            .collect(Collectors.toMap(this::mapKey, Function.identity(), (v1, v2) -> v1))
             .values()
             .stream()
             .map(this::mapToTempEntity)
