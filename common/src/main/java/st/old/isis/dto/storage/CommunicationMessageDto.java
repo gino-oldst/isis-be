@@ -6,12 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.utils.CsvUtil;
+import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @Builder
@@ -76,4 +76,25 @@ public class CommunicationMessageDto implements Dto {
   private List<String> sources;
 
   private String fileSource;
+
+  public static List<String> csvHeaders() {
+    return List.of("id", "subject", "message", "source", "dateTime", "sender", "recipients");
+  }
+
+  @Override
+  public String toCsvString() {
+
+    final var subjectVal = subject == null ? "" : subject;
+    final var recipientsVal =
+        ListUtils.isNullOrEmpty(recipients) ? Collections.emptyList() : recipients;
+    return CsvUtil.mapToCsv(
+        List.of(
+            id,
+            subjectVal,
+            message,
+            source,
+            timeSent.toString(),
+            sender,
+            Arrays.toString(recipientsVal.toArray())));
+  }
 }

@@ -10,8 +10,13 @@ import st.old.isis.configuration.AuditConfiguration;
 import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.builder.AuditUrl;
+import st.old.isis.utils.AuditUtil;
 import st.old.isis.utils.HttpEntityBuilder;
 import st.old.isis.utils.ObjectUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -22,6 +27,7 @@ public class AuditService {
   private final InternalRestService restService;
   private final ObjectUtils objectUtils;
   private final AuditConfiguration auditConfiguration;
+  private final AuditUtil auditUtil;
 
   @Async
   public EventLogDto recordEvent(@NonNull final EventLogDto event) {
@@ -44,5 +50,18 @@ public class AuditService {
     }
 
     return EventLogDto.builder().build();
+  }
+
+  @Async
+  public EventLogDto recordEvent(
+      @NonNull final String source, @NonNull final String event, Map<String, Object> metadata) {
+
+    final var auditEvent = auditUtil.auditEvent(event, metadata);
+    return recordEvent(
+        EventLogDto.builder()
+            .txnId(UUID.randomUUID().toString())
+            .events(List.of(auditEvent))
+            .source(source)
+            .build());
   }
 }

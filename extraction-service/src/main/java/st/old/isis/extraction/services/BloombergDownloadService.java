@@ -110,6 +110,9 @@ public class BloombergDownloadService extends AzureDownloadService {
       saveToHistory(fileId, client.getFilePath());
 
     } catch (JAXBException | XMLStreamException e) {
+
+      finalizeDownload(filename, client.getFilePath());
+
       final var event =
           auditUtil.auditEvent("BLOOMBERG_FILE_PARSING_ERROR", Map.of("filename", filename));
       auditService.recordEvent(
@@ -128,5 +131,15 @@ public class BloombergDownloadService extends AzureDownloadService {
 
   private boolean isEmail(@NonNull final String filename) {
     return EMAIL_FILE_PATTERN.matcher(filename).find();
+  }
+
+  private void finalizeDownload(String filename,String fileSource) {
+    if (isChat(filename)) {
+      chatExtractionService.finalizeParsing(fileSource);
+    }
+
+    if (isEmail(filename)) {
+      emailExtractionService.finalizeParsing(fileSource);
+    }
   }
 }

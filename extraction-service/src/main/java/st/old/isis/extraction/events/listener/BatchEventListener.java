@@ -11,10 +11,11 @@ import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchEvent;
+import st.old.isis.extraction.services.internal.AuditService;
 import st.old.isis.extraction.services.internal.NotificationService;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -26,6 +27,7 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
   private final BatchConfiguration batchConfiguration;
   private final NotificationService notificationService;
   private final ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<>();
+  private final AuditService auditService;
 
   protected abstract boolean isOnQueue(T obj, T newObj);
 
@@ -61,6 +63,11 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
       }
 
     } catch (Throwable err) {
+      auditService.recordEvent(
+          "Extraction Service",
+          "BATCH_PERSISTING_ERROR",
+          Map.of(
+              "batchEvent", event.getClass().getSimpleName(), "filename", event.getFileSource()));
       sendBatchPersistingError(err);
     }
   }
@@ -96,6 +103,6 @@ public abstract class BatchEventListener<T extends Dto, B extends BatchEvent<T>>
             // .recipients() todo: recipients
             .build();
 
-    notificationService.sendNotification(List.of(request));
+//    notificationService.sendNotification(List.of(request));
   }
 }

@@ -10,6 +10,7 @@ import st.old.isis.dto.storage.TempDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.configurations.BatchConfiguration;
 import st.old.isis.extraction.events.BatchCommunicationChainEvent;
+import st.old.isis.extraction.services.internal.AuditService;
 import st.old.isis.extraction.services.internal.NotificationService;
 import st.old.isis.extraction.services.internal.StorageService;
 import st.old.isis.utils.ListUtils;
@@ -24,11 +25,12 @@ public class BatchCommunicationChainListener
   private final ObjectUtils objectUtils;
 
   public BatchCommunicationChainListener(
-      @NonNull final StorageService storageService,
-      @NonNull final ObjectUtils objectUtils,
-      @NonNull final NotificationService notificationService,
-      @NonNull final BatchConfiguration batchConfiguration) {
-    super(batchConfiguration, notificationService);
+          @NonNull final StorageService storageService,
+          @NonNull final ObjectUtils objectUtils,
+          @NonNull final NotificationService notificationService,
+          @NonNull final BatchConfiguration batchConfiguration,
+          @NonNull final AuditService auditService) {
+    super(batchConfiguration, notificationService, auditService);
     this.storageService = storageService;
     this.objectUtils = objectUtils;
   }
@@ -51,7 +53,7 @@ public class BatchCommunicationChainListener
       storageService.importChain(list);
     } catch (Throwable e) {
       // todo: save failed requests to a file for retrying or do an immediate retry
-      log.error("Error persisting communication chains: {}", objectUtils.toString(list));
+      log.error("Error persisting communication chains: {}", e.getMessage());
       throw e;
     }
   }

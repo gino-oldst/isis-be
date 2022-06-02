@@ -187,31 +187,7 @@ public class CommunicationMessageService {
         LocalDateTime.ofInstant(Instant.ofEpochMilli(start), ZoneId.systemDefault()),
         filter);
 
-    final var messageFilter =
-        CommunicationMessageDto.builder()
-            .id(filter.getId())
-            .dateSentFrom(filter.getDateSentFrom())
-            .dateSentTo(filter.getDateSentTo())
-            .source(filter.getSource())
-            .sources(filter.getSources())
-            .sender(filter.getSender())
-            .senders(filter.getSenders())
-            .build();
-
-    final var spec = new CommunicationMessageSpecification(messageFilter);
-
-    final var keyword = filter.getMessage();
-    final var recipients = filter.getRecipients();
-
-    final List<CommunicationMessageDto> filteredResults;
-
-    messageSearchProcessor.init(keyword, recipients);
-
-    try (final var searchResults = streamedRepository.findAll(spec)) {
-      searchResults.forEach(messageSearchProcessor::addToQueue);
-    }
-
-    filteredResults = messageSearchProcessor.getFilteredMessages();
+    final var filteredResults = filterMessages(filter);
 
     final var endTime = System.currentTimeMillis() - start;
 
@@ -423,5 +399,40 @@ public class CommunicationMessageService {
         .filter(Objects::nonNull)
         .reduce(Comparator::thenComparing)
         .orElse(CommunicationMessageDto.SORT_FIELDS.get("timeSent"));
+  }
+
+  private List<CommunicationMessageDto> filterMessages(CommunicationMessageDto filter) {
+    final var messageFilter =
+            CommunicationMessageDto.builder()
+                    .id(filter.getId())
+                    .dateSentFrom(filter.getDateSentFrom())
+                    .dateSentTo(filter.getDateSentTo())
+                    .source(filter.getSource())
+                    .sources(filter.getSources())
+                    .sender(filter.getSender())
+                    .senders(filter.getSenders())
+                    .build();
+
+    final var spec = new CommunicationMessageSpecification(messageFilter);
+
+    final var keyword = filter.getMessage();
+    final var recipients = filter.getRecipients();
+
+    final List<CommunicationMessageDto> filteredResults;
+
+    messageSearchProcessor.init(keyword, recipients);
+
+    try (final var searchResults = streamedRepository.findAll(spec)) {
+      searchResults.forEach(messageSearchProcessor::addToQueue);
+    }
+
+    filteredResults = messageSearchProcessor.getFilteredMessages();
+
+    return filteredResults;
+  }
+
+  @Transactional(timeoutString = "${isis.search.timeout:60}", readOnly = true)
+  public List<CommunicationMessageDto> downloadMessages(CommunicationMessageDto filter) {
+    return filterMessages(filter);
   }
 }
