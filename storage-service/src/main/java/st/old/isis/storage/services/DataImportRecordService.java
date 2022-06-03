@@ -24,7 +24,7 @@ public class DataImportRecordService {
     @Audited(event = "CREATE_DATA_IMPORT_RECORD")
     public DataImportRecordDto create(@NonNull final DataImportRecordDto dto) throws IsisException{
 
-        log.info("Creating data import record {}", dto);
+        log.debug("Creating data import record {}", dto);
 
         final var entity = mapToEntity(dto);
 

@@ -48,7 +48,7 @@ public class QuickCommunicationDto implements Dto, CsvList {
   private List<AlertStatusType> statusTypes;
 
   public static List<String> csvHeaders() {
-    return List.of("messageId", "status", "dateTime", "source", "sender", "recipients");
+    return List.of("messageId", "alert", "triggeredText", "status", "dateTime", "source", "sender", "recipients");
   }
 
   @Override
@@ -60,6 +60,8 @@ public class QuickCommunicationDto implements Dto, CsvList {
                 CsvUtil.mapToCsv(
                     List.of(
                         alert.getCommMessageId(),
+                        alert.getPolicyName(),
+                        alert.getKeyword(),
                         alert.getStatus().name(),
                         alert.getTimeSent().toString(),
                         alert.getSource(),
