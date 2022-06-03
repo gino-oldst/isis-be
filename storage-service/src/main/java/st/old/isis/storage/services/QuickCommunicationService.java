@@ -15,6 +15,7 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
@@ -25,6 +26,7 @@ import st.old.isis.utils.ListUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +43,8 @@ public class QuickCommunicationService {
     private final AlertLogService alertLogService;
 
     private final CommunicationRecipientService communicationRecipientService;
+
+    private final KeywordService keywordService;
 
     @Audited(event = "SEARCH_PAGED_QUICK_COMMUNICATION")
     public ListDto<QuickCommunicationDto> search(@NonNull @Audited final QuickCommunicationDto filter, @Audited Pageable pageable) throws IsisException {
@@ -64,6 +68,10 @@ public class QuickCommunicationService {
         if(ListUtils.isNullOrEmpty(distinctMessageIds)){
             throw IsisException.notFound("No messages found for indicated filter", "NotFoundException");
         }
+
+        final var keyword =
+                keywordService.search(KeywordDto.builder().build()).getData().stream()
+                        .collect(Collectors.toMap(KeywordDto::getId, Function.identity()));
 
         final List<QuickCommunicationDto> quickCommList= new ArrayList<>();
 
@@ -95,6 +103,13 @@ public class QuickCommunicationService {
 
             if(!ListUtils.isNullOrEmpty(filteredAlerts)) {
 
+                filteredAlerts
+                        .forEach(alert -> {
+                            final var key = keyword.get(alert.getKeywordId());
+                            if (key != null) {
+                                alert.setAlertName("Alert " + key.getNumber());
+                            }
+                        });
 //                    final var chainLinkId = alerts.getData().get(0).getCommChainLinkId();
 
                 // Retrieve the recipients

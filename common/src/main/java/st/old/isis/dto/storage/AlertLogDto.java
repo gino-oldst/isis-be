@@ -33,6 +33,8 @@ public class AlertLogDto implements Dto {
 
     private String policyName;
 
+    private String alertName;
+
     private String description;
 
     private String notes;

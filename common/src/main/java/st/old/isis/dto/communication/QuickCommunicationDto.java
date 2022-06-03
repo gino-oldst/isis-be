@@ -60,7 +60,7 @@ public class QuickCommunicationDto implements Dto, CsvList {
                 CsvUtil.mapToCsv(
                     List.of(
                         alert.getCommMessageId(),
-                        alert.getPolicyName(),
+                        alert.getAlertName(),
                         alert.getKeyword(),
                         alert.getStatus().name(),
                         alert.getTimeSent().toString(),
