@@ -1,24 +1,25 @@
 package st.old.isis.storage.batch;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemWriter;
-import st.old.isis.storage.entities.AlertLog;
+import st.old.isis.dto.storage.BatchAlertNotificationDto;
 
 import java.util.List;
 
 @Slf4j
-public class MessageItemWriter implements ItemWriter<AlertLog> {
+@RequiredArgsConstructor
+public class MessageItemWriter implements ItemWriter<BatchAlertNotificationDto> {
 
     @Override
-    public void write(List<? extends AlertLog> list) throws Exception {
+    public void write(List<? extends BatchAlertNotificationDto> list) throws Exception {
 
-        log.info("Processing list of alerts for message id {}", list.get(0).getCommMessageId());
+        // Only used for logging
 
-//        list.stream().forEach(message -> {
-//            log.info("Done Processing message {}", message);
+//        list.stream().forEach(notif -> {
+//            if(notif.getCount() > 0) log.info("Batch Alert Notification for message id {} with {} alerts", notif.getCommMessageId(), notif.getCount());
 //        });
 
-        log.info("Chunk completed!");
-
+        log.info("Chunk completed! Size: {}", list.size());
     }
 }

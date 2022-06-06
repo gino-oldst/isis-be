@@ -17,7 +17,7 @@ import st.old.isis.dto.storage.PolicyProcessorDto;
 import st.old.isis.exception.IsisException;
 
 @RestController
-@RequestMapping(path = "/batch")
+@RequestMapping(path = "/batch-policy")
 @RequiredArgsConstructor
 public class BatchController {
 

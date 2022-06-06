@@ -158,7 +158,7 @@ public class AlertLogService {
                         "NotFoundException"));
     }
 
-    private AlertLog mapToEntity(@NonNull final AlertLogDto dto) {
+    public AlertLog mapToEntity(@NonNull final AlertLogDto dto) {
 
         return AlertLog.builder()
                 .id(dto.getId())

@@ -8,6 +8,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.RepositoryItemReader;
@@ -16,8 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
+import st.old.isis.dto.storage.AlertLogDto;
+import st.old.isis.dto.storage.BatchAlertNotificationDto;
 import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.entities.CommunicationMessage;
+import st.old.isis.storage.policy.PolicyProcessorService;
 import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
 
@@ -34,6 +38,8 @@ public class MessageItemBatchConfig {
 
     private final CommunicationMessageRepository communicationMessageRepository;
     private final AlertLogRepository alertLogRepository;
+
+    private final PolicyProcessorService policyProcessorService;
 
     @Bean
     @StepScope
@@ -58,14 +64,18 @@ public class MessageItemBatchConfig {
         return reader;
     }
 
-    @Bean
-    public RepositoryItemWriter<AlertLog> writer() {
-        RepositoryItemWriter<AlertLog> writer = new RepositoryItemWriter<>();
-        writer.setRepository(alertLogRepository);
-        writer.setMethodName("save");
-        return writer;
-    }
+//    @Bean
+//    public RepositoryItemWriter<AlertLog> writer() {
+//        RepositoryItemWriter<AlertLog> writer = new RepositoryItemWriter<>();
+//        writer.setRepository(alertLogRepository);
+//        writer.setMethodName("saveAll");
+//        return writer;
+//    }
 
+    @Bean
+    public MessageItemWriter writer() {
+        return new MessageItemWriter();
+    }
 
     @Bean
     public MessageItemProcessor processor() {
@@ -73,17 +83,17 @@ public class MessageItemBatchConfig {
     }
 
     @Bean
-    public Step step1(ItemReader<CommunicationMessage> itemReader, ItemWriter<AlertLog> itemWriter)
+    public Step step1(ItemReader<CommunicationMessage> itemReader, ItemWriter<BatchAlertNotificationDto> itemWriter)
             throws Exception {
-        return this.stepBuilderFactory.get("step1").<CommunicationMessage, AlertLog>chunk(100).reader(itemReader)
-                .processor(processor()).writer(itemWriter).build();
+        return this.stepBuilderFactory.get("step1").<CommunicationMessage, BatchAlertNotificationDto>chunk(10000).reader(itemReader)
+                .processor(processor()).writer(writer()).build();
     }
 
     @Bean
     public Job profileUpdateJob(JobCompletionNotificationListener listener, Step step1)
             throws Exception {
 
-        return this.jobBuilderFactory.get("profileUpdateJob").incrementer(new RunIdIncrementer())
+        return this.jobBuilderFactory.get("policyProcessorBatchJob").incrementer(new RunIdIncrementer())
                 .listener(listener).start(step1).build();
     }
 

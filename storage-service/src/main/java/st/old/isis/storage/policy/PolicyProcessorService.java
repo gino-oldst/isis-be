@@ -6,12 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
-import st.old.isis.dto.storage.AlertPolicyDto;
-import st.old.isis.dto.storage.CommunicationMessageDto;
-import st.old.isis.dto.storage.DataImportRecordDto;
-import st.old.isis.dto.storage.PolicyProcessorDto;
+import st.old.isis.dto.storage.*;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.AlertLog;
+import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
 import st.old.isis.storage.services.AlertPolicyService;
 import st.old.isis.storage.services.CommunicationMessageService;
@@ -19,6 +18,7 @@ import st.old.isis.storage.services.DataImportRecordService;
 import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -113,6 +113,33 @@ public class PolicyProcessorService {
 
         log.info("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
+    }
+
+    public BatchAlertNotificationDto processSingleMessageByAllPolicies(@NonNull CommunicationMessage message) throws IsisException {
+
+        log.debug("STARTED - Processing All Policies by Message: {}", message.getId());
+
+        final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
+
+        if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
+            log.warn("No Policy Records Found");
+            throw IsisException.notFound("No Policy Records Found", "NotFoundException");
+        }
+
+        for(AlertPolicyDto policy: listOfPolicies.getData()){
+            if(message == null){
+                log.warn("No communication message for processing.", message);
+            } else {
+                switch (policy.getInternalCode()) {
+                    case "INAPPROPRIATE_LANGUAGE":
+                        return inappropriateLanguagePolicy.processSingle(message, policy, message.getImportDate());
+                    default:
+                        return null;
+                }
+            }
+        }
+
+        return null;
     }
 
     public void processPolicyIdByFilter(PolicyProcessorDto filter) throws IsisException {
