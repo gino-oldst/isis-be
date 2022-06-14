@@ -8,25 +8,31 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.RepositoryItemReader;
-import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Sort;
-import st.old.isis.dto.storage.AlertLogDto;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import st.old.isis.dto.storage.BatchAlertNotificationDto;
-import st.old.isis.storage.entities.AlertLog;
+import st.old.isis.storage.configurations.BatchConfiguration;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.policy.PolicyProcessorService;
 import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableBatchProcessing
@@ -37,9 +43,8 @@ public class MessageItemBatchConfig {
     private final StepBuilderFactory stepBuilderFactory;
 
     private final CommunicationMessageRepository communicationMessageRepository;
-    private final AlertLogRepository alertLogRepository;
 
-    private final PolicyProcessorService policyProcessorService;
+    private final BatchConfiguration batchConfiguration;
 
     @Bean
     @StepScope
@@ -64,13 +69,16 @@ public class MessageItemBatchConfig {
         return reader;
     }
 
-//    @Bean
-//    public RepositoryItemWriter<AlertLog> writer() {
-//        RepositoryItemWriter<AlertLog> writer = new RepositoryItemWriter<>();
-//        writer.setRepository(alertLogRepository);
-//        writer.setMethodName("saveAll");
-//        return writer;
-//    }
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(batchConfiguration.getPolicyProcessingCorePoolSize());
+        executor.setMaxPoolSize(batchConfiguration.getPolicyProcessingMaxPoolSize());
+        executor.setQueueCapacity(batchConfiguration.getPolicyProcessingQueueCapacity());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("MultiThreaded-");
+        return executor;
+    }
 
     @Bean
     public MessageItemWriter writer() {
@@ -83,18 +91,42 @@ public class MessageItemBatchConfig {
     }
 
     @Bean
+    public AsyncItemProcessor<CommunicationMessage, BatchAlertNotificationDto> asyncProcessor() {
+        AsyncItemProcessor<CommunicationMessage, BatchAlertNotificationDto> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(processor());
+        asyncItemProcessor.setTaskExecutor(taskExecutor());
+        return asyncItemProcessor;
+    }
+
+    @Bean
+    public AsyncItemWriter<BatchAlertNotificationDto> asyncWriter() {
+        AsyncItemWriter<BatchAlertNotificationDto> asyncItemWriter = new AsyncItemWriter<>();
+        asyncItemWriter.setDelegate(writer());
+        return asyncItemWriter;
+    }
+
+    @Bean
     public Step step1(ItemReader<CommunicationMessage> itemReader, ItemWriter<BatchAlertNotificationDto> itemWriter)
             throws Exception {
-        return this.stepBuilderFactory.get("step1").<CommunicationMessage, BatchAlertNotificationDto>chunk(10000).reader(itemReader)
-                .processor(processor()).writer(writer()).build();
+        return this.stepBuilderFactory
+                .get("step1")
+                .<CommunicationMessage, Future<BatchAlertNotificationDto>>chunk(batchConfiguration.getPolicyProcessingBatchSize())
+                .reader(itemReader)
+                .processor(asyncProcessor())
+                .writer(asyncWriter())
+                .taskExecutor(taskExecutor())
+                .build();
     }
 
     @Bean
     public Job profileUpdateJob(JobCompletionNotificationListener listener, Step step1)
             throws Exception {
 
-        return this.jobBuilderFactory.get("policyProcessorBatchJob").incrementer(new RunIdIncrementer())
-                .listener(listener).start(step1).build();
+        return this.jobBuilderFactory.get("policyProcessorBatchJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(listener)
+                .flow(step1)
+                .end().build();
     }
 
 

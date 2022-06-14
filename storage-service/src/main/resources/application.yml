@@ -63,3 +63,10 @@ isis:
     timeout: ${SEARCH_TIMEOUT}
   database:
     batch-size: ${DATABASE_BATCH_SIZE}
+  batch-process:
+    policy-processing:
+      size: ${POLICY_PROCESSING_BATCH_SIZE}
+      core-pool-size: ${POLICY_PROCESSING_CORE_POOL_SIZE}
+      max-pool-size: ${POLICY_PROCESSING_MAX_POOL_SIZE}
+      queue-capacity: ${POLICY_PROCESSING_QUEUE_CAPACITY}
+      reader-page-size: ${POLICY_PROCESSING_READER_PAGE_SIZE}

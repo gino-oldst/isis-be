@@ -25,7 +25,8 @@ import java.time.LocalDateTime;
       @Index(name = "idx_communication_message_time_sent", columnList = "timeSent"),
       @Index(name = "idx_communication_message_source", columnList = "source"),
       @Index(name = "idx_communication_message_sender", columnList = "sender"),
-      @Index(name = "idx_communication_message_chain_link_id", columnList = "chainLinkId")
+      @Index(name = "idx_communication_message_chain_link_id", columnList = "chainLinkId"),
+      @Index(name = "idx_communication_message_import_date", columnList = "importDate"),
     })
 public class CommunicationMessage implements Serializable {
 
