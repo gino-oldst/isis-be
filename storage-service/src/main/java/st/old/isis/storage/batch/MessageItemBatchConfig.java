@@ -22,8 +22,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import st.old.isis.dto.storage.BatchAlertNotificationDto;
 import st.old.isis.storage.configurations.BatchConfiguration;
 import st.old.isis.storage.entities.CommunicationMessage;
-import st.old.isis.storage.policy.PolicyProcessorService;
-import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
 
 import java.time.LocalDate;
@@ -61,7 +59,7 @@ public class MessageItemBatchConfig {
         queryMethodArguments.add(LocalDate.parse(dateTo));
         reader.setArguments(queryMethodArguments);
 
-        reader.setPageSize(100);
+        reader.setPageSize(batchConfiguration.getPolicyProcessingReaderPageSize());
         Map<String, Sort.Direction> sorts = new HashMap<>();
         sorts.put("timeSent", Sort.Direction.ASC);
         reader.setSort(sorts);

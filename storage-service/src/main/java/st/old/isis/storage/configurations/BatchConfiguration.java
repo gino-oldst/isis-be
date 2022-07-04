@@ -21,6 +21,6 @@ public class BatchConfiguration {
   private int policyProcessingQueueCapacity;
 
   @Value("${isis.batch-process.policy-processing.reader-page-size}")
-  private int policyProcessingReaderPageSizez;
+  private int policyProcessingReaderPageSize;
 
 }
