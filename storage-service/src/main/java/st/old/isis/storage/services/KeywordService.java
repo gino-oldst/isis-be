@@ -143,8 +143,6 @@ public class KeywordService {
 
         log.info("Uploading Keyword List via csv file");
 
-        final var policy = policyMapService.getByPolicyId(policyId);
-
         try {
             CSVParser csvParser = new CSVParser(new FileReader(tempFile),
                     CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
@@ -152,29 +150,34 @@ public class KeywordService {
 
             long recordCount = StreamSupport.stream(csvRecords.spliterator(), false).count();
             log.info("Uploading {} keyword records", recordCount);
-            int ctr = 1;
 
             List<KeywordDto> keywordDtoList = new ArrayList<>();    //TODO Can include this in the response for verification
 
             for(CSVRecord csvRecord: csvRecords){
 
-                final var keywordDto = KeywordDto.builder()
-                        .word(csvRecord.get(0).replaceAll("\"", ""))
-                        .build();
+                final var targetWord = csvRecord.get(0).replaceAll("\"", "");
+                final var optKeyword = repository.findByWord(targetWord);
 
-                final var createdKeyword= create(keywordDto);
+                if (optKeyword.isPresent()) {
+                    log.error("Keyword {} already exists with id {}", targetWord, optKeyword.get().getId());
+                } else {
+                    final var keywordDto = KeywordDto.builder()
+                            .word(csvRecord.get(0).replaceAll("\"", ""))
+                            .build();
 
-                final var policyMapDto = PolicyMapDto.builder()
-                        .policyId(policyId)
-                        .keywordId(createdKeyword.getId())
-                        .build();
+                    final var createdKeyword= create(keywordDto);
 
-                final var createdPolicyMap = policyMapService.create(policyMapDto);
+                    final var policyMapDto = PolicyMapDto.builder()
+                            .policyId(policyId)
+                            .keywordId(createdKeyword.getId())
+                            .build();
 
-                log.info("Policy Map created for Policy Id: {} and Keyword Id: {}", policyId, createdKeyword.getId());
+                    final var createdPolicyMap = policyMapService.create(policyMapDto);
 
-                keywordDtoList.add(createdKeyword);
+                    log.info("Policy Map created for Policy Id: {} and Keyword Id: {}", policyId, createdKeyword.getId());
 
+                    keywordDtoList.add(createdKeyword);
+                }
             }
 
         } catch (IOException e) {
