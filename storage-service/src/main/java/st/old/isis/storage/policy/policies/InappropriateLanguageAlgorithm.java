@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,8 @@ public class InappropriateLanguageAlgorithm {
                     "NotFoundException");
         }
 
-        final var keywordsMap = generateKeywordMap(listPolicyMap.getData());
+        final var keywordsMap = new TreeMap<String, KeywordDto>(String.CASE_INSENSITIVE_ORDER);
+        keywordsMap.putAll(generateKeywordMap(listPolicyMap.getData()));
 
         // Generate keyword set for trie
         final var keywords = keywordsMap.entrySet().stream()
