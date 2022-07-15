@@ -59,6 +59,7 @@ public class AlertLog implements Serializable {
 
     private String sender;
 
+    @Lob
     private String recipients;
 
     private String source;

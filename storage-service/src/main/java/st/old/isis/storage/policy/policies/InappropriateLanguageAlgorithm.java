@@ -2,6 +2,7 @@ package st.old.isis.storage.policy.policies;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ahocorasick.trie.Emit;
 import org.ahocorasick.trie.Trie;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -84,33 +85,40 @@ public class InappropriateLanguageAlgorithm {
                     emits.stream()
                             .forEach( emit -> {
 
-                                final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
+                                //Disregard if within disclaimer text
+                                if(checkifEmitWithinDisclaimer(emit, message.getMessage())) {
+                                    log.info("Keyword found {} in messageId {} but within disclaimer text. No alerts flagged", emit.getKeyword(), message.getId());
+                                } else {
+                                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
 
-                                final var keywordDto= keywordsMap.get(emit.getKeyword());
+                                    final var keywordDto= keywordsMap.get(emit.getKeyword());
 
-                                if(keywordDto == null){
-                                    log.warn("No keywords found in keywords map for {}", emit.getKeyword());
-                                    return;
+                                    if(keywordDto == null){
+                                        log.warn("No keywords found in keywords map for {}", emit.getKeyword());
+                                        return;
+                                    }
+
+                                    final var alert= AlertLogDto.builder()
+                                            .commChainLinkId(message.getChainLinkId())
+                                            .commMessageId(message.getId())
+                                            .message(message.getMessage())
+                                            .policyId(policyId)
+                                            .description(null) // TODO Generated alert description
+                                            .status(AlertStatusType.OPEN)
+                                            .keyword(emit.getKeyword())
+                                            .keywordId(keywordDto.getId())
+                                            .importDate(importDate)  // For internal use only
+                                            .timeSent(message.getTimeSent())
+                                            .sender(message.getSender())
+                                            .source(message.getSource())
+                                            .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
+                                            .build();
+
+                                    log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
+                                    alertLogService.create(alert);
                                 }
 
-                                final var alert= AlertLogDto.builder()
-                                        .commChainLinkId(message.getChainLinkId())
-                                        .commMessageId(message.getId())
-                                        .message(message.getMessage())
-                                        .policyId(policyId)
-                                        .description(null) // TODO Generated alert description
-                                        .status(AlertStatusType.OPEN)
-                                        .keyword(emit.getKeyword())
-                                        .keywordId(keywordDto.getId())
-                                        .importDate(importDate)  // For internal use only
-                                        .timeSent(message.getTimeSent())
-                                        .sender(message.getSender())
-                                        .source(message.getSource())
-                                        .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
-                                        .build();
 
-                                log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
-                                alertLogService.create(alert);
                             });
                 }
             }
@@ -119,6 +127,27 @@ public class InappropriateLanguageAlgorithm {
 
 
         log.info("COMPLETED - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+
+    }
+
+    private boolean checkifEmitWithinDisclaimer(Emit emit, String message) {
+
+        /*
+        *   Reuters Disclaimer Text
+        *
+        *   Ex. [[:Conversations will be recorded and may be monitored by the participants and their employers, and may be disclosed to governmental or other regulatory bodies in compliance with applicable laws.You acknowledge and agree that any interactive
+        *       features within Eikon, Eikon Messenger, Refinitiv Messenger, Refinitiv Workspace or any other services which are not advertised to be trade execution venues must not be used to conduct or execute any transactions or trades under any circumstances.:]]
+        *
+        * */
+        if(message.matches("^(.*)[\\[\\[\\:\\:\\]\\]]([\\s\\S]*)$")) {
+
+            int disclaimerStart = message.indexOf("[[:");
+            int disclaimerEnd = message.indexOf(":]]");
+
+            return emit.getStart() > disclaimerStart && emit.getEnd() < disclaimerEnd;
+        }
+
+        return false;
 
     }
 
