@@ -31,6 +31,14 @@ spring:
 isis:
   audit:
     enabled: ${AUDIT_ENABLED}
+  cloud:
+    aws:
+      s3:
+        url: s3.eu-west-2.amazonaws.com
+        region: eu-west-2
+        accessKey: REMOVED_AWS_ACCESS_KEY
+        secretKey: REMOVED_AWS_SECRET_KEY
+        bucket: isis-ii-raw-files
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:
