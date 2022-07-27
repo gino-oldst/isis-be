@@ -3,18 +3,17 @@ package st.old.isis.extraction.controllers;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.azure.core.annotation.Post;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.BloombergChatExtractionService;
-import st.old.isis.extraction.services.amazon.AmazonS3DownloadService;
+import st.old.isis.extraction.services.amazon.AmazonS3ClientService;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
-import java.time.LocalDate;
 
 @Slf4j
 @RestController
@@ -23,7 +22,7 @@ import java.time.LocalDate;
 public class AmazonS3Controller {
 
     private final AmazonS3 s3Client;
-    private final AmazonS3DownloadService amazonS3DownloadService;
+    private final AmazonS3ClientService amazonS3ClientService;
     private final BloombergChatExtractionService chatExtractionService;
 
     @GetMapping("/list-bucket-files")
@@ -43,7 +42,7 @@ public class AmazonS3Controller {
 
         ObjectListing objectListing = s3Client.listObjects("isis-ii-raw-test");
         for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
-            final var s3Object = amazonS3DownloadService.downloadS3Object(os.getBucketName(), os.getKey());
+            final var s3Object = amazonS3ClientService.downloadS3Object(os.getBucketName(), os.getKey());
             chatExtractionService.processXml(s3Object.getObjectContent(), null);
         }
 
@@ -55,13 +54,24 @@ public class AmazonS3Controller {
         ObjectListing objectListing = s3Client.listObjects("isis-ii-raw-test");
         for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
             log.info(os.getKey());
-            final var s3Object = amazonS3DownloadService.downloadS3Object(os.getBucketName(), os.getKey());
+            final var s3Object = amazonS3ClientService.downloadS3Object(os.getBucketName(), os.getKey());
             log.info(s3Object.toString());
         }
 
     }
 
+    @PostMapping("/move-file-to-target-bucket")
+    public void moveFileToTargetBucket(@RequestBody AwsS3BucketObject awsS3BucketObject) throws IsisException {
+        amazonS3ClientService.moveFileToTargetLocation(awsS3BucketObject.getSourceBucket(),
+                awsS3BucketObject.getSourceKey(),
+                awsS3BucketObject.getTargetBucket(),
+                awsS3BucketObject.getTargetKey());
+    }
 
+    @PostMapping("/move-file-to-ingress")
+    public void moveFileToIngressBucket(@RequestBody AwsS3BucketObject awsS3BucketObject) throws IsisException {
+        amazonS3ClientService.moveFileToIngressBucket(awsS3BucketObject);
+    }
 
 
 

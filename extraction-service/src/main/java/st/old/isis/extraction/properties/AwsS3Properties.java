@@ -10,6 +10,7 @@ public class AwsS3Properties {
     private String region;
     private String accessKey;
     private String secretKey;
-    private String rawFilesBucket;
+    private String rawBucket;
+    private String ingressBucket;
     private String directory;
 }

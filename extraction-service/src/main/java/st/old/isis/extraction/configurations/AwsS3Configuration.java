@@ -21,6 +21,12 @@ public class AwsS3Configuration {
     @Value(AppConstants.AWS_S3_SECRET_KEY)
     private String secretKey;
 
+    @Value(AppConstants.AWS_S3_RAW_BUCKET)
+    private String rawBucket;
+
+    @Value(AppConstants.AWS_S3_INGRESS_BUCKET)
+    private String ingressBucket;
+
     @Bean
     public AwsS3Properties awsS3Properties(){
         return AwsS3Properties.builder()
@@ -28,6 +34,8 @@ public class AwsS3Configuration {
                 .region(region)
                 .accessKey(accessKey)
                 .secretKey(secretKey)
+                .rawBucket(rawBucket)
+                .ingressBucket(ingressBucket)
                 .build();
     }
 

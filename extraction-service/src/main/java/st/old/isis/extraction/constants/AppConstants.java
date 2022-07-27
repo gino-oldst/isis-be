@@ -10,4 +10,6 @@ public class AppConstants {
     public static final String AWS_S3_ACCESS_KEY = "${isis.cloud.aws.s3.accessKey}";
     public static final String AWS_S3_SECRET_KEY = "${isis.cloud.aws.s3.secretKey}";
 
+    public static final String AWS_S3_RAW_BUCKET = "${isis.cloud.aws.s3.raw-bucket}";
+    public static final String AWS_S3_INGRESS_BUCKET = "${isis.cloud.aws.s3.ingress-bucket}";
 }
