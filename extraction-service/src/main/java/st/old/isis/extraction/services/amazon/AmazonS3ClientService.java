@@ -2,20 +2,49 @@ package st.old.isis.extraction.services.amazon;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CopyObjectResult;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.aws.AwsS3BucketObject;
+import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.properties.AwsS3Properties;
 
 @Slf4j
 @Service
+@Getter
 @RequiredArgsConstructor
 public class AmazonS3ClientService {
 
     private final AmazonS3 amazonS3Client;
     private final AwsS3Properties awsS3Properties;
+
+    public void listAllRawBucketFiles() {
+        ObjectListing objectListing = amazonS3Client.listObjects(awsS3Properties.getRawBucket());
+        for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
+            if(os.getKey().endsWith("/")){
+                log.info("Bucket found! - {}", os.getKey());
+                ObjectListing subFolderListing = listObjects(awsS3Properties.getRawBucket(), os.getKey());
+
+                subFolderListing.getObjectSummaries().stream().forEach(so -> {
+                    log.info(so.getKey());
+                });
+            } else {
+                log.info(">> {}", os.getKey());
+            }
+        }
+    }
+
+    public ObjectListing listObjects(String bucket){
+        return amazonS3Client.listObjects(bucket);
+    }
+
+    public ObjectListing listObjects(String bucket, String prefix){
+        return amazonS3Client.listObjects(bucket, prefix);
+    }
 
     public S3Object downloadS3Object(String bucket, String objectKey){
         S3Object s3object = amazonS3Client.getObject(bucket, objectKey);
