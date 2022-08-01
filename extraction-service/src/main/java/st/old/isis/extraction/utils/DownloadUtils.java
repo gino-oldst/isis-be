@@ -3,6 +3,7 @@ package st.old.isis.extraction.utils;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import st.old.isis.enums.Source;
 
 import java.time.format.DateTimeFormatter;
 
@@ -39,4 +40,24 @@ public class DownloadUtils {
 
   @Value("${isis.download.directory.whatsapp}")
   private String whatsappDirectory;
+
+  public String determineDirectoryFromSource(String source) {
+
+    final var sourceEnum = Source.valueOf(source);
+
+    switch (sourceEnum) {
+      case BLOOMBERG:
+        return bloombergDirectory;
+      case ICE_CHAT:
+        return iceChatDirectory;
+      case REUTERS:
+        return reutersDirectory;
+      case SYMPHONY:
+        return symphonyDirectory;
+      case WHATSAPP:
+        return whatsappDirectory;
+    }
+    return null;
+
+  }
 }
