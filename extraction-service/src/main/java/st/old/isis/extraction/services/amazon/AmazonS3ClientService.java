@@ -10,7 +10,9 @@ import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.utils.DownloadUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -80,6 +82,30 @@ public class AmazonS3ClientService {
     public ObjectListing listObjects(String bucket, String prefix){
         ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(bucket).withDelimiter("/").withPrefix(prefix);
         return amazonS3Client.listObjects(listObjectsRequest);
+    }
+
+    public List<S3ObjectSummary> retrieveRawMessageDataFromSource(String source) {
+
+        final var directory = downloadUtils.determineDirectoryFromSource(source);
+
+        ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(awsS3Properties.getRawBucket()).withPrefix(directory);
+        ObjectListing listObjectsResponse = amazonS3Client.listObjects(listObjectsRequest);
+
+        List<S3ObjectSummary> listSummaries = new ArrayList<>();
+
+        for(S3ObjectSummary os : listObjectsResponse.getObjectSummaries()) {
+            String objectKey = os.getKey();
+            final var keys = Arrays.asList(objectKey.split("/"));
+            if(objectKey.endsWith("/") && keys.size() > 1 && keys.get(1) != null && keys.get(1).matches("^[0-9]{4,6}$")){
+                log.info("Date Bucket found! - {}", keys.get(1));
+                ObjectListing subFolderListing = listRawSpecificFolder(awsS3Properties.getRawBucket(), keys.get(1));
+                subFolderListing.getObjectSummaries().stream().forEach(so -> {
+                    listSummaries.add(so);
+                });
+            }
+        }
+
+        return listSummaries;
     }
 
     public S3Object downloadS3Object(String bucket, String objectKey){

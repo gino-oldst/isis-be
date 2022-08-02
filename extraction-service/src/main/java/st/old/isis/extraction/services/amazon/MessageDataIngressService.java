@@ -12,6 +12,7 @@ import st.old.isis.extraction.services.BloombergChatExtractionService;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -23,8 +24,9 @@ public class MessageDataIngressService {
     private final AwsS3Properties awsS3Properties;
 
     public void ingressAll(@RequestBody DataImportRecordDto request) throws XMLStreamException, JAXBException {
-        ObjectListing objectListing = amazonS3ClientService.listObjects(awsS3Properties.getRawBucket());
-        for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
+        List<S3ObjectSummary> listOfSummaries = amazonS3ClientService.retrieveRawMessageDataFromSource(request.getSource());
+        for(S3ObjectSummary os : listOfSummaries) {
+            log.info("Processing - {}", os.getKey());
             final var s3Object = amazonS3ClientService.downloadS3Object(os.getBucketName(), os.getKey());
             bloombergChatExtractionService.processXml(s3Object.getObjectContent(), null);
         }
