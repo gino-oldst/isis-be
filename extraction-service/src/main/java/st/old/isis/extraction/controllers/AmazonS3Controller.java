@@ -38,7 +38,7 @@ public class AmazonS3Controller {
     }
 
     @PostMapping("/ingress-all")
-    public void ingressAll(@RequestBody DataImportRecordDto request) throws XMLStreamException, JAXBException {
+    public void ingressAll(@RequestBody DataImportRecordDto request) throws XMLStreamException, JAXBException, IsisException {
         messageDataIngressService.ingressAll(request);
     }
 
