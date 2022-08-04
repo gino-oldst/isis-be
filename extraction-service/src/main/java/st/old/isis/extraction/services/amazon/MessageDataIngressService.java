@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.context.DownloadContext;
@@ -35,6 +36,13 @@ public class MessageDataIngressService {
             //TODO Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
 //            bloombergChatExtractionService.processXml(s3Object.getObjectContent(), request.getSource());
             bloombergChatExtractionService.parse(s3Object.getObjectContent(), request.getImportDate(), request.getSource());
+
+            // Transfer to processed bucket
+            amazonS3ClientService.moveFileToIngressBucket(AwsS3BucketObject.builder()
+                            .sourceBucket(os.getBucketName())
+                            .sourceKey(os.getKey())
+                            .targetBucket(awsS3Properties.getIngressBucket())
+                            .targetKey(os.getKey()).build());
         }
         storageService.merge(DownloadContext.getBatchFilesMap());
     }

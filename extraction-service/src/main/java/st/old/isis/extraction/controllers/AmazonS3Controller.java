@@ -34,7 +34,7 @@ public class AmazonS3Controller {
 
     @GetMapping("/list-specific-date")
     public void listRawSpecificFolder(@RequestParam @NonNull final String marker) {
-        amazonS3ClientService.listRawSpecificFolder(marker);
+        amazonS3ClientService.listFilesByBucketAndPrefix(marker);
     }
 
     @PostMapping("/ingress-all")

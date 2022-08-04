@@ -17,6 +17,8 @@ public class DownloadUtils {
   public static final DateTimeFormatter REUTERS_FILENAME_FORMAT =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T0000+0000'");
 
+  public static final String S3_DELIMITER = "/";
+
   @Value("${isis.azure.connection-string}")
   private String connectionString;
 

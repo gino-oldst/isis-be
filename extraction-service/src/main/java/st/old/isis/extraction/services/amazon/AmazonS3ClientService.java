@@ -52,7 +52,7 @@ public class AmazonS3ClientService {
             final var keys = Arrays.asList(objectKey.split("/"));
             if(objectKey.endsWith("/") && keys.size() > 1 && keys.get(1) != null && keys.get(1).matches("^[0-9]{4,6}$")){
                 log.info("Date Bucket found! - {}", keys.get(1));
-                ObjectListing subFolderListing = listRawSpecificFolder(awsS3Properties.getRawBucket(), keys.get(1));
+                ObjectListing subFolderListing = listFilesByBucketAndPrefix(awsS3Properties.getRawBucket(), keys.get(1));
                 subFolderListing.getObjectSummaries().stream().forEach(so -> {
                     log.info(so.getKey());
                 });
@@ -60,12 +60,12 @@ public class AmazonS3ClientService {
         }
     }
 
-    public ObjectListing listRawSpecificFolder(String bucket, String marker) {
-        ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(bucket).withDelimiter("/").withMarker(marker);
+    public ObjectListing listFilesByBucketAndPrefix(String bucket, String prefix) {
+        ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(bucket).withPrefix(prefix);
         return amazonS3Client.listObjects(listObjectsRequest);
     }
 
-    public void listRawSpecificFolder(String marker) {
+    public void listFilesByBucketAndPrefix(String marker) {
 
         ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(awsS3Properties.getRawBucket()).withDelimiter("/").withMarker(marker);
         ObjectListing objectListing = amazonS3Client.listObjects(listObjectsRequest);
@@ -97,9 +97,10 @@ public class AmazonS3ClientService {
             String objectKey = os.getKey();
             final var keys = Arrays.asList(objectKey.split("/"));
             if(objectKey.endsWith("/") && keys.size() > 1 && keys.get(1) != null && keys.get(1).matches("^[0-9]{4,6}$")){
-                log.info("Date Bucket found! - {}", keys.get(1));
-                ObjectListing subFolderListing = listRawSpecificFolder(awsS3Properties.getRawBucket(), keys.get(1));
-                subFolderListing.getObjectSummaries().stream().forEach(so -> {
+                log.info("Date Bucket found! {}/{}", keys.get(0), keys.get(1));
+                String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + keys.get(1) + DownloadUtils.S3_DELIMITER;
+                ObjectListing subFolderListing = listFilesByBucketAndPrefix(awsS3Properties.getRawBucket(), delimitedKey);
+                subFolderListing.getObjectSummaries().stream().filter(so -> !so.getKey().endsWith(DownloadUtils.S3_DELIMITER)).forEach(so -> {
                     listSummaries.add(so);
                 });
             }

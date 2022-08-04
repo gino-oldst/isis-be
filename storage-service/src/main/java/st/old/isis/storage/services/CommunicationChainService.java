@@ -18,6 +18,7 @@ import st.old.isis.storage.repositories.CommunicationChainRepository;
 import st.old.isis.storage.repositories.temp.TempCommunicationChainRepository;
 import st.old.isis.storage.specifications.CommunicationChainSpecification;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,14 +53,21 @@ public class CommunicationChainService {
     // we can include post factory call instead of calling from inside individual services
     // ex. Import Reuters then Bloomberg then ... then create data import record
 
-    DataImportRecordDto dataImportRecordDto =
-        DataImportRecordDto.builder()
-            .importDate(results.get(0).getDateImported())
-            .processedStatus(ProcessedStatus.PENDING_PROCESS)
-            .source(results.get(0).getSource())
-            .build();
+    String source= results.get(0).getSource();
+    LocalDate importDate= results.get(0).getDateImported();
 
-    dataImportRecordService.create(dataImportRecordDto);
+    if(dataImportRecordService.findBySourceAndImportDate(source, importDate) == null) {
+      DataImportRecordDto dataImportRecordDto =
+              DataImportRecordDto.builder()
+                      .importDate(importDate)
+                      .processedStatus(ProcessedStatus.PENDING_PROCESS)
+                      .source(source)
+                      .build();
+
+      dataImportRecordService.create(dataImportRecordDto);
+    } else {
+      log.info("Communication Chain Batch -  Source {} Date Import {} already exists. Will not create new entry", source, importDate);
+    }
 
     return ListDto.<CommunicationChainDto>builder()
         .data(results)

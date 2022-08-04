@@ -12,6 +12,7 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.DataImportRecord;
 import st.old.isis.storage.repositories.DataImportRecordRepository;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 @Slf4j
@@ -70,6 +71,10 @@ public class DataImportRecordService {
                 .orElseThrow(() -> IsisException.notFound(
                        String.format("Cannot find Policy with id: [%s]", id),
                        "NotFoundException"));
+    }
+
+    public DataImportRecord findBySourceAndImportDate(@NonNull String source, LocalDate importDate) {
+        return repository.findBySourceAndImportDate(source, importDate).orElse(null);
     }
 
     @Audited(event = "GET_DATA_IMPORT_RECORD_BY_STATUS")
