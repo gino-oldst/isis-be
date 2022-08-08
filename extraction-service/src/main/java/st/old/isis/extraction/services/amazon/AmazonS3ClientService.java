@@ -10,9 +10,7 @@ import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.utils.DownloadUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -92,17 +90,21 @@ public class AmazonS3ClientService {
         ObjectListing listObjectsResponse = amazonS3Client.listObjects(listObjectsRequest);
 
         List<S3ObjectSummary> listSummaries = new ArrayList<>();
+        Set<String> processedDates= new HashSet<>();
 
         for(S3ObjectSummary os : listObjectsResponse.getObjectSummaries()) {
             String objectKey = os.getKey();
             final var keys = Arrays.asList(objectKey.split("/"));
-            if(objectKey.endsWith("/") && keys.size() > 1 && keys.get(1) != null && keys.get(1).matches("^[0-9]{4,6}$")){
-                log.info("Date Bucket found! {}/{}", keys.get(0), keys.get(1));
-                String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + keys.get(1) + DownloadUtils.S3_DELIMITER;
+
+            if(keys.size() > 1 && keys.get(1) != null && !processedDates.contains(keys.get(1)) && keys.get(1).matches("^[0-9]{4,6}$")){
+                String folderDate = keys.get(1);
+                log.info("Date Bucket found! {}/{}", keys.get(0), folderDate);
+                String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + folderDate + DownloadUtils.S3_DELIMITER;
                 ObjectListing subFolderListing = listFilesByBucketAndPrefix(awsS3Properties.getRawBucket(), delimitedKey);
                 subFolderListing.getObjectSummaries().stream().filter(so -> !so.getKey().endsWith(DownloadUtils.S3_DELIMITER)).forEach(so -> {
                     listSummaries.add(so);
                 });
+                processedDates.add(folderDate);
             }
         }
 
