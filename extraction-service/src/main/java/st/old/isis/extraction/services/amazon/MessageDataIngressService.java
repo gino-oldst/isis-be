@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
@@ -19,14 +20,22 @@ import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.services.BloombergChatExtractionService;
 import st.old.isis.extraction.services.BloombergEmailExtractionService;
 import st.old.isis.extraction.services.FileDownloadHistoryService;
+import st.old.isis.extraction.services.ReutersXmlExtractionService;
 import st.old.isis.extraction.services.internal.StorageService;
 import st.old.isis.extraction.utils.DownloadUtils;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.stream.XMLStreamException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.zip.ZipInputStream;
 
 @Slf4j
 @Service
@@ -37,6 +46,7 @@ public class MessageDataIngressService {
 
     private final BloombergChatExtractionService bloombergChatExtractionService;
     private final BloombergEmailExtractionService emailExtractionService;
+    private final ReutersXmlExtractionService reutersXmlExtractionService;
 
     private final AwsS3Properties awsS3Properties;
     private final StorageService storageService;
@@ -44,6 +54,15 @@ public class MessageDataIngressService {
 
     private final Pattern CHAT_FILE_PATTERN = Pattern.compile("^f840690.ib19.*\\.xml$");
     private final Pattern EMAIL_FILE_PATTERN = Pattern.compile("^f840690.msg.*\\.xml$");
+
+
+    private List<String> directoryFilenamePrefixes() {
+        return List.of("messages.zip");
+    }
+
+    private List<String> unzippedFilenamePrefixes() {
+        return List.of("messages.xml");
+    }
 
     protected String source() {
         return Source.BLOOMBERG.name();
@@ -85,19 +104,67 @@ public class MessageDataIngressService {
 
         boolean isSuccess= false;
 
-//        if(isChat(fileName)){
-//            // TODO Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
-////        bloombergChatExtractionService.processXml(s3Object.getObjectContent(), source);
-//            bloombergChatExtractionService.parse(s3Object.getObjectContent(), importDate, source);
-//            isSuccess = true;
-//        }
+        if (Source.BLOOMBERG.name().equals(source)) {
+            if (isChat(fileName)) {
+                // TODO Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
+//        bloombergChatExtractionService.processXml(s3Object.getObjectContent(), source);
+                bloombergChatExtractionService.parse(s3Object.getObjectContent(), importDate, source);
+                isSuccess = true;
+            }
 
-        if(isEmail(fileName)){
-            // TODO Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
+            if(isEmail(fileName)){
+                // TODO Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
 //            emailExtractionService.processXml(s3Object.getObjectContent(), source);
-            emailExtractionService.parse(s3Object.getObjectContent(), importDate, source);
-            isSuccess = true;
+                emailExtractionService.parse(s3Object.getObjectContent(), importDate, source);
+                isSuccess = true;
+            }
+        } else if (Source.REUTERS.name().equals(source)) {
+
+            try {
+
+                final var zis = new ZipInputStream(s3Object.getObjectContent());
+
+                var zipEntry = zis.getNextEntry();
+
+                while (zipEntry != null) {
+
+                    final var unSkipFile = unzippedFilenamePrefixes().contains(zipEntry.getName());
+
+                    if (unSkipFile) {
+
+                        final var clone = cloneInputStream(zis);
+                        final var filename = zipEntry.getName();
+
+                        log.info("Process unzipped file: {}", filename);
+
+                        reutersXmlExtractionService.processXml(clone, Source.REUTERS.name(), importDate);
+
+                        isSuccess= true;
+
+                    } else {
+                        log.info("Ignore unzipped file: {}", zipEntry.getName());
+                    }
+
+                    zipEntry = zis.getNextEntry();
+                }
+                zis.closeEntry();
+                zis.close();
+            } catch (IOException e) {
+//                final var event =
+//                        auditUtil.auditEvent("REUTERS_UNZIP_FILE_ERROR", Map.of("filename", fileSource));
+//                auditService.recordEvent(
+//                        EventLogDto.builder()
+//                                .txnId(UUID.randomUUID().toString())
+//                                .events(List.of(event))
+//                                .source("Extraction Service")
+//                                .build());
+//                log.error("Error unzipping file: {} - {}", fileSource, e.getMessage());
+                e.printStackTrace();
+            }
+
         }
+
+
 
         if(isSuccess){
             storageService.merge(DownloadContext.getBatchFilesMap());
@@ -131,7 +198,13 @@ public class MessageDataIngressService {
     }
 
     protected boolean skipFile(@NonNull final String filename) {
-        return filenamePatterns().stream().noneMatch(pattern -> pattern.matcher(filename).find());
+        return filenamePatterns().stream().noneMatch(pattern -> pattern.matcher(filename).find()) && !directoryFilenamePrefixes().contains(filename);
+    }
+
+    private InputStream cloneInputStream(@NonNull final InputStream inputStream) throws IOException {
+        var baos = new ByteArrayOutputStream();
+        inputStream.transferTo(baos);
+        return new ByteArrayInputStream(baos.toByteArray());
     }
 
     private List<Pattern> filenamePatterns() {

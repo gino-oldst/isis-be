@@ -96,7 +96,7 @@ public class AmazonS3ClientService {
             String objectKey = os.getKey();
             final var keys = Arrays.asList(objectKey.split("/"));
 
-            if(keys.size() > 1 && keys.get(1) != null && !processedDates.contains(keys.get(1)) && keys.get(1).matches("^[0-9]{4,6}$")){
+            if(keys.size() > 1 && keys.get(1) != null && !processedDates.contains(keys.get(1)) && (keys.get(1).matches("^[0-9]{4,6}$") || keys.get(1).matches("^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])T\\d{4}\\+\\d{4}$") )){
                 String folderDate = keys.get(1);
                 log.info("Date Bucket found! {}/{}", keys.get(0), folderDate);
                 String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + folderDate + DownloadUtils.S3_DELIMITER;
