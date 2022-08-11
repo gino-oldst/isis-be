@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
@@ -97,11 +98,11 @@ public abstract class RawDownloadService {
 
             // TODO Indexing
             // Transfer to processed bucket
-//            amazonS3ClientService.moveFileToProcessedBucket(AwsS3BucketObject.builder()
-//                    .sourceBucket(os.getBucketName())
-//                    .sourceKey(objectKey)
-//                    .targetBucket(awsS3Properties.getIngressBucket())
-//                    .targetKey(objectKey).build());
+            amazonS3ClientService.moveFileToProcessedBucket(AwsS3BucketObject.builder()
+                    .sourceBucket(os.getBucketName())
+                    .sourceKey(objectKey)
+                    .targetBucket(awsS3Properties.getIngressBucket())
+                    .targetKey(objectKey).build());
 
         } catch (IsisException ie) {
             log.error("Error processing raw file: {} - {}", source, ie.getMessage());
