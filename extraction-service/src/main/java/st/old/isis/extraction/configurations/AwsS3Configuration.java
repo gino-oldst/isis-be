@@ -27,6 +27,9 @@ public class AwsS3Configuration {
     @Value(AppConstants.AWS_S3_INGRESS_BUCKET)
     private String ingressBucket;
 
+    @Value(AppConstants.AWS_S3_PROCESSED_BUCKET)
+    private String processedBucket;
+
     @Bean
     public AwsS3Properties awsS3Properties(){
         return AwsS3Properties.builder()
@@ -36,6 +39,7 @@ public class AwsS3Configuration {
                 .secretKey(secretKey)
                 .rawBucket(rawBucket)
                 .ingressBucket(ingressBucket)
+                .processedBucket(processedBucket)
                 .build();
     }
 

@@ -12,4 +12,5 @@ public class AppConstants {
 
     public static final String AWS_S3_RAW_BUCKET = "${isis.cloud.aws.s3.raw-bucket}";
     public static final String AWS_S3_INGRESS_BUCKET = "${isis.cloud.aws.s3.ingress-bucket}";
+    public static final String AWS_S3_PROCESSED_BUCKET = "${isis.cloud.aws.s3.processed-bucket}";
 }

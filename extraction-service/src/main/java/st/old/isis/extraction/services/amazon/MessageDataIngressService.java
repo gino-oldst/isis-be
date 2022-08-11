@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
@@ -32,8 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 

@@ -40,6 +40,7 @@ isis:
         secretKey: REMOVED_AWS_SECRET_KEY
         raw-bucket: ${AWS_S3_RAW_BUCKET}
         ingress-bucket: ${AWS_S3_INGRESS_BUCKET}
+        processed-bucket: ${AWS_S3_PROCESSED_BUCKET}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:

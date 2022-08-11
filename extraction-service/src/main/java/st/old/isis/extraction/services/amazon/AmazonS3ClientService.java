@@ -82,6 +82,10 @@ public class AmazonS3ClientService {
         return amazonS3Client.listObjects(listObjectsRequest);
     }
 
+    public ObjectListing listObjects(ListObjectsRequest listObjectsRequest){
+        return amazonS3Client.listObjects(listObjectsRequest);
+    }
+
     public List<S3ObjectSummary> retrieveRawMessageDataFromSource(String source) {
 
         final var directory = downloadUtils.determineDirectoryFromSource(source);
@@ -121,6 +125,12 @@ public class AmazonS3ClientService {
         String targetKey = bucketObject.getSourceKey(); //TODO For future purposes, determine target key for indexing
         moveFileToTargetLocation(bucketObject.getSourceBucket(), bucketObject.getSourceKey(), awsS3Properties.getIngressBucket(), targetKey);
         log.info("Moved S3 object key {} from bucket {} to ingress bucket {} key {}", bucketObject.getSourceKey(), bucketObject.getSourceBucket(), awsS3Properties.getIngressBucket(), targetKey);
+    }
+
+    public void moveFileToProcessedBucket(AwsS3BucketObject bucketObject){
+        String targetKey = bucketObject.getSourceKey(); //TODO For future purposes, determine target key for indexing
+        moveFileToTargetLocation(bucketObject.getSourceBucket(), bucketObject.getSourceKey(), awsS3Properties.getProcessedBucket(), targetKey);
+        log.info("Moved S3 object key {} from bucket {} to processed bucket {} key {}", bucketObject.getSourceKey(), bucketObject.getSourceBucket(), awsS3Properties.getIngressBucket(), targetKey);
     }
 
     public void moveFileToTargetLocation(String sourceBucket, String sourceKey, String targetBucket, String targetKey){

@@ -20,6 +20,7 @@ public class DataImportRecordDto implements Dto {
 
     private String id;
 
+    @Deprecated
     private String source;
 
     private LocalDate importDate;

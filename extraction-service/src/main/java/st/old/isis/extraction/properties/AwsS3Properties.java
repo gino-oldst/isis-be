@@ -12,5 +12,6 @@ public class AwsS3Properties {
     private String secretKey;
     private String rawBucket;
     private String ingressBucket;
+    private String processedBucket;
     private String directory;
 }
