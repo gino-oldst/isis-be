@@ -43,11 +43,6 @@ public class ReutersRawDownloadService extends RawDownloadService {
     }
 
     @Override
-    protected List<S3ObjectSummary> retrieveRawMessageDataFromSource() {
-        return null;
-    }
-
-    @Override
     protected void processFile(S3Object s3Object, LocalDate importDate, String source) throws IsisException {
 
         try (final var zis = new ZipInputStream(s3Object.getObjectContent())) {

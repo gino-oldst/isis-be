@@ -86,35 +86,6 @@ public class AmazonS3ClientService {
         return amazonS3Client.listObjects(listObjectsRequest);
     }
 
-    public List<S3ObjectSummary> retrieveRawMessageDataFromSource(String source) {
-
-        final var directory = downloadUtils.determineDirectoryFromSource(source);
-
-        ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(awsS3Properties.getRawBucket()).withPrefix(directory);
-        ObjectListing listObjectsResponse = amazonS3Client.listObjects(listObjectsRequest);
-
-        List<S3ObjectSummary> listSummaries = new ArrayList<>();
-        Set<String> processedDates= new HashSet<>();
-
-        for(S3ObjectSummary os : listObjectsResponse.getObjectSummaries()) {
-            String objectKey = os.getKey();
-            final var keys = Arrays.asList(objectKey.split("/"));
-
-            if(keys.size() > 1 && keys.get(1) != null && !processedDates.contains(keys.get(1)) && (keys.get(1).matches("^[0-9]{4,6}$") || keys.get(1).matches("^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])T\\d{4}\\+\\d{4}$") )){
-                String folderDate = keys.get(1);
-                log.info("Date Bucket found! {}/{}", keys.get(0), folderDate);
-                String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + folderDate + DownloadUtils.S3_DELIMITER;
-                ObjectListing subFolderListing = listFilesByBucketAndPrefix(awsS3Properties.getRawBucket(), delimitedKey);
-                subFolderListing.getObjectSummaries().stream().filter(so -> !so.getKey().endsWith(DownloadUtils.S3_DELIMITER)).forEach(so -> {
-                    listSummaries.add(so);
-                });
-                processedDates.add(folderDate);
-            }
-        }
-
-        return listSummaries;
-    }
-
     public S3Object downloadS3Object(String bucket, String objectKey){
         S3Object s3object = amazonS3Client.getObject(bucket, objectKey);
         log.info("Downloaded s3 object", s3object.toString());
