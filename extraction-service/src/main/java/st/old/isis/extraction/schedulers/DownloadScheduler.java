@@ -8,14 +8,16 @@ import org.springframework.stereotype.Component;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.BloombergDownloadService;
 import st.old.isis.extraction.services.ReutersDownloadService;
+import st.old.isis.extraction.services.amazon.BloombergRawDownloadService;
+import st.old.isis.extraction.services.amazon.ReutersRawDownloadService;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DownloadScheduler {
 
-  private final ReutersDownloadService reutersDownloadService;
-  private final BloombergDownloadService bloombergDownloadService;
+  private final BloombergRawDownloadService bloombergRawDownloadService;
+  private final ReutersRawDownloadService reutersRawDownloadService;
 
   @Scheduled(cron = "${isis.download.scheduler.reuters.cron}")
   @SchedulerLock(
@@ -25,7 +27,7 @@ public class DownloadScheduler {
 
     log.info("Downloading Reuters raw files from azure...");
 
-    reutersDownloadService.sync();
+    bloombergRawDownloadService.sync();
   }
 
   @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
@@ -36,6 +38,6 @@ public class DownloadScheduler {
 
     log.info("Downloading Bloomberg raw files from azure...");
 
-    bloombergDownloadService.sync();
+    reutersRawDownloadService.sync();
   }
 }

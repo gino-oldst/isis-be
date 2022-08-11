@@ -47,13 +47,22 @@ public abstract class RawDownloadService {
     protected abstract boolean isDirectoryValid (String key);
 
     @Async
-    public void sync(@RequestBody DataImportRecordDto request) {
+    public void sync() {
+        sync(LocalDate.now());
+    }
+    @Async
+    public void sync(DataImportRecordDto request) {
+        sync(request.getImportDate());
+    }
 
-        List<S3ObjectSummary> listOfSummaries = amazonS3ClientService.retrieveRawMessageDataFromSource(source());
+    @Async
+    public void sync(LocalDate importDate) {
+
+        List<S3ObjectSummary> listOfSummaries = retrieveRawMessageDataFromSource();
 
         listOfSummaries.stream().forEach(o -> {
             try {
-                inspectItem(o, request.getImportDate(), source());
+                inspectItem(o, importDate, source());
             } catch (Exception e) {
                 e.printStackTrace();
                 sendDownloadingError(e);
