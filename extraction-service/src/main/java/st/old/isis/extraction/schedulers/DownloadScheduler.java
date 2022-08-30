@@ -24,10 +24,8 @@ public class DownloadScheduler {
       name = "downloadReutersRawFiles",
       lockAtLeastFor = "${isis.download.scheduler.reuters.lock-time}")
   public void downloadReutersRawFiles() throws IsisException {
-
     log.info("Downloading Reuters raw files from azure...");
-
-    bloombergRawDownloadService.sync();
+    reutersRawDownloadService.sync();
   }
 
   @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
@@ -35,9 +33,8 @@ public class DownloadScheduler {
       name = "downloadBloombergRawFiles",
       lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
   public void downloadBloombergRawFiles() throws IsisException {
-
     log.info("Downloading Bloomberg raw files from azure...");
+    bloombergRawDownloadService.sync();
 
-    reutersRawDownloadService.sync();
   }
 }
