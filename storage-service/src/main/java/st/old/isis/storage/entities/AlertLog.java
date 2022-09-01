@@ -23,7 +23,8 @@ import java.time.LocalDateTime;
     indexes = {
             @Index(name = "idx_communication_message_commMessageId", columnList = "commMessageId"),
             @Index(name = "idx_communication_message_keywordId", columnList = "keywordId"),
-            @Index(name = "idx_communication_message_status", columnList = "status")
+            @Index(name = "idx_communication_message_status", columnList = "status"),
+            @Index(name = "idx_communication_message_source", columnList = "source")
     })
 public class AlertLog implements Serializable {
 

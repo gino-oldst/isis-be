@@ -31,7 +31,6 @@ public class QuickCommunicationController {
 
     @PostMapping("/thread-search/paged")
     public ListDto<QuickCommunicationDto> streamPagedSearch(@RequestBody final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
-        log.info("STARTED: streamPagedSearch");
         return service.getFilteredAlerts(filter, pageable);
     }
 
