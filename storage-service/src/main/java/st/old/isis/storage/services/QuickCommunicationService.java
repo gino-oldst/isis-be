@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.communication.QuickCommunicationDto;
 import st.old.isis.dto.list.ListDto;
@@ -17,8 +18,10 @@ import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.repositories.AlertLogRepository;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
+import st.old.isis.storage.repositories.StreamedAlertLogRepository;
 import st.old.isis.storage.specifications.AlertLogSpecification;
 import st.old.isis.storage.specifications.QuickCommunicationSpecification;
 import st.old.isis.utils.ListUtils;
@@ -34,17 +37,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QuickCommunicationService {
 
-    private final CommunicationMessageRepository communicationMessageRepository;
-
-    private final CommunicationMessageService communicationMessageService;
-
     private final AlertLogRepository alertLogRepository;
-
     private final AlertLogService alertLogService;
-
-    private final CommunicationRecipientService communicationRecipientService;
-
     private final KeywordService keywordService;
+    private final StreamedAlertLogRepository streamedAlertLogRepository;
 
     @Audited(event = "SEARCH_PAGED_QUICK_COMMUNICATION")
     public ListDto<QuickCommunicationDto> search(@NonNull @Audited final QuickCommunicationDto filter, @Audited Pageable pageable) throws IsisException {
@@ -131,6 +127,95 @@ public class QuickCommunicationService {
         });
 
         return quickCommList;
+    }
+
+    @Transactional(readOnly = true)
+    public ListDto<QuickCommunicationDto> getFilteredAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
+
+        // Remove status sorting for now
+        final var sortByStatus = pageable.getSort().by("status");
+
+        Sort newSort = Sort.by(pageable.getSort()
+                .get()
+                .filter(order -> !order.getProperty().equals("status"))
+                .collect(Collectors.toList()));
+
+        int fetchSize = 10;
+
+        final var keyword =
+                keywordService.search(KeywordDto.builder().build()).getData().stream()
+                        .collect(Collectors.toMap(KeywordDto::getId, Function.identity()));
+
+        final List<QuickCommunicationDto> quickCommList= new ArrayList<>();
+
+        final var filterDateTimeFrom= filter.getDateFrom();
+        final var filterDateTimeTo= filter.getDateTo();
+
+        try(final var distinctMessageIds = alertLogRepository.streamDistinctMessagesOrderBy(newSort)){
+            final var itr= distinctMessageIds.iterator();
+            Object[] current = null;
+
+            while(quickCommList.size() < fetchSize && itr.hasNext()){
+
+                {
+                    current = itr.next();
+                    String messageId = (String) current[0];
+
+                    // Retrieve alerts for that specific message
+                    final var alerts = alertLogService.search(AlertLogDto.builder()
+                            .keywordIds(filter.getKeywordIds())
+                            .statusTypes(filter.getStatusTypes())
+                            .sources(filter.getSources())
+                            .senders(filter.getSenders())
+                            .timeSentFromRange(filterDateTimeFrom)
+                            .timeSentToRange(filterDateTimeTo)
+                            .commMessageId(messageId).build(), sortByStatus);
+
+                    var filteredAlerts = alerts.getData();
+
+                    if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+                        filteredAlerts = alerts.getData().stream().filter(alert -> {
+                            String joinString = String.join(",", alert.getRecipients());
+                            return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
+                        }).collect(Collectors.toList());
+                    }
+
+                    if(!ListUtils.isNullOrEmpty(filteredAlerts)) {
+
+                        filteredAlerts
+                                .forEach(alert -> {
+                                    final var key = keyword.get(alert.getKeywordId());
+                                    if (key != null) {
+                                        alert.setAlertName("Alert " + key.getNumber());
+                                    }
+                                });
+
+                        final var filteredListDto = ListDto.<AlertLogDto>builder()
+                                .data(filteredAlerts)
+                                .totalNoOfRecords(filteredAlerts.size())
+                                .build();
+
+                        final var quickComm = QuickCommunicationDto.builder()
+                                .alerts(filteredListDto)
+                                .build();
+
+                        quickCommList.add(quickComm);
+                    }
+
+                }
+
+
+            }
+
+        };
+
+        return ListDto.<QuickCommunicationDto>builder()
+                .data(quickCommList)
+                .totalPages(1)
+                .totalNoOfRecords(quickCommList.size())
+                .totalCurrentElements(quickCommList.size())
+                .build().success();
+
     }
 
     private ListDto<QuickCommunicationDto> pagedResults(List<QuickCommunicationDto> quickCommList, Pageable pageable) {
