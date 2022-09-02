@@ -68,7 +68,7 @@ public class AlertLogService {
             addActivityLog(newEntity.getCommMessageId(),
                     String.format(
                             "Alert [%s] status has been updated to: [%s]",
-                            dto.getPolicyId(), dto.getStatus()));
+                            dto.getId(), dto.getStatus()));
         }
 
         final var updatedEntity = repository.save(newEntity);
