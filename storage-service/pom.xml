@@ -15,7 +15,7 @@
     <description>Storage service for project ISIS</description>
     <properties>
         <java.version>11</java.version>
-	<shedlock.version>4.21.0</shedlock.version>
+        <shedlock.version>4.21.0</shedlock.version>
     </properties>
     <dependencies>
         <dependency>
@@ -64,29 +64,34 @@
             <artifactId>commons-csv</artifactId>
             <version>1.8</version>
         </dependency>
-	<dependency>
-		<groupId>org.ahocorasick</groupId>
-		<artifactId>ahocorasick</artifactId>
-		<version>0.4.0</version>
-	</dependency>
+        <dependency>
+            <groupId>org.ahocorasick</groupId>
+            <artifactId>ahocorasick</artifactId>
+            <version>0.4.0</version>
+        </dependency>
         <dependency>
             <groupId>net.javacrumbs.shedlock</groupId>
             <artifactId>shedlock-provider-jdbc-template</artifactId>
             <version>${shedlock.version}</version>
         </dependency>
-	<dependency>
-		<groupId>net.javacrumbs.shedlock</groupId>
-		<artifactId>shedlock-spring</artifactId>
-		<version>${shedlock.version}</version>
-	</dependency>
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-batch</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.springframework.batch</groupId>
-        <artifactId>spring-batch-integration</artifactId>
-    </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>${shedlock.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-batch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.batch</groupId>
+            <artifactId>spring-batch-integration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-jpamodelgen</artifactId>
+            <version>5.3.7.Final</version>
+        </dependency>
     </dependencies>
 
     <build>

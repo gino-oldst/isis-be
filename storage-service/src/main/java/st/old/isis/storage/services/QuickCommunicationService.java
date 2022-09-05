@@ -2,9 +2,6 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
@@ -14,22 +11,20 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.dto.communication.QuickCommunicationDto;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
-import st.old.isis.dto.storage.CommunicationMessageDto;
-import st.old.isis.dto.storage.CommunicationRecipientDto;
 import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.repositories.AlertLogRepository;
-import st.old.isis.storage.repositories.CommunicationMessageRepository;
 import st.old.isis.storage.repositories.StreamedAlertLogRepository;
 import st.old.isis.storage.specifications.AlertLogSpecification;
-import st.old.isis.storage.specifications.QuickCommunicationSpecification;
 import st.old.isis.utils.ListUtils;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -61,7 +56,7 @@ public class QuickCommunicationService {
 
         List<Object[]> distinctMessageIds = alertLogRepository.findDistinctMessagesOrderBy(newSort);
 
-        if(ListUtils.isNullOrEmpty(distinctMessageIds)){
+        if (ListUtils.isNullOrEmpty(distinctMessageIds)) {
             throw IsisException.notFound("No messages found for indicated filter", "NotFoundException");
         }
 
@@ -69,10 +64,10 @@ public class QuickCommunicationService {
                 keywordService.search(KeywordDto.builder().build()).getData().stream()
                         .collect(Collectors.toMap(KeywordDto::getId, Function.identity()));
 
-        final List<QuickCommunicationDto> quickCommList= new ArrayList<>();
+        final List<QuickCommunicationDto> quickCommList = new ArrayList<>();
 
-        final var filterDateTimeFrom= filter.getDateFrom();
-        final var filterDateTimeTo= filter.getDateTo();
+        final var filterDateTimeFrom = filter.getDateFrom();
+        final var filterDateTimeTo = filter.getDateTo();
 
         distinctMessageIds.forEach(obj -> {
 
@@ -90,14 +85,14 @@ public class QuickCommunicationService {
 
             var filteredAlerts = alerts.getData();
 
-            if(!ListUtils.isNullOrEmpty(filter.getRecipients())){
+            if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
                 filteredAlerts = alerts.getData().stream().filter(alert -> {
                     String joinString = String.join(",", alert.getRecipients());
                     return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
                 }).collect(Collectors.toList());
             }
 
-            if(!ListUtils.isNullOrEmpty(filteredAlerts)) {
+            if (!ListUtils.isNullOrEmpty(filteredAlerts)) {
 
                 filteredAlerts
                         .forEach(alert -> {
@@ -142,87 +137,182 @@ public class QuickCommunicationService {
                 .filter(order -> !order.getProperty().equals("status"))
                 .collect(Collectors.toList()));
 
-        final var pageSize =  pageable.getPageSize();
+        final var pageSize = pageable.getPageSize();
         final var pageNumber = pageable.getPageNumber();
 
         final var keyword =
                 keywordService.search(KeywordDto.builder().build()).getData().stream()
                         .collect(Collectors.toMap(KeywordDto::getId, Function.identity()));
 
-        final List<QuickCommunicationDto> quickCommList= new ArrayList<>();
+        final List<QuickCommunicationDto> quickCommList = new ArrayList<>();
+        int totalDistinctMessageCount = 0;
 
-        final var filterDateTimeFrom= filter.getDateFrom();
-        final var filterDateTimeTo= filter.getDateTo();
+        final var filterDateTimeFrom = filter.getDateFrom();
+        final var filterDateTimeTo = filter.getDateTo();
 
-        try(final var distinctMessageIds = alertLogRepository.streamDistinctMessagesOrderBy(newSort)){
-            final var itr= distinctMessageIds.iterator();
-            Object[] current = null;
+        AlertLog current = null;
 
-            int counter= 0;
+        final var alertFilter = AlertLogDto.builder()
+                .keywordIds(filter.getKeywordIds())
+                .statusTypes(filter.getStatusTypes())
+                .sources(filter.getSources())
+                .senders(filter.getSenders())
+                .timeSentFromRange(filterDateTimeFrom)
+                .timeSentToRange(filterDateTimeTo).build();
 
-            while(quickCommList.size() < pageSize && itr.hasNext()){
-                    current = itr.next();
-                    counter++;
-                    if(counter > pageSize * pageNumber) {
-                        String messageId = (String) current[0];
+        final var spec = new AlertLogSpecification(alertFilter);
 
-                        // Retrieve alerts for that specific message
-                        final var alerts = alertLogService.search(AlertLogDto.builder()
-                                .keywordIds(filter.getKeywordIds())
-                                .statusTypes(filter.getStatusTypes())
-                                .sources(filter.getSources())
-                                .senders(filter.getSenders())
-                                .timeSentFromRange(filterDateTimeFrom)
-                                .timeSentToRange(filterDateTimeTo)
-                                .commMessageId(messageId).build(), sortByStatus);
+        try (final var distinctMessageIds = streamedAlertLogRepository.findAll(spec).filter(distinctByKey(id -> id.getCommMessageId()))) {
+            final var itr = distinctMessageIds.iterator();
+            current = itr.next();
 
-                        var filteredAlerts = alerts.getData();
+            int counter = 0;
 
-                        if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
-                            filteredAlerts = alerts.getData().stream().filter(alert -> {
-                                String joinString = String.join(",", alert.getRecipients());
-                                return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
-                            }).collect(Collectors.toList());
-                        }
+            while (quickCommList.size() < pageSize && itr.hasNext()) {
+                totalDistinctMessageCount++;
+                counter++;
+                if (counter > pageSize * pageNumber) {
+                    String messageId = (String) current.getCommMessageId();
 
-                        if (!ListUtils.isNullOrEmpty(filteredAlerts)) {
+                    // Retrieve alerts for that specific message
+                    final var alerts = alertLogService.search(AlertLogDto.builder()
+                            .keywordIds(filter.getKeywordIds())
+                            .statusTypes(filter.getStatusTypes())
+                            .sources(filter.getSources())
+                            .senders(filter.getSenders())
+                            .timeSentFromRange(filterDateTimeFrom)
+                            .timeSentToRange(filterDateTimeTo)
+                            .commMessageId(messageId).build(), sortByStatus);
 
-                            filteredAlerts
-                                    .forEach(alert -> {
-                                        final var key = keyword.get(alert.getKeywordId());
-                                        if (key != null) {
-                                            alert.setAlertName("Alert " + key.getNumber());
-                                        }
-                                    });
+                    var filteredAlerts = alerts.getData();
 
-                            final var filteredListDto = ListDto.<AlertLogDto>builder()
-                                    .data(filteredAlerts)
-                                    .totalNoOfRecords(filteredAlerts.size())
-                                    .build();
-
-                            final var quickComm = QuickCommunicationDto.builder()
-                                    .alerts(filteredListDto)
-                                    .build();
-
-                            quickCommList.add(quickComm);
-                        }
+                    if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
+                        filteredAlerts = alerts.getData().stream().filter(alert -> {
+                            String joinString = String.join(",", alert.getRecipients());
+                            return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
+                        }).collect(Collectors.toList());
                     }
-            }
 
+                    if (!ListUtils.isNullOrEmpty(filteredAlerts)) {
+
+                        filteredAlerts
+                                .forEach(alert -> {
+                                    final var key = keyword.get(alert.getKeywordId());
+                                    if (key != null) {
+                                        alert.setAlertName("Alert " + key.getNumber());
+                                    }
+                                });
+
+                        final var filteredListDto = ListDto.<AlertLogDto>builder()
+                                .data(filteredAlerts)
+                                .totalNoOfRecords(filteredAlerts.size())
+                                .build();
+
+                        final var quickComm = QuickCommunicationDto.builder()
+                                .alerts(filteredListDto)
+                                .build();
+
+                        quickCommList.add(quickComm);
+                    }
+                }
+            }
         };
 
         return ListDto.<QuickCommunicationDto>builder()
                 .data(quickCommList)
-                .totalPages(100)
-                .totalNoOfRecords(quickCommList.size())
+                .totalPages(totalDistinctMessageCount / pageSize)
+                .totalNoOfRecords(totalDistinctMessageCount)
                 .totalCurrentElements(quickCommList.size())
                 .build().success();
 
     }
 
+    @Transactional(readOnly = true)
+    public ListDto<QuickCommunicationDto> pagedFilteredAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
+
+        log.info("STARTED: getFilteredAlerts - {}", filter);
+
+        // Remove status sorting for now
+        final var sortByStatus = pageable.getSort().by("status");
+
+        final var keyword =
+                keywordService.search(KeywordDto.builder().build()).getData().stream()
+                        .collect(Collectors.toMap(KeywordDto::getId, Function.identity()));
+
+        final List<QuickCommunicationDto> quickCommList = new ArrayList<>();
+
+        final var filterDateTimeFrom = filter.getDateFrom();
+        final var filterDateTimeTo = filter.getDateTo();
+
+        final var alertFilter = AlertLogDto.builder()
+                .keywordIds(filter.getKeywordIds())
+                .statusTypes(filter.getStatusTypes())
+                .sources(filter.getSources())
+                .senders(filter.getSenders())
+                .timeSentFromRange(filterDateTimeFrom)
+                .timeSentToRange(filterDateTimeTo).build();
+
+        final var spec = new AlertLogSpecification(alertFilter);
+
+        final var distinctMessageIds = streamedAlertLogRepository.findDistinctMessageIdsPaged(spec, pageable);
+
+        distinctMessageIds.getContent().stream().forEach(messageId -> {
+
+            // Retrieve alerts for that specific message
+            final var alerts = alertLogService.search(alertFilter, sortByStatus);
+
+            var filteredAlerts = alerts.getData();
+
+            if (!ListUtils.isNullOrEmpty(filter.getRecipients())) {
+                filteredAlerts = alerts.getData().stream().filter(alert -> {
+                    String joinString = String.join(",", alert.getRecipients());
+                    return filter.getRecipients().stream().allMatch(r -> joinString.contains(r));
+                }).collect(Collectors.toList());
+            }
+
+            if (!ListUtils.isNullOrEmpty(filteredAlerts)) {
+
+                filteredAlerts
+                        .forEach(alert -> {
+                            final var key = keyword.get(alert.getKeywordId());
+                            if (key != null) {
+                                alert.setAlertName("Alert " + key.getNumber());
+                            }
+                        });
+
+                final var filteredListDto = ListDto.<AlertLogDto>builder()
+                        .data(filteredAlerts)
+                        .totalNoOfRecords(filteredAlerts.size())
+                        .build();
+
+                final var quickComm = QuickCommunicationDto.builder()
+                        .alerts(filteredListDto)
+                        .build();
+
+                quickCommList.add(quickComm);
+            }
+
+
+        });
+
+        return ListDto.<QuickCommunicationDto>builder()
+                .data(quickCommList)
+                .totalPages(distinctMessageIds.getTotalPages())
+                .totalNoOfRecords(distinctMessageIds.getTotalElements())
+                .totalCurrentElements(distinctMessageIds.getNumberOfElements())
+                .build().success();
+    }
+
+    public static <T> Predicate<T> distinctByKey(
+            Function<? super T, ?> keyExtractor) {
+
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
+
     private ListDto<QuickCommunicationDto> pagedResults(List<QuickCommunicationDto> quickCommList, Pageable pageable) {
-        int start= pageable.getPageNumber() * pageable.getPageSize();
-        int end= (pageable.getPageSize() * (pageable.getPageNumber() + 1)) > quickCommList.size()? quickCommList.size() : pageable.getPageSize() * (pageable.getPageNumber() + 1);
+        int start = pageable.getPageNumber() * pageable.getPageSize();
+        int end = (pageable.getPageSize() * (pageable.getPageNumber() + 1)) > quickCommList.size() ? quickCommList.size() : pageable.getPageSize() * (pageable.getPageNumber() + 1);
 
         final var totalSize = quickCommList.size();
         final var pageSize = pageable.getPageSize();

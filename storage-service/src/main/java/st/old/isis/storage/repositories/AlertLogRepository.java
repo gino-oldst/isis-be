@@ -30,4 +30,7 @@ public interface AlertLogRepository extends JpaRepository<AlertLog, String>,
     @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.source, a.sender FROM AlertLog a")
     Stream<Object[]> streamDistinctMessagesOrderBy(Sort sort);
 
+    @Query("SELECT DISTINCT a.commMessageId, a.timeSent, a.source, a.sender FROM AlertLog a WHERE a.source IN (:sources)")
+    Stream<Object[]> streamDistinctMessagesOrderBy(@Param("sources") List<String> sources, Sort sort);
+
 }
