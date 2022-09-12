@@ -61,7 +61,7 @@ public class InappropriateLanguageAlgorithm {
                 .map(k -> k.getValue().getWord())
                 .collect(Collectors.toSet());
 
-        Trie trie = Trie.builder().ignoreCase().addKeywords(keywords).build();
+        Trie trie = Trie.builder().onlyWholeWordsWhiteSpaceSeparated().ignoreCase().addKeywords(keywords).build();
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
             log.warn("No communication messages found.");
@@ -182,7 +182,7 @@ public class InappropriateLanguageAlgorithm {
                 .map(k -> k.getValue().getWord())
                 .collect(Collectors.toSet());
 
-        Trie trie = Trie.builder().ignoreCase().addKeywords(keywords).build();
+        Trie trie = Trie.builder().onlyWholeWordsWhiteSpaceSeparated().ignoreCase().addKeywords(keywords).build();
 
         if(commMessage.getMessage() == null) {
             if(commMessage.getType() != null || !commMessage.getType().equals(MessageType.BLOOMBERG_CHAT_ATTACHMENT)){
@@ -262,7 +262,7 @@ public class InappropriateLanguageAlgorithm {
                 .map(k -> k.getValue().getWord())
                 .collect(Collectors.toSet());
 
-        Trie trie = Trie.builder().onlyWholeWords().ignoreCase().addKeywords(keywords).build();
+        Trie trie = Trie.builder().onlyWholeWordsWhiteSpaceSeparated().ignoreCase().addKeywords(keywords).build();
 
         final var commMessages= communicationMessageService.searchList(
                 CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
