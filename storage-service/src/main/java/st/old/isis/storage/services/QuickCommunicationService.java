@@ -258,6 +258,8 @@ public class QuickCommunicationService {
 
         distinctMessageIds.getContent().stream().forEach(messageId -> {
 
+            alertFilter.setCommMessageId(messageId);
+
             // Retrieve alerts for that specific message
             final var alerts = alertLogService.search(alertFilter, sortByStatus);
 

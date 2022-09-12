@@ -70,7 +70,8 @@ public class StreamedAlertLogRepositoryImpl implements StreamedAlertLogRepositor
         // Create Count Query
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<AlertLog> alertRootCount = countQuery.from(AlertLog.class);
-        countQuery.select(cb.count(alertRootCount)).where(spec.toPredicate(root, query, cb));
+        countQuery.select(cb.countDistinct(alertRootCount.get(AlertLog_.commMessageId)))
+                .where(spec.toPredicate(root, query, cb));
 
         // Fetches the count of all Books as per given criteria
         Long count = em.createQuery(countQuery).getSingleResult();
