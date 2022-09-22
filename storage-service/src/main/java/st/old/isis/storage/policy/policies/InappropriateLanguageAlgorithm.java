@@ -130,7 +130,7 @@ public class InappropriateLanguageAlgorithm {
 
     }
 
-    private boolean checkifEmitWithinDisclaimer(Emit emit, String message) {
+    private static boolean checkifEmitWithinDisclaimer(Emit emit, String message) {
 
         /*
         *   Reuters Disclaimer Text
@@ -139,12 +139,24 @@ public class InappropriateLanguageAlgorithm {
         *       features within Eikon, Eikon Messenger, Refinitiv Messenger, Refinitiv Workspace or any other services which are not advertised to be trade execution venues must not be used to conduct or execute any transactions or trades under any circumstances.:]]
         *
         * */
-        if(message.matches("^(.*)[\\[\\[\\:\\:\\]\\]]([\\s\\S]*)$")) {
+        if(message.matches("^[\\[\\[\\:\\:\\]\\]]([\\s\\S]*)$")) {
 
             int disclaimerStart = message.indexOf("[[:");
             int disclaimerEnd = message.indexOf(":]]");
 
             return emit.getStart() > disclaimerStart && emit.getEnd() < disclaimerEnd;
+        } else if (message.matches("^[*][*][*]([\\s\\S]*)Disclaimer:([\\s\\S]*)$")) {
+
+            /*
+            *   Bloomberg Chat Disclaimer Text
+            *
+            *  Ex. *** CLIENT NAME THAT (MARIANA UFP LLP) Firm Disclaimer: The contents of this message are confidential and intended for the addressee only. It may not be copied or reproduced and is not an investment recommendation as defined in MAR. It is issued
+            *       for information and marketing purposes only and is not and should not be regarded as an offer to sell or buy any security or financial product. Emails and messages may not be secure or virus-free. We cannot accept responsibility for this message's
+            *       completeness or accuracy and it should not be relied upon as such. Mariana Capital Sales Limited (FRN 649237) is an appointed representative of Mariana UFP LLP which is authorised & regulated by the Financial Conduct Authority (FRN 551170).
+            *
+            * */
+
+            return true;
         }
 
         return false;
@@ -195,36 +207,40 @@ public class InappropriateLanguageAlgorithm {
                 emits.stream()
                         .forEach( emit -> {
 
-                            final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(commMessage.getChainLinkId()).build());
+                            if(checkifEmitWithinDisclaimer(emit, commMessage.getMessage())) {
+                                log.info("Keyword found {} in messageId {} but within disclaimer text. No alerts flagged", emit.getKeyword(), commMessage.getId());
+                            } else {
+                                final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(commMessage.getChainLinkId()).build());
 
-                            final var keywordDto= keywordsMap.get(emit.getKeyword());
+                                final var keywordDto= keywordsMap.get(emit.getKeyword());
 
-                            if(keywordDto == null){
-                                log.warn("No keywords found in keywords map for {}", emit.getKeyword());
-                                return;
+                                if(keywordDto == null){
+                                    log.warn("No keywords found in keywords map for {}", emit.getKeyword());
+                                    return;
+                                }
+
+                                final var alert= AlertLogDto.builder()
+                                        .commChainLinkId(commMessage.getChainLinkId())
+                                        .commMessageId(commMessage.getId())
+                                        .message(commMessage.getMessage())
+                                        .policyId(policyId)
+                                        .description(null) // TODO Generated alert description
+                                        .status(AlertStatusType.OPEN)
+                                        .keyword(emit.getKeyword())
+                                        .keywordId(keywordDto.getId())
+                                        .importDate(importDate)  // For internal use only
+                                        .timeSent(commMessage.getTimeSent())
+                                        .sender(commMessage.getSender())
+                                        .source(commMessage.getSource())
+                                        .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
+                                        .build();
+
+                                log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , commMessage.getId());
+
+                                final var result = alertLogService.create(alert);
+
+                                alertResults.add(alertLogService.mapToEntity(result));
                             }
-
-                            final var alert= AlertLogDto.builder()
-                                    .commChainLinkId(commMessage.getChainLinkId())
-                                    .commMessageId(commMessage.getId())
-                                    .message(commMessage.getMessage())
-                                    .policyId(policyId)
-                                    .description(null) // TODO Generated alert description
-                                    .status(AlertStatusType.OPEN)
-                                    .keyword(emit.getKeyword())
-                                    .keywordId(keywordDto.getId())
-                                    .importDate(importDate)  // For internal use only
-                                    .timeSent(commMessage.getTimeSent())
-                                    .sender(commMessage.getSender())
-                                    .source(commMessage.getSource())
-                                    .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
-                                    .build();
-
-                            log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , commMessage.getId());
-
-                            final var result = alertLogService.create(alert);
-
-                            alertResults.add(alertLogService.mapToEntity(result));
                         });
             }
         }
