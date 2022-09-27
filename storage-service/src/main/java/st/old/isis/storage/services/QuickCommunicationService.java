@@ -228,7 +228,7 @@ public class QuickCommunicationService {
     }
 
     @Transactional(readOnly = true)
-    public ListDto<QuickCommunicationDto> pagedFilteredAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
+        public ListDto<QuickCommunicationDto> pagedFilteredAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
 
         log.info("STARTED: getFilteredAlerts - {}", filter);
 
@@ -258,7 +258,7 @@ public class QuickCommunicationService {
 
         distinctMessageIds.getContent().stream().forEach(messageId -> {
 
-            alertFilter.setCommMessageId(messageId);
+            alertFilter.setCommMessageId((String) messageId.get(0));
 
             // Retrieve alerts for that specific message
             final var alerts = alertLogService.search(alertFilter, sortByStatus);
