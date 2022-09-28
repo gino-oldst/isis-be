@@ -66,7 +66,7 @@ public class StreamedAlertLogRepositoryImpl implements StreamedAlertLogRepositor
         tupleQuery.where(spec.toPredicate(tupleRoot, tupleQuery, cb));
         tupleQuery.orderBy(QueryUtils.toOrders(pageable.getSort(), tupleRoot, cb));
 
-        tupleQuery.multiselect(tupleRoot.get(AlertLog_.commMessageId), tupleRoot.get(AlertLog_.timeSent), tupleRoot.get(AlertLog_.source), tupleRoot.get(AlertLog_.sender));
+        tupleQuery.multiselect(tupleRoot.get(AlertLog_.commMessageId), tupleRoot.get(AlertLog_.timeSent), tupleRoot.get(AlertLog_.source), tupleRoot.get(AlertLog_.sender)).distinct(true);
         List<Tuple> resultAlerts = em.createQuery(tupleQuery).setFirstResult((int) pageable.getOffset()).setMaxResults(pageable.getPageSize()).getResultList();
 
         // Create Count Query
