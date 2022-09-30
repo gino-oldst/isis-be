@@ -133,7 +133,6 @@ public class ReutersXmlExtractionService {
             // TODO Cleanup validation here
 
             if (event.getType().equals(ReutersConstants.EVENT_TYPE_SEND)) {
-
               final var message = event.getMessage().get(0);
               final var timeSent =
                   event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
@@ -146,9 +145,50 @@ public class ReutersXmlExtractionService {
                       .timeSent(timeSent)
                       .sender(eventUser)
                       .importDate(importDate)
+                      .type(ReutersConstants.EVENT_TYPE_SEND)
                       .source(SourceType.REUTERS.toString())
                       .fileSource(fileSource)
                       .build();
+
+              commMessageList.add(commMessage);
+            }
+            else if (event.getType().equals(ReutersConstants.EVENT_TYPE_JOIN)) {
+              final var message = String.format("*** %s has joined the room", event.getUser());
+              final var timeSent =
+                      event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+
+              final var commMessage =
+                  CommunicationMessageDto.builder()
+                      .chainLinkId(sourceChainId)
+                      .message(message)
+                      // .sourceMessageId(String.valueOf(message.getMessageID()))
+                      .timeSent(timeSent)
+                      .sender(eventUser)
+                      .importDate(importDate)
+                      .type(ReutersConstants.EVENT_TYPE_JOIN)
+                      .source(SourceType.REUTERS.toString())
+                      .fileSource(fileSource)
+                      .build();
+
+              commMessageList.add(commMessage);
+            }
+            else if (event.getType().equals(ReutersConstants.EVENT_TYPE_LEAVE)) {
+              final var message = String.format("*** %s has left the room", event.getUser());
+              final var timeSent =
+                      event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+
+              final var commMessage =
+                      CommunicationMessageDto.builder()
+                              .chainLinkId(sourceChainId)
+                              .message(message)
+                              // .sourceMessageId(String.valueOf(message.getMessageID()))
+                              .timeSent(timeSent)
+                              .sender(eventUser)
+                              .importDate(importDate)
+                              .type(ReutersConstants.EVENT_TYPE_LEAVE)
+                              .source(SourceType.REUTERS.toString())
+                              .fileSource(fileSource)
+                              .build();
 
               commMessageList.add(commMessage);
             }

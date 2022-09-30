@@ -42,7 +42,4 @@ public class AmazonS3Controller {
     public void moveFileToIngressBucket(@RequestBody AwsS3BucketObject awsS3BucketObject) {
         amazonS3ClientService.moveFileToIngressBucket(awsS3BucketObject);
     }
-
-
-
 }

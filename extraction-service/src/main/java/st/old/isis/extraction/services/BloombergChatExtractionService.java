@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
+import st.old.isis.constants.BloombergChatConstants;
 import st.old.isis.dto.Dto;
 import st.old.isis.dto.metadata.BloombergAttachment;
 import st.old.isis.dto.metadata.BloombergChatAttachmentMetadata;
@@ -115,18 +116,25 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedMessages = parseMessages(conversation.getMessage(), importDate, fileSource);
     final var attachmentMessages =
         parseAttachments(conversation.getAttachment(), importDate, fileSource);
+    final var mappedEntryEvents =
+            parseEntryEvents(conversation.getParticipantEntered(), importDate, fileSource);
+    final var mappedExitEvents=
+            parseExitEvents(conversation.getParticipantLeft(), importDate, fileSource);
 
     final var mappedMessagesCommunications = mappedMessages.get("communication");
     final var mappedAttachmentCommunications = attachmentMessages.get("communication");
+    final var mappedEntryEventsCommunications = mappedEntryEvents.get("communication");
+    final var mappedExitEventsCommunications = mappedExitEvents.get("communication");
 
     final var communications =
-        Stream.concat(
-                mappedMessagesCommunications.stream(), mappedAttachmentCommunications.stream())
+        Stream.of(
+                mappedMessagesCommunications.stream(),
+                mappedAttachmentCommunications.stream(),
+                mappedEntryEventsCommunications.stream(),
+                mappedExitEventsCommunications.stream())
+            .flatMap(stream -> stream)
             .map(message -> (CommunicationMessageDto) message)
             .collect(Collectors.toList());
-
-    final var mappedEntryEvents =
-        parseEntryEvents(conversation.getParticipantEntered(), fileSource);
 
     final var mappedMessagesRecipients = mappedMessages.get("recipient");
     final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
@@ -311,16 +319,21 @@ public class BloombergChatExtractionService extends XmlExtractionService {
 
   private Map<String, List<? extends Dto>> parseEntryEvents(
       @NonNull final List<BloombergChatParticipantEntered> entryEvents,
+      @NonNull final LocalDate importDate,
       @NonNull final String fileSource) {
 
     final var recipients = new ArrayList<CommunicationRecipientDto>();
     final var users = new ArrayList<ExternalUserDto>();
+    final var messages = new ArrayList<CommunicationMessageDto>();
 
     for (final var entryEvent : entryEvents) {
 
       final var user = entryEvent.getUser();
 
       final var chainLinkId = entryEvent.getConversationID();
+
+      // *** DANIEL CAPLIN (MARIANA UFP LLP) has joined the room.
+      final var customMessage = String.format("*** %1$s %2$s (%3$s) has joined the room", user.getFirstName(), user.getLastName(), user.getCompanyName());
 
       final var recipient =
           CommunicationRecipientDto.builder()
@@ -339,10 +352,82 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .fileSource(fileSource)
               .build();
 
+      final var message =
+          CommunicationMessageDto.builder()
+                .timeSent(
+                  LocalDateTime.ofInstant(
+                          Instant.ofEpochSecond(entryEvent.getDateTimeUTC()), ZoneId.systemDefault()))
+                .message(customMessage)
+                .chainLinkId(chainLinkId)
+                .sender(user.getEmailAddress())
+                .source(SourceType.BLOOMBERG_CHAT.toString())
+                .type(BloombergChatConstants.EVENT_TYPE_JOIN)
+                .importDate(importDate)
+                .fileSource(fileSource)
+                .build();
+
       recipients.add(recipient);
       users.add(externalUser);
+      messages.add(message);
     }
 
-    return Map.of("recipient", recipients, "user", users);
+    return Map.of("recipient", recipients, "user", users, "communication", messages);
+  }
+
+  private Map<String, List<? extends Dto>> parseExitEvents(
+          @NonNull final List<BloombergChatParticipantLeft> exitEvents,
+          @NonNull final LocalDate importDate,
+          @NonNull final String fileSource) {
+
+    final var recipients = new ArrayList<CommunicationRecipientDto>();
+    final var users = new ArrayList<ExternalUserDto>();
+    final var messages = new ArrayList<CommunicationMessageDto>();
+
+    for (final var entryEvent : exitEvents) {
+
+      final var user = entryEvent.getUser();
+
+      final var chainLinkId = entryEvent.getConversationID();
+
+      // *** DANIEL CAPLIN (MARIANA UFP LLP) has left the room.
+      final var customMessage = String.format("*** %1$s %2$s (%3$s) has left the room", user.getFirstName(), user.getLastName(), user.getCompanyName());
+
+      final var recipient =
+              CommunicationRecipientDto.builder()
+                      .chainLinkId(chainLinkId)
+                      .recipient(user.getEmailAddress())
+                      .fileSource(fileSource)
+                      .build();
+
+      final var externalUser =
+              ExternalUserDto.builder()
+                      .externalId(user.getEmailAddress())
+                      .email(user.getEmailAddress())
+                      .firstName(user.getFirstName())
+                      .lastName(user.getLastName())
+                      .source(Source.BLOOMBERG.toString())
+                      .fileSource(fileSource)
+                      .build();
+
+      final var message =
+              CommunicationMessageDto.builder()
+                      .timeSent(
+                              LocalDateTime.ofInstant(
+                                      Instant.ofEpochSecond(entryEvent.getDateTimeUTC()), ZoneId.systemDefault()))
+                      .message(customMessage)
+                      .chainLinkId(chainLinkId)
+                      .sender(user.getEmailAddress())
+                      .source(SourceType.BLOOMBERG_CHAT.toString())
+                      .type(BloombergChatConstants.EVENT_TYPE_LEAVE)
+                      .importDate(importDate)
+                      .fileSource(fileSource)
+                      .build();
+
+      recipients.add(recipient);
+      users.add(externalUser);
+      messages.add(message);
+    }
+
+    return Map.of("recipient", recipients, "user", users, "communication", messages);
   }
 }
