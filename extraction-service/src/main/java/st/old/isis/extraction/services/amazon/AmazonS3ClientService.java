@@ -58,6 +58,22 @@ public class AmazonS3ClientService {
         }
     }
 
+    public void listRawSpecificSourceAndSubDirectory(String source, String subDirectory) {
+
+        final var directory = downloadUtils.determineDirectoryFromSource(source);
+
+        ListObjectsV2Request listObjectsRequest= new ListObjectsV2Request().withBucketName(awsS3Properties.getRawBucket()).withPrefix(directory + DownloadUtils.S3_DELIMITER + subDirectory);
+        ListObjectsV2Result listObjectsResponse = amazonS3Client.listObjectsV2(listObjectsRequest);
+
+        for(S3ObjectSummary os : listObjectsResponse.getObjectSummaries()) {
+            String objectKey = os.getKey();
+            final var keys = Arrays.asList(objectKey.split("/"));
+            if(keys.size() > 1 && keys.get(1) != null && keys.get(1).matches("^[0-9]{4,6}$")){
+                log.info("File Found in Bucket {} - {}", keys.get(1), keys.get(2));
+            }
+        }
+    }
+
     public ObjectListing listFilesByBucketAndPrefix(String bucket, String prefix) {
         ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(bucket).withPrefix(prefix);
         return amazonS3Client.listObjects(listObjectsRequest);

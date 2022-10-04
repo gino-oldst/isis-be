@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
@@ -47,17 +46,37 @@ public abstract class RawDownloadService {
 
     protected abstract boolean isDirectoryValid (String key);
 
+    protected abstract LocalDate parseToImportDate(String key);
+
+    protected abstract String parseToS3FolderDate(LocalDate originalDate);
+
     @Async
-    public void sync() {
-        sync(LocalDate.now());
+    public void syncCurrentDate() {
+        syncDate(LocalDate.now());
     }
     @Async
-    public void sync(DataImportRecordDto request) {
-        sync(request.getImportDate());
+    public void syncAll(DataImportRecordDto request) {
+        syncAll(request.getImportDate());
     }
 
     @Async
-    public void sync(LocalDate importDate) {
+    public void syncDate(LocalDate importDate) {
+
+        List<S3ObjectSummary> listOfSummaries = retrieveRawMessageDataFromSourceByDate(importDate);
+
+        listOfSummaries.stream().forEach(o -> {
+            try {
+                inspectItem(o, importDate, source());
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendDownloadingError(e);
+            }
+        });
+
+    }
+
+    @Async
+    public void syncAll(LocalDate importDate) {
 
         List<S3ObjectSummary> listOfSummaries = retrieveRawMessageDataFromSource();
 
@@ -79,6 +98,11 @@ public abstract class RawDownloadService {
 
         String objectKey = os.getKey();
         String fileName = getS3FileName(objectKey);
+        LocalDate processedImportDate = importDate;
+
+        if(importDate == null){
+            processedImportDate = parseToImportDate(objectKey);
+        }
 
         if (skipFile(fileName)) {
             log.info("File ignored: {}", objectKey);
@@ -92,7 +116,7 @@ public abstract class RawDownloadService {
 
         try {
 
-            processFile(s3Object, importDate, source());
+            processFile(s3Object, processedImportDate, source());
 
             storageService.merge(DownloadContext.getBatchFilesMap());
 
@@ -140,9 +164,43 @@ public abstract class RawDownloadService {
         return listSummaries;
     }
 
+    protected List<S3ObjectSummary> retrieveRawMessageDataFromSourceByDate(LocalDate targetDate) {
+
+        final var directory = downloadUtils.determineDirectoryFromSource(source());
+
+        ListObjectsRequest listObjectsRequest= new ListObjectsRequest().withBucketName(awsS3Properties.getRawBucket()).withPrefix(directory + DownloadUtils.S3_DELIMITER + parseToS3FolderDate(targetDate));
+        ObjectListing listObjectsResponse = amazonS3ClientService.listObjects(listObjectsRequest);
+
+        List<S3ObjectSummary> listSummaries = new ArrayList<>();
+        Set<String> processedDates= new HashSet<>();
+
+        for(S3ObjectSummary os : listObjectsResponse.getObjectSummaries()) {
+            String objectKey = os.getKey();
+            final var keys = Arrays.asList(objectKey.split("/"));
+
+            if(keys.size() > 1 && keys.get(1) != null && !processedDates.contains(keys.get(1)) && isDirectoryValid(keys.get(1))){
+                String folderDate = keys.get(1);
+                log.info("Date Bucket found! {}/{} for source {}", keys.get(0), folderDate, source());
+                String delimitedKey = keys.get(0) + DownloadUtils.S3_DELIMITER + folderDate + DownloadUtils.S3_DELIMITER;
+                ObjectListing subFolderListing = amazonS3ClientService.listFilesByBucketAndPrefix(awsS3Properties.getRawBucket(), delimitedKey);
+                subFolderListing.getObjectSummaries().stream().filter(so -> !so.getKey().endsWith(DownloadUtils.S3_DELIMITER)).forEach(so -> {
+                    listSummaries.add(so);
+                });
+                processedDates.add(folderDate);
+            }
+        }
+
+        return listSummaries;
+    }
+
     protected String getS3FileName(String objectKey) {
         final var keys = objectKey.split(DownloadUtils.S3_DELIMITER);
         return keys[2];
+    }
+
+    protected static String getFileDate(String objectKey) {
+        final var keys = objectKey.split(DownloadUtils.S3_DELIMITER);
+        return keys[1];
     }
 
     private void sendDownloadingError(Throwable err) {
