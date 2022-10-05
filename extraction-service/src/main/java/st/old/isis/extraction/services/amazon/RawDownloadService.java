@@ -93,7 +93,7 @@ public abstract class RawDownloadService {
 
     private void inspectItem (
             @NonNull final S3ObjectSummary os,
-            @NonNull final LocalDate importDate,
+            final LocalDate importDate,
             @NonNull final String source) throws IsisException {
 
         String objectKey = os.getKey();
@@ -109,7 +109,7 @@ public abstract class RawDownloadService {
             return;
         }
 
-        log.info("Processing - {}", objectKey);
+        log.info("Processing - {} for Import Date - {}", objectKey, processedImportDate);
 
         final var s3Object = amazonS3ClientService.downloadS3Object(os.getBucketName(), objectKey);
 
