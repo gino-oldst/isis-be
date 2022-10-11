@@ -1,5 +1,7 @@
 package st.old.isis.dto.storage;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,8 +24,10 @@ public class KeywordDto implements Dto {
 
     private String word;
 
+    @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDateTime dateCreated;
 
+    @JsonDeserialize(using = LocalDateDeserializer.class)
     private LocalDateTime dateModified;
 
     private boolean deleted;
