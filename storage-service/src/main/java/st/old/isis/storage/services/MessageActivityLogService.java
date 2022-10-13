@@ -112,22 +112,26 @@ public class MessageActivityLogService {
 
   private MessageActivityLog mapToEntity(@NonNull final MessageActivityLogDto dto) {
     return MessageActivityLog.builder()
-        .id(dto.getId())
-        .messageId(dto.getMessageId())
-        .executorId(dto.getExecutorId())
-        .event(dto.getEvent())
-        .type(dto.getType())
-        .dateCreated(dto.getDateCreated())
-        .build();
+          .id(dto.getId())
+          .messageId(dto.getMessageId())
+          .alertId(dto.getAlertId())
+          .executorId(dto.getExecutorId())
+          .event(dto.getEvent())
+          .type(dto.getType())
+          .target(dto.getTarget())
+          .dateCreated(dto.getDateCreated())
+          .build();
   }
 
   private MessageActivityLogDto mapToResource(@NonNull final MessageActivityLog entity) {
     return MessageActivityLogDto.builder()
         .id(entity.getId())
         .messageId(entity.getMessageId())
+        .alertId(entity.getAlertId())
         .executorId(entity.getExecutorId())
         .event(entity.getEvent())
         .type(entity.getType())
+        .target(entity.getTarget())
         .dateCreated(entity.getDateCreated())
         .build();
   }

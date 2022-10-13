@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.enums.ActivityTargetType;
 import st.old.isis.enums.ActivityType;
 
 import java.time.LocalDate;
@@ -22,11 +23,15 @@ public class MessageActivityLogDto implements Dto {
 
     private String messageId;
 
+    private String alertId;
+
     private String executorId;
 
     private String event;
 
     private ActivityType type;
+
+    private ActivityTargetType target;
 
     private LocalDateTime dateCreated;
 
