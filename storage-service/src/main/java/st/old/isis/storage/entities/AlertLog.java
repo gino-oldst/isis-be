@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 import st.old.isis.enums.AlertStatusType;
+import st.old.isis.enums.Escalation;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -24,7 +25,8 @@ import java.time.LocalDateTime;
             @Index(name = "idx_communication_message_commMessageId", columnList = "commMessageId"),
             @Index(name = "idx_communication_message_keywordId", columnList = "keywordId"),
             @Index(name = "idx_communication_message_status", columnList = "status"),
-            @Index(name = "idx_communication_message_source", columnList = "source")
+            @Index(name = "idx_communication_message_source", columnList = "source"),
+            @Index(name = "idx_communication_message_escalation", columnList = "escalation")
     })
 public class AlertLog implements Serializable {
 
@@ -73,6 +75,10 @@ public class AlertLog implements Serializable {
 
     @UpdateTimestamp
     private LocalDateTime dateModified;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "escalation", columnDefinition = "varchar(255) default 'BASE'")
+    private Escalation escalation = Escalation.BASE;
 
     private boolean deleted;
 }
