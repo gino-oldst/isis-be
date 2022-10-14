@@ -52,7 +52,7 @@ public class AlertPolicyService {
 
         final var oldEntity = findById(dto.getId());
 
-        validator.validate(dto);
+        validator.updateValidate(oldEntity, dto);
 
         final var newEntity = mapToEntity(oldEntity, dto);
 

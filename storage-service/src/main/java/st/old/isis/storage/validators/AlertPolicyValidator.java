@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.KeywordDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.AlertPolicy;
 import st.old.isis.storage.entities.Keyword;
 import st.old.isis.storage.repositories.AlertPolicyRepository;
 
@@ -23,8 +24,8 @@ public class AlertPolicyValidator {
         }
     }
 
-    public void updateValidate(@NonNull final Keyword oldEntity,
-                               @NonNull final KeywordDto dto) throws IsisException {
+    public void updateValidate(@NonNull final AlertPolicy oldEntity,
+                               @NonNull final AlertPolicyDto dto) throws IsisException {
 
     }
 }
