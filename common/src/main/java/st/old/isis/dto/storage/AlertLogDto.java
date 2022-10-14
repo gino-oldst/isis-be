@@ -82,5 +82,7 @@ public class AlertLogDto implements Dto {
 
     private Escalation escalation;
 
+    private List<Escalation> escalations;
+
     private boolean deleted;
 }

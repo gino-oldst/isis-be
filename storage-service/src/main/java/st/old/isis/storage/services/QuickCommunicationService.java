@@ -249,6 +249,7 @@ public class QuickCommunicationService {
                 .statusTypes(filter.getStatusTypes())
                 .sources(filter.getSources())
                 .senders(filter.getSenders())
+                .escalations(filter.getEscalations())
                 .timeSentFromRange(filterDateTimeFrom)
                 .timeSentToRange(filterDateTimeTo).build();
 
