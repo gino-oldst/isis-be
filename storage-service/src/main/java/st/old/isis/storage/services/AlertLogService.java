@@ -46,7 +46,8 @@ public class AlertLogService {
 
         final var createdEntity = repository.save(entity);
 
-        addActivityLog(createdEntity.getCommMessageId(), "An alert has been generated for this message");
+        addActivityLog(createdEntity.getCommMessageId(),
+                "An alert has been generated for this message", createdEntity.getId(), ActivityTargetType.ALERT);
 
         return mapToResource(createdEntity);
     }
@@ -65,7 +66,7 @@ public class AlertLogService {
                 addActivityLog(newEntity.getCommMessageId(),
                         String.format(
                                 "Note was added for alert [%s] : %s",
-                                dto.getPolicyId(), dto.getNotes()));
+                                dto.getPolicyId(), dto.getNotes()), oldEntity.getId(), ActivityTargetType.COMMUNICATION_MESSAGE);
             }
         }
 
@@ -73,7 +74,7 @@ public class AlertLogService {
             addActivityLog(newEntity.getCommMessageId(),
                     String.format(
                             "Alert [%s] status has been updated to: [%s]",
-                            dto.getId(), dto.getStatus()));
+                            dto.getId(), dto.getStatus()), oldEntity.getId(), ActivityTargetType.ALERT);
         }
 
         determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
@@ -274,21 +275,18 @@ public class AlertLogService {
         return mapToEntity(updatedEntity);
     }
 
-    private void addActivityLog(@NonNull final String messageId, @NonNull final String message) {
+    private void addActivityLog(@NonNull final String messageId, @NonNull final String message, final String alertId, ActivityTargetType targetType) {
         messageActivityLogService.create(
                 MessageActivityLogDto.builder()
                         .messageId(messageId)
+                        .alertId(alertId)
                         .type(ActivityType.SYSTEM_EVENT)
-                        .target(ActivityTargetType.ALERT)
+                        .target(targetType)
                         .event(message)
                         .build());
     }
 
     private void addEscalationActivityLog(@NonNull final String messageId, @NonNull final String alertId, @NonNull final String message, @NonNull final String executorId) {
-
-        final var authenticationContext = SecurityContextHolder.getContext().getAuthentication();
-        final var user = authenticationContext.getPrincipal();
-
         messageActivityLogService.create(
                 MessageActivityLogDto.builder()
                         .messageId(messageId)
