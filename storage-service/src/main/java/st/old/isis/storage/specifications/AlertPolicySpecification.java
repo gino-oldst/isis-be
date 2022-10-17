@@ -27,6 +27,10 @@ public class AlertPolicySpecification implements Specification<AlertPolicy> {
 
         final List<Predicate> predicates = new ArrayList<>();
 
+        if(filter.getName() != null && !filter.getName().isEmpty()) {
+            predicates.add(cb.like(root.get("name"), "%" + filter.getName() + "%"));
+        }
+
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
         return cb.and(predicates.toArray(Predicate[]::new));
