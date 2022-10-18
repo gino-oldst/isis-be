@@ -88,6 +88,17 @@ public class BloombergRawDownloadService extends RawDownloadService {
         return key.matches("^[0-9]{4,6}$");
     }
 
+    @Override
+    protected LocalDate parseToImportDate(String key) {
+        final String rawDate = getFileDate(key);
+        return LocalDate.parse(rawDate, DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
+    }
+
+    @Override
+    protected String parseToS3FolderDate(LocalDate originalDate) {
+        return originalDate.format(DownloadUtils.BLOOMBERG_FILENAME_FORMAT);
+    }
+
     private InputStream cloneInputStream(@NonNull final InputStream inputStream) throws IOException {
         var baos = new ByteArrayOutputStream();
         inputStream.transferTo(baos);

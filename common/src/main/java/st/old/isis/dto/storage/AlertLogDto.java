@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 import st.old.isis.enums.AlertStatusType;
+import st.old.isis.enums.Escalation;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -78,6 +79,12 @@ public class AlertLogDto implements Dto {
     private List<String> sources;
 
     private List<String> recipients;
+
+    private String executorId;
+
+    private Escalation escalation;
+
+    private List<Escalation> escalations;
 
     private boolean deleted;
 }

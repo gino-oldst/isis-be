@@ -10,6 +10,7 @@ import st.old.isis.dto.audit.EventLogDto;
 import st.old.isis.enums.Source;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.ReutersXmlExtractionService;
+import st.old.isis.extraction.utils.DownloadUtils;
 
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
@@ -94,6 +95,17 @@ public class ReutersRawDownloadService extends RawDownloadService {
 
     protected boolean isDirectoryValid(String key) {
         return key.matches("^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])T\\d{4}\\+\\d{4}$");
+    }
+
+    @Override
+    protected LocalDate parseToImportDate(String key) {
+        final String rawDate = getFileDate(key);
+        return LocalDate.parse(rawDate, DownloadUtils.REUTERS_FILENAME_FORMAT);
+    }
+
+    @Override
+    protected String parseToS3FolderDate(LocalDate originalDate) {
+        return originalDate.format(DownloadUtils.REUTERS_FILENAME_FORMAT);
     }
 
     private InputStream cloneInputStream(@NonNull final InputStream inputStream) throws IOException {

@@ -6,8 +6,6 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import st.old.isis.exception.IsisException;
-import st.old.isis.extraction.services.BloombergDownloadService;
-import st.old.isis.extraction.services.ReutersDownloadService;
 import st.old.isis.extraction.services.amazon.BloombergRawDownloadService;
 import st.old.isis.extraction.services.amazon.ReutersRawDownloadService;
 
@@ -25,7 +23,7 @@ public class DownloadScheduler {
       lockAtLeastFor = "${isis.download.scheduler.reuters.lock-time}")
   public void downloadReutersRawFiles() throws IsisException {
     log.info("Downloading Reuters raw files from AWS S3...");
-    reutersRawDownloadService.sync();
+    reutersRawDownloadService.syncCurrentDate();
   }
 
   @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
@@ -34,7 +32,7 @@ public class DownloadScheduler {
       lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
   public void downloadBloombergRawFiles() throws IsisException {
     log.info("Downloading Bloomberg raw files from AWS S3...");
-    bloombergRawDownloadService.sync();
+    bloombergRawDownloadService.syncCurrentDate();
 
   }
 }

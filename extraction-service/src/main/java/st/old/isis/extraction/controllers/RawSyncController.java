@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.DataImportRecordDto;
-import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.amazon.BloombergRawDownloadService;
 import st.old.isis.extraction.services.amazon.ReutersRawDownloadService;
 
@@ -21,13 +20,13 @@ public class RawSyncController {
   @PostMapping("/bloomberg")
   @Audited(event = "MANUAL_SYNC_BLOOMBERG_S3")
   public void downloadBloomberg(@RequestBody DataImportRecordDto dto) {
-    bloombergRawDownloadService.sync(dto);
+    bloombergRawDownloadService.syncAll(dto);
   }
 
   @PostMapping("/reuters")
   @Audited(event = "MANUAL_SYNC_REUTERS_S3")
   public void downloadReuters(@RequestBody DataImportRecordDto dto) {
-    reutersRawDownloadService.sync(dto);
+    reutersRawDownloadService.syncAll(dto);
   }
 
 }

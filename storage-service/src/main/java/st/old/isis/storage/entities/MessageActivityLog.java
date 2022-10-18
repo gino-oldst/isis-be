@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
+import st.old.isis.enums.ActivityTargetType;
 import st.old.isis.enums.ActivityType;
 
 import javax.persistence.*;
@@ -30,12 +31,17 @@ public class MessageActivityLog implements Serializable {
 
   private String messageId;
 
+  private String alertId;
+
   private String executorId;
 
   private String event;
 
   @Enumerated(EnumType.STRING)
   private ActivityType type;
+
+  @Enumerated(EnumType.STRING)
+  private ActivityTargetType target;
 
   @CreationTimestamp private LocalDateTime dateCreated;
 

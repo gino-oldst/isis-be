@@ -9,7 +9,6 @@ import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.*;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
-import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
 import st.old.isis.storage.services.AlertPolicyService;
@@ -19,6 +18,7 @@ import st.old.isis.utils.ListUtils;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -142,6 +142,25 @@ public class PolicyProcessorService {
         return null;
     }
 
+    public BatchAlertNotificationDto processSingleMessageByAllPolicies(@NonNull Map<AlertPolicyDto, List<KeywordDto>> policyMap, @NonNull CommunicationMessage message) throws IsisException {
+
+        log.debug("STARTED - Processing All Policies by Message: {}", message.getId());
+
+        for(AlertPolicyDto policy: policyMap.keySet()){
+            if(message == null){
+                log.warn("No communication message for processing.", message);
+            } else {
+                switch (policy.getInternalCode()) {
+                    case "INAPPROPRIATE_LANGUAGE":
+                        return inappropriateLanguagePolicy.processSingleWithKeywords(message, policy, policyMap.get(policy), message.getImportDate());
+                    default:
+                        return null;
+                }
+            }
+        }
+
+        return null;
+    }
     public void processPolicyIdByFilter(PolicyProcessorDto filter) throws IsisException {
 
         log.info("STARTED - Processing Policy By Filter {}", filter);

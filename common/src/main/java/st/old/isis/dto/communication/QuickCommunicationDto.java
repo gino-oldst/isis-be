@@ -10,6 +10,7 @@ import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.enums.AlertStatusType;
+import st.old.isis.enums.Escalation;
 import st.old.isis.utils.CsvUtil;
 
 import java.time.LocalDateTime;
@@ -48,6 +49,8 @@ public class QuickCommunicationDto implements Dto, CsvList {
   private List<String> recipients;
 
   private List<AlertStatusType> statusTypes;
+
+  private List<Escalation> escalations;
 
   public static List<String> csvHeaders() {
     return List.of("messageId", "alert", "triggeredText", "status", "dateTime", "source", "sender", "recipients");

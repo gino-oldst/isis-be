@@ -5,13 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AlertLogDto;
 import st.old.isis.dto.storage.AlertPolicyDto;
+import st.old.isis.dto.storage.EscalationHistoryDto;
 import st.old.isis.dto.storage.MessageActivityLogDto;
+import st.old.isis.enums.ActivityTargetType;
 import st.old.isis.enums.ActivityType;
+import st.old.isis.enums.Escalation;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.AlertLog;
 import st.old.isis.storage.repositories.AlertLogRepository;
@@ -30,8 +34,9 @@ public class AlertLogService {
     private final AlertLogRepository repository;
     private final AlertLogValidator validator;
     private final MessageActivityLogService messageActivityLogService;
-
     private final AlertPolicyService alertPolicyService;
+
+    private final EscalationHistoryService escalationHistoryService;
 
 
     @Audited(event = "CREATE_ALERT_LOG")
@@ -41,7 +46,8 @@ public class AlertLogService {
 
         final var createdEntity = repository.save(entity);
 
-        addActivityLog(createdEntity.getCommMessageId(), "An alert has been generated for this message");
+        addActivityLog(createdEntity.getCommMessageId(),
+                "An alert has been generated for this message", createdEntity.getId(), ActivityTargetType.ALERT);
 
         return mapToResource(createdEntity);
     }
@@ -60,7 +66,7 @@ public class AlertLogService {
                 addActivityLog(newEntity.getCommMessageId(),
                         String.format(
                                 "Note was added for alert [%s] : %s",
-                                dto.getPolicyId(), dto.getNotes()));
+                                dto.getPolicyId(), dto.getNotes()), oldEntity.getId(), ActivityTargetType.COMMUNICATION_MESSAGE);
             }
         }
 
@@ -68,8 +74,10 @@ public class AlertLogService {
             addActivityLog(newEntity.getCommMessageId(),
                     String.format(
                             "Alert [%s] status has been updated to: [%s]",
-                            dto.getId(), dto.getStatus()));
+                            dto.getId(), dto.getStatus()), oldEntity.getId(), ActivityTargetType.ALERT);
         }
+
+        determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -178,8 +186,38 @@ public class AlertLogService {
                 .source(dto.getSource())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
+                .escalation(dto.getEscalation())
                 .deleted(dto.isDeleted())
                 .build();
+    }
+
+    private void determineEscalationHistoryChanges(AlertLog existingRecord, AlertLog updateRecord, String executorId) throws IsisException {
+
+        if (existingRecord.getEscalation() == null || existingRecord.getEscalation() != updateRecord.getEscalation()) {
+            createEscalationHistoryRecord(existingRecord, existingRecord.getEscalation(), updateRecord.getEscalation(), executorId);
+        }
+
+    }
+
+    private void createEscalationHistoryRecord(AlertLog alert, Escalation from, Escalation to, String executorId) throws IsisException {
+
+        // Workaround: Handle from null values prior to this feature
+        Escalation tempFrom= from;
+        if(alert.getEscalation() == null){
+            tempFrom = Escalation.BASE;
+        }
+
+        EscalationHistoryDto escalationHistoryDto = EscalationHistoryDto.builder()
+                .alertId(alert.getId())
+                .escalatedFrom(tempFrom)
+                .escalatedTo(to)
+                .executorId(executorId)
+                .build();
+
+        escalationHistoryService.createRecord(escalationHistoryDto);
+
+        addEscalationActivityLog(alert.getCommMessageId(), alert.getId(),
+                String.format("Alert [%s] has been escalated from [%s] to [%s]", alert.getId(), tempFrom, to), executorId);
     }
 
     private AlertLogDto mapToResource(@NonNull final AlertLog entity) {
@@ -212,6 +250,7 @@ public class AlertLogService {
                 .recipients(entity.getRecipients() != null? Stream.of(entity.getRecipients().split(",", -1)).collect(Collectors.toList()) : null)
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
+                .escalation(entity.getEscalation())
                 .deleted(entity.isDeleted())
                 .build();
     }
@@ -229,14 +268,32 @@ public class AlertLogService {
             updatedEntity.setNotes(newDto.getNotes());
         }
 
+        if(newDto.getEscalation() != null && !newDto.getEscalation().equals(oldEntity.getEscalation())){
+            updatedEntity.setEscalation(newDto.getEscalation());
+        }
+
         return mapToEntity(updatedEntity);
     }
 
-    private void addActivityLog(@NonNull final String messageId, @NonNull final String message) {
+    private void addActivityLog(@NonNull final String messageId, @NonNull final String message, final String alertId, ActivityTargetType targetType) {
         messageActivityLogService.create(
                 MessageActivityLogDto.builder()
                         .messageId(messageId)
+                        .alertId(alertId)
                         .type(ActivityType.SYSTEM_EVENT)
+                        .target(targetType)
+                        .event(message)
+                        .build());
+    }
+
+    private void addEscalationActivityLog(@NonNull final String messageId, @NonNull final String alertId, @NonNull final String message, @NonNull final String executorId) {
+        messageActivityLogService.create(
+                MessageActivityLogDto.builder()
+                        .messageId(messageId)
+                        .alertId(alertId)
+                        .executorId(executorId)
+                        .type(ActivityType.USER_EVENT)
+                        .target(ActivityTargetType.ALERT)
                         .event(message)
                         .build());
     }

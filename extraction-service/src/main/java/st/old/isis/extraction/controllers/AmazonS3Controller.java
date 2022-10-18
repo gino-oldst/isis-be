@@ -25,9 +25,14 @@ public class AmazonS3Controller {
         amazonS3ClientService.listRawSpecificSource(source);
     }
 
-    @GetMapping("/list-specific-date")
+    @GetMapping("/list-specific-filename")
     public void listRawSpecificFolder(@RequestParam @NonNull final String marker) {
         amazonS3ClientService.listFilesByBucketAndPrefix(marker);
+    }
+
+    @GetMapping("/list-specific-directory")
+    public void listRawSpecificFolder(@RequestParam @NonNull final String source, @RequestParam @NonNull final String directory) {
+        amazonS3ClientService.listRawSpecificSourceAndSubDirectory(source, directory);
     }
 
     @PostMapping("/move-file-to-target-bucket")

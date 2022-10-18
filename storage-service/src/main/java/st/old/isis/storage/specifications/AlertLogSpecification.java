@@ -86,7 +86,17 @@ public class AlertLogSpecification implements Specification<AlertLog> {
             predicates.add(cb.between(root.get("timeSent"), filter.getTimeSentFromRange(), filter.getTimeSentToRange()));
         }
 
+        if (filter.getEscalation() != null) {
+            predicates.add(cb.equal(root.get("escalation"), filter.getEscalation()));
+        }
 
+        if (filter.getEscalation() != null) {
+            predicates.add(cb.equal(root.get("escalation"), filter.getEscalation()));
+        }
+
+        if (!ListUtils.isNullOrEmpty(filter.getEscalations())) {
+            predicates.add(root.get("escalation").in(filter.getEscalations()));
+        }
 
         return cb.and(predicates.toArray(Predicate[]::new));
     }
