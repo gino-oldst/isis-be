@@ -69,6 +69,8 @@ public class AlertLogDto implements Dto {
 
     private List<String> keywordIds;
 
+    private List<String> policyIds;
+
     private List<AlertStatusType> statusTypes;
 
     private List<String> senders;
