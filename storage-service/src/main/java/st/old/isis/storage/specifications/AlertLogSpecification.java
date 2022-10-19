@@ -34,6 +34,10 @@ public class AlertLogSpecification implements Specification<AlertLog> {
             predicates.add(cb.equal(root.get("commMessageId"), filter.getCommMessageId()));
         }
 
+        if (!ListUtils.isNullOrEmpty(filter.getPolicyIds()) ) {
+            predicates.add(root.get("policyId").in(filter.getPolicyIds()));
+        }
+
         if (!ListUtils.isNullOrEmpty(filter.getCommMessageIds())) {
             predicates.add(root.get("commMessageId").in(filter.getCommMessageIds()));
         }

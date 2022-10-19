@@ -42,6 +42,8 @@ public class QuickCommunicationDto implements Dto, CsvList {
 
   private List<String> keywordIds;
 
+  private List<String> policyIds;
+
   private List<String> sources;
 
   private List<String> recipients;

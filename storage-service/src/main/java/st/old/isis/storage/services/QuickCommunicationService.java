@@ -246,6 +246,7 @@ public class QuickCommunicationService {
 
         final var alertFilter = AlertLogDto.builder()
                 .keywordIds(filter.getKeywordIds())
+                .policyIds(filter.getPolicyIds())
                 .statusTypes(filter.getStatusTypes())
                 .sources(filter.getSources())
                 .senders(filter.getSenders())
