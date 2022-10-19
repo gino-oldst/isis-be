@@ -20,13 +20,15 @@ public class EscalationHistoryValidator {
             throw new IsisException("Invalid Escalation From "+ dto.getEscalatedFrom(), "InvalidEscalationHistoryDataException");
         }
 
-        if (dto.getEscalatedTo() == null){
-            throw new IsisException("Invalid Escalation To "+ dto.getEscalatedTo(), "InvalidEscalationHistoryDataException");
-        }
-
-        if (dto.getExecutorId() == null){
-            throw new IsisException("Invalid Executor Id "+ dto.getExecutorId(), "InvalidEscalationHistoryDataException");
-        }
+        // @TODO Temporary workaround for issue with bulk update
+        // May uncomment once escalation via bulk review is implemented
+//        if (dto.getEscalatedTo() == null){
+//            throw new IsisException("Invalid Escalation To "+ dto.getEscalatedTo(), "InvalidEscalationHistoryDataException");
+//        }
+//
+//        if (dto.getExecutorId() == null){
+//            throw new IsisException("Invalid Executor Id "+ dto.getExecutorId(), "InvalidEscalationHistoryDataException");
+//        }
 
     }
 }
