@@ -76,6 +76,7 @@ public class QuickCommunicationService {
             // Retrieve alerts for that specific message
             final var alerts = alertLogService.search(AlertLogDto.builder()
                     .keywordIds(filter.getKeywordIds())
+                    .policyIds(filter.getPolicyIds())
                     .statusTypes(filter.getStatusTypes())
                     .sources(filter.getSources())
                     .senders(filter.getSenders())
