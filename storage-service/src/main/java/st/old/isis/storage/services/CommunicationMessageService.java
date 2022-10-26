@@ -13,9 +13,11 @@ import st.old.isis.dto.audit.AuditEvent;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.PatternBypassDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
+import st.old.isis.storage.entities.PatternBypass;
 import st.old.isis.storage.entities.temp.TempCommunicationMessage;
 import st.old.isis.storage.processors.MessageSearchProcessor;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
@@ -42,13 +44,27 @@ public class CommunicationMessageService {
   private final CommunicationRecipientService communicationRecipientService;
   private final MessageSearchProcessor messageSearchProcessor;
 
+  private final PatternBypassService patternBypassService;
+
   @Audited(event = "BATCH_MESSAGE_SAVE")
   public List<CommunicationMessageDto> batchSave(
       @NonNull final List<CommunicationMessageDto> request) {
 
+    final List<PatternBypassDto> patternBypassList= patternBypassService.findWithFilter(PatternBypassDto.builder().build()).getData();
+
     final var messages =
         request.stream()
             .filter(message -> !Strings.isEmpty(message.getSender()))
+            .map(message -> {
+
+              if(message.getMessage() == null || message.getMessage().isEmpty()) return message;
+
+              final var bypassMatch = patternBypassList.stream().filter(bypass -> message.getMessage().contains(bypass.getValue())).findFirst().orElse(null);
+              if(bypassMatch != null){
+                message.setBypassType(bypassMatch.getBypassType());
+              }
+              return message;
+            })
             .map(this::mapToTempEntity)
             .collect(Collectors.toList());
 
@@ -276,6 +292,7 @@ public class CommunicationMessageService {
         .source(dto.getSource())
         .type(dto.getType())
         .metadata(dto.getMetadata())
+        .bypassType(dto.getBypassType())
         .build();
   }
 
@@ -293,6 +310,7 @@ public class CommunicationMessageService {
         .type(dto.getType())
         .metadata(dto.getMetadata())
         .fileSource(dto.getFileSource())
+        .bypassType(dto.getBypassType())
         .build();
   }
 
@@ -309,6 +327,7 @@ public class CommunicationMessageService {
         .source(entity.getSource())
         .type(entity.getType())
         .metadata(entity.getMetadata())
+        .bypassType(entity.getBypassType())
         .build();
   }
 
@@ -325,6 +344,7 @@ public class CommunicationMessageService {
         .source(entity.getSource())
         .type(entity.getType())
         .metadata(entity.getMetadata())
+        .bypassType(entity.getBypassType())
         .build();
   }
 

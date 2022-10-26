@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.mappers.MetadataConverter;
 
 import javax.persistence.*;
@@ -66,4 +67,7 @@ public class TempCommunicationMessage implements Serializable {
   private boolean deleted;
 
   private String fileSource;
+
+  @Enumerated(EnumType.STRING)
+  private MessageBypassType bypassType;
 }

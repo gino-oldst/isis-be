@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.BatchAlertNotificationDto;
 import st.old.isis.dto.storage.KeywordDto;
+import st.old.isis.dto.storage.PatternBypassDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.policy.PolicyProcessorService;
@@ -26,6 +27,8 @@ public class MessageItemProcessor implements ItemProcessor<CommunicationMessage,
 
     @Autowired private PolicyProcessorService policyProcessorService;
     private Map<AlertPolicyDto, List<KeywordDto>> policyMap;
+
+    private List<PatternBypassDto> patternBypassList;
     private StepExecution stepExecution;
     @BeforeStep
     public void beforeStep(StepExecution stepExecution) {
@@ -46,7 +49,9 @@ public class MessageItemProcessor implements ItemProcessor<CommunicationMessage,
         if(!executionContext.containsKey(BatchJobUtils.EXECUTION_CONTEXT_KEY_POLICY_MAP)){
             throw new IsisException("Policy Map was not found in Step Execution Context.");
         }
+
         policyMap = (Map<AlertPolicyDto, List<KeywordDto>>) executionContext.get(BatchJobUtils.EXECUTION_CONTEXT_KEY_POLICY_MAP);
+        patternBypassList= (List<PatternBypassDto>) executionContext.get(BatchJobUtils.EXECUTION_CONTEXT_KEY_PATTERN_BYPASS);
 
         final var convertedAlert = policyProcessorService.processSingleMessageByAllPolicies(policyMap, message);
         return convertedAlert;

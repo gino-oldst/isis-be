@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
 import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.utils.CsvUtil;
 import st.old.isis.utils.ListUtils;
 
@@ -76,6 +77,8 @@ public class CommunicationMessageDto implements Dto {
   private List<String> sources;
 
   private String fileSource;
+
+  private MessageBypassType bypassType;
 
   public static List<String> csvHeaders() {
     return List.of("id", "subject", "message", "source", "dateTime", "sender", "recipients");
