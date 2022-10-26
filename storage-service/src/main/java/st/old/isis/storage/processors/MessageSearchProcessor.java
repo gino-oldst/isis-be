@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -146,6 +147,7 @@ public class MessageSearchProcessor {
     }
 
     return Strings.isEmpty(keyword) || containsIgnoreCase(message, keyword);
+//    return Strings.isEmpty(keyword) || exactIgnoreCase(message, keyword);
   }
 
   public static boolean containsIgnoreCase(String source, String word) {
@@ -171,5 +173,15 @@ public class MessageSearchProcessor {
     }
 
     return false;
+  }
+
+  public static boolean exactIgnoreCase(String source, String word){
+      final var result = Pattern.compile(Pattern.quote(word), Pattern.CASE_INSENSITIVE)
+            .matcher(source)
+            .find();
+
+      System.out.println(result);
+
+      return result;
   }
 }
