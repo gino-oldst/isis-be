@@ -146,20 +146,29 @@ public class PolicyProcessorService {
 
         log.debug("STARTED - Processing All Policies by Message: {}", message.getId());
 
+        int totalAlertSize = 0;
+
         for(AlertPolicyDto policy: policyMap.keySet()){
             if(message == null){
                 log.warn("No communication message for processing.", message);
             } else {
                 switch (policy.getInternalCode()) {
                     case "INAPPROPRIATE_LANGUAGE":
-                        return inappropriateLanguagePolicy.processSingleWithKeywords(message, policy, policyMap.get(policy), message.getImportDate());
+                        final var itrBatchAlert = inappropriateLanguagePolicy.processSingleWithKeywords(message, policy, policyMap.get(policy), message.getImportDate());
+                        if(itrBatchAlert.getCount() > 0) totalAlertSize += itrBatchAlert.getCount();
+                        break;
                     default:
-                        return null;
+                        throw IsisException.notFound("Policy's internal code was not found. " + policy, "NotFoundException");
                 }
             }
         }
 
-        return null;
+        return BatchAlertNotificationDto.builder()
+                .commChainLinkId(message.getChainLinkId())
+                .commMessageId(message.getId())
+                .message(message.getMessage())
+                .count(totalAlertSize)
+                .build();
     }
     public void processPolicyIdByFilter(PolicyProcessorDto filter) throws IsisException {
 
