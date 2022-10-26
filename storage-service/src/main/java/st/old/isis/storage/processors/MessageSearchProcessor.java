@@ -146,8 +146,8 @@ public class MessageSearchProcessor {
       return false;
     }
 
-    return Strings.isEmpty(keyword) || containsIgnoreCase(message, keyword);
-//    return Strings.isEmpty(keyword) || exactIgnoreCase(message, keyword);
+//    return Strings.isEmpty(keyword) || containsIgnoreCase(message, keyword);
+    return Strings.isEmpty(keyword) || exactIgnoreCase(message, keyword);
   }
 
   public static boolean containsIgnoreCase(String source, String word) {
@@ -176,12 +176,12 @@ public class MessageSearchProcessor {
   }
 
   public static boolean exactIgnoreCase(String source, String word){
-      final var result = Pattern.compile(Pattern.quote(word), Pattern.CASE_INSENSITIVE)
-            .matcher(source)
-            .find();
+    final var pattern =  String.format("\\b%s\\b", word);
 
-      System.out.println(result);
+    final var result = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE)
+          .matcher(source)
+          .find();
 
-      return result;
+    return result;
   }
 }
