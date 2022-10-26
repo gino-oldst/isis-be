@@ -186,7 +186,7 @@ public class AlertLogService {
                 .source(dto.getSource())
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
-                .escalation(dto.getEscalation())
+                .escalation(dto.getEscalation() == null? Escalation.BASE: dto.getEscalation())
                 .deleted(dto.isDeleted())
                 .build();
     }
