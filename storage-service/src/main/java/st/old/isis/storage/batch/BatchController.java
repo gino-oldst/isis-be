@@ -27,8 +27,7 @@ public class BatchController {
     @PostMapping(path = "/start")
     public void startBatch(@RequestBody PolicyProcessorDto dto) throws IsisException {
 
-        if(dto.getPolicyId() == null ||
-                dto.getDateFrom() == null ||
+        if(dto.getDateFrom() == null ||
                 dto.getDateTo() == null||
                 dto.getSource() == null) {
             throw IsisException.badRequest("Missing policy processor parameters", "SearchFilterException");
@@ -36,7 +35,6 @@ public class BatchController {
 
         JobParameters jobParameters = new JobParametersBuilder()
                 .addLong("startAt", System.currentTimeMillis())
-                .addString("policyId", dto.getPolicyId())
                 .addString("dateFrom", dto.getDateFrom().toString())
                 .addString("dateTo", dto.getDateTo().toString())
                 .addString("source", dto.getSource())
