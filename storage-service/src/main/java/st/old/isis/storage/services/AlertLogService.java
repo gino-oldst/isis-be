@@ -79,6 +79,8 @@ public class AlertLogService {
 
         determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
 
+        //TODO - Add assigned to History changes
+
         final var updatedEntity = repository.save(newEntity);
 
         return mapToResource(updatedEntity);

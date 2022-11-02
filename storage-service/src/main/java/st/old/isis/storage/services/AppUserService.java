@@ -5,12 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.AppUserDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.specifications.AppUserSpecification;
 import st.old.isis.storage.utils.BCryptEncoderService;
 import st.old.isis.storage.entities.AppUser;
 import st.old.isis.storage.repositories.AppUserRepository;
 import st.old.isis.storage.validators.AppUserValidator;
+
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -88,6 +92,27 @@ public class AppUserService {
     repository.delete(entity);
   }
 
+  @Audited(event = "SEARCH_APP_USER")
+  public ListDto<AppUserDto> search(@NonNull @Audited final AppUserDto filter) {
+
+    final var spec = new AppUserSpecification(filter);
+
+    final var results = repository.findAll(spec)
+            .stream()
+            .map(this::mapToResource)
+            .collect(Collectors.toList());
+
+    final var size = results.size();
+
+    return ListDto.<AppUserDto>builder()
+            .data(results)
+            .totalNoOfRecords(size)
+            .totalPages(size)
+            .totalCurrentElements(size)
+            .build()
+            .success();
+  }
+
   public AppUserDto getAuthenticationDetails(@NonNull final String username) throws IsisException {
 
     final var user = findByUsername(username);
@@ -118,6 +143,7 @@ public class AppUserService {
                     String.format("Cannot find app user with username: [%s]", username),
                     "NotFoundException"));
   }
+
 
   private AppUser mapToEntity(@NonNull final AppUserDto dto) {
     return AppUser.builder()
