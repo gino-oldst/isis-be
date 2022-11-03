@@ -3,6 +3,8 @@ server:
   servlet:
     contextPath: /storage-service
 spring:
+  main:
+    allow-bean-definition-overriding: true
   batch:
     job:
       enabled: false

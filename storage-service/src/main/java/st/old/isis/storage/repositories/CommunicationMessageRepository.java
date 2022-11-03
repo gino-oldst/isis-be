@@ -4,11 +4,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.storage.entities.CommunicationMessage;
+import st.old.isis.storage.entities.PatternBypass;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface CommunicationMessageRepository
     extends JpaRepository<CommunicationMessage, String>,
@@ -32,6 +36,12 @@ public interface CommunicationMessageRepository
   int merge(String fileSource);
 
 
-  Page<CommunicationMessage> findAllBySourceAndImportDateBetween(String source, LocalDate dateFrom, LocalDate dateTo, Pageable pageable);
+  Page<CommunicationMessage> findAllBySourceAndBypassTypeIsNullAndImportDateBetween(String source, LocalDate dateFrom, LocalDate dateTo, Pageable pageable);
+
+  Page<CommunicationMessage> findAllByBypassTypeIsNullAndImportDateBetween(LocalDate dateFrom, LocalDate dateTo, Pageable pageable);
+
+  @Query(value = "UPDATE CommunicationMessage SET bypassType = :type WHERE id IN (:ids)")
+  @Modifying
+  int updateBypassPattern(MessageBypassType type, List<String> ids);
 
 }

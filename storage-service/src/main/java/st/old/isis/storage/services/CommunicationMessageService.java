@@ -17,7 +17,6 @@ import st.old.isis.dto.storage.PatternBypassDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
-import st.old.isis.storage.entities.PatternBypass;
 import st.old.isis.storage.entities.temp.TempCommunicationMessage;
 import st.old.isis.storage.processors.MessageSearchProcessor;
 import st.old.isis.storage.repositories.CommunicationMessageRepository;
@@ -31,6 +30,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -71,6 +71,19 @@ public class CommunicationMessageService {
     return tempRepository.saveAll(messages).stream()
         .map(this::mapToResource)
         .collect(Collectors.toList());
+  }
+
+  @Audited(event = "BATCH_MESSAGE_SAVE_FROM_BATCH_JOB")
+  public List<CommunicationMessageDto> batchSaveFromBatchJob(
+          @NonNull final List<CommunicationMessageDto> request) {
+
+    final var entityList = request.stream()
+            .filter(Objects::nonNull)
+            .map(this::mapToEntity).collect(Collectors.toList());
+
+    repository.saveAllAndFlush(entityList);
+
+    return request;
   }
 
   @Audited(event = "FINALIZE_BATCH_SAVE_MESSAGES")
@@ -117,6 +130,18 @@ public class CommunicationMessageService {
     final var newEntity = mapToEntity(dto);
 
     final var updatedEntity = repository.save(newEntity);
+
+    return mapToResource(updatedEntity);
+  }
+
+  public CommunicationMessageDto saveAndFlush(@NonNull final CommunicationMessageDto dto)
+          throws IsisException {
+
+    final var oldEntity = findById(dto.getId());
+
+    final var newEntity = mapToEntity(dto);
+
+    final var updatedEntity = repository.saveAndFlush(newEntity);
 
     return mapToResource(updatedEntity);
   }
@@ -277,6 +302,41 @@ public class CommunicationMessageService {
             () ->
                 IsisException.notFound(
                     String.format("Cannot find a message with id: [%s]", id), "NotFoundException"));
+  }
+
+  public CommunicationMessageDto processIfSystemEvent(List<PatternBypassDto> patternBypassList,  CommunicationMessage message) throws IsisException {
+
+    if(message.getMessage() == null) return null;
+
+    final var bypassMatch = patternBypassList.stream()
+            .filter(bypass -> message.getMessage().contains(bypass.getValue()))
+            .findFirst()
+            .orElse(null);
+
+    if(bypassMatch != null){
+      log.info("System Event Found for Message Id: {} of type {}", message.getId(), bypassMatch.getBypassType());
+      final var dto = this.mapToResource(message);
+      dto.setBypassType(bypassMatch.getBypassType());
+      return dto;
+    }
+
+    return null;
+  }
+
+  public int updateBypassMessageType(List<CommunicationMessageDto> messages){
+
+    AtomicInteger resultSize = new AtomicInteger();
+
+    final var bypassTypeMap = messages.stream()
+            .collect(Collectors.groupingBy(map -> map.getBypassType(), Collectors.mapping(dto -> dto.getId(), Collectors.toList())));
+
+    bypassTypeMap.keySet().stream().forEach(
+        b -> {
+          resultSize.getAndAdd(repository.updateBypassPattern(b, bypassTypeMap.get(b)));
+        }
+    );
+
+    return resultSize.get();
   }
 
   private CommunicationMessage mapToEntity(@NonNull final CommunicationMessageDto dto) {
