@@ -119,6 +119,8 @@ public class NotificationLogService {
                 .id(dto.getId())
                 .userId(dto.getUserId())
                 .message(dto.getMessage())
+                .alertId(dto.getAlertId())
+                .alertStatus(dto.getAlertStatus())
                 .seen(dto.isSeen())
                 .dateCreated(dto.getDateCreated())
                 .deleted(dto.isDeleted())
@@ -131,6 +133,8 @@ public class NotificationLogService {
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .message(entity.getMessage())
+                .alertId(entity.getAlertId())
+                .alertStatus(entity.getAlertStatus())
                 .seen(entity.isSeen())
                 .dateCreated(entity.getDateCreated())
                 .deleted(entity.isDeleted())
@@ -141,9 +145,18 @@ public class NotificationLogService {
     private NotificationLog mapToEntity(@NonNull NotificationLog oldEntity,
                                         @NonNull NotificationLogDto newDto) {
 
-        final var entity = mapToEntity(newDto);
-        entity.setDateCreated(oldEntity.getDateCreated());
+        // final var entity = mapToEntity(newDto);
+        // entity.setDateCreated(oldEntity.getDateCreated());
+        //
+        // return entity;
+        final var updatedEntity= mapToResource(oldEntity);
+        updatedEntity.setDateCreated(oldEntity.getDateCreated());
 
-        return entity;
+        if(newDto.isSeen()){
+            updatedEntity.setSeen(newDto.isSeen());
+        }
+
+        return mapToEntity(updatedEntity);
+
     }
 }

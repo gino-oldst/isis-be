@@ -23,8 +23,8 @@ public class NotificationLogController {
     }
 
     @PutMapping
-    public NotificationLogDto update(@RequestBody final NotificationLogDto user) throws IsisException {
-        return service.update(user);
+    public NotificationLogDto update(@RequestBody final NotificationLogDto data) throws IsisException {
+        return service.update(data);
     }
 
     @GetMapping("/{id}")
