@@ -80,5 +80,7 @@ public class AlertLog implements Serializable {
     @Column(name = "escalation", columnDefinition = "varchar(255) default 'BASE'")
     private Escalation escalation = Escalation.BASE;
 
+    private String assignedUserId;
+
     private boolean deleted;
 }
