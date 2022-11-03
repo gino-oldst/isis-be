@@ -5,14 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.lang.NonNull;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
-import st.old.isis.dto.storage.AlertLogDto;
-import st.old.isis.dto.storage.AlertPolicyDto;
-import st.old.isis.dto.storage.EscalationHistoryDto;
-import st.old.isis.dto.storage.MessageActivityLogDto;
+import st.old.isis.dto.storage.*;
 import st.old.isis.enums.ActivityTargetType;
 import st.old.isis.enums.ActivityType;
 import st.old.isis.enums.Escalation;
@@ -37,6 +33,8 @@ public class AlertLogService {
     private final AlertPolicyService alertPolicyService;
 
     private final EscalationHistoryService escalationHistoryService;
+
+    private final AssignToUserHistoryService assignToUserHistoryService;
 
 
     @Audited(event = "CREATE_ALERT_LOG")
@@ -80,6 +78,7 @@ public class AlertLogService {
         determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
 
         //TODO - Add assigned to History changes
+        determineAssignToUserHistoryChange(oldEntity, newEntity, dto.getExecutorId());
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -189,6 +188,7 @@ public class AlertLogService {
                 .dateCreated(dto.getDateCreated())
                 .dateModified(dto.getDateModified())
                 .escalation(dto.getEscalation() == null? Escalation.BASE: dto.getEscalation())
+                .assignedUserId(dto.getAssignedUserId())
                 .deleted(dto.isDeleted())
                 .build();
     }
@@ -199,6 +199,12 @@ public class AlertLogService {
             createEscalationHistoryRecord(existingRecord, existingRecord.getEscalation(), updateRecord.getEscalation(), executorId);
         }
 
+    }
+
+    private void determineAssignToUserHistoryChange(AlertLog existingRecord, AlertLog updateRecord, String executorId) throws IsisException {
+        if (existingRecord.getAssignedUserId() == null || !existingRecord.getAssignedUserId().equals(updateRecord.getAssignedUserId())) {
+            createAssignToUserHistoryRecord(existingRecord, executorId, updateRecord.getAssignedUserId(), executorId);
+        }
     }
 
     private void createEscalationHistoryRecord(AlertLog alert, Escalation from, Escalation to, String executorId) throws IsisException {
@@ -222,6 +228,24 @@ public class AlertLogService {
                 String.format("Alert [%s] has been escalated from [%s] to [%s]", alert.getId(), tempFrom, to), executorId);
     }
 
+    private void createAssignToUserHistoryRecord(AlertLog alert, String assignFrom, String assignTo, String executorId) throws IsisException {
+
+        // Retain the 1st executor of the assignment
+        final var topExistingRow = assignToUserHistoryService.getRecordById(alert.getId());
+
+        AssignToUserHistoryDto assignToUserHistoryDto = AssignToUserHistoryDto.builder()
+                .alertId(alert.getId())
+                .assignedFrom(assignFrom)
+                .assignedTo(assignTo)
+                .executorId(topExistingRow == null ? executorId : topExistingRow.getExecutorId())
+                .build();
+
+        assignToUserHistoryService.createRecord(assignToUserHistoryDto);
+
+        addAssignToUserActivityLog(alert.getCommMessageId(), alert.getId(),
+                String.format("Alert [%s] has been assigned to [%s] by [%s] to review", alert.getId(), assignTo, assignFrom), executorId);
+    }
+
     private AlertLogDto mapToResource(@NonNull final AlertLog entity) {
 
         AlertPolicyDto policy = null;
@@ -231,7 +255,6 @@ public class AlertLogService {
         } catch (IsisException e) {
             log.error("An error occurred during retrieval of policy {}", e.getMessage());
         }
-
 
         return AlertLogDto.builder()
                 .id(entity.getId())
@@ -253,6 +276,7 @@ public class AlertLogService {
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
                 .escalation(entity.getEscalation())
+                .assignedUserId(entity.getAssignedUserId())
                 .deleted(entity.isDeleted())
                 .build();
     }
@@ -274,6 +298,10 @@ public class AlertLogService {
             updatedEntity.setEscalation(newDto.getEscalation());
         }
 
+        if(newDto.getAssignedUserId() != null && !newDto.getAssignedUserId().equals(oldEntity.getAssignedUserId())){
+            updatedEntity.setAssignedUserId(newDto.getAssignedUserId());
+        }
+
         return mapToEntity(updatedEntity);
     }
 
@@ -289,6 +317,18 @@ public class AlertLogService {
     }
 
     private void addEscalationActivityLog(@NonNull final String messageId, @NonNull final String alertId, @NonNull final String message, @NonNull final String executorId) {
+        messageActivityLogService.create(
+                MessageActivityLogDto.builder()
+                        .messageId(messageId)
+                        .alertId(alertId)
+                        .executorId(executorId)
+                        .type(ActivityType.USER_EVENT)
+                        .target(ActivityTargetType.ALERT)
+                        .event(message)
+                        .build());
+    }
+
+    private void addAssignToUserActivityLog(@NonNull final String messageId, @NonNull final String alertId, @NonNull final String message, @NonNull final String executorId) {
         messageActivityLogService.create(
                 MessageActivityLogDto.builder()
                         .messageId(messageId)
