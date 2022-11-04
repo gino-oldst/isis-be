@@ -314,7 +314,7 @@ public class CommunicationMessageService {
             .orElse(null);
 
     if(bypassMatch != null){
-      log.info("System Event Found for Message Id: {} of type {}", message.getId(), bypassMatch.getBypassType());
+//      log.info("System Event Found for Message Id: {} of type {}", message.getId(), bypassMatch.getBypassType());
       final var dto = this.mapToResource(message);
       dto.setBypassType(bypassMatch.getBypassType());
       return dto;
@@ -501,6 +501,7 @@ public class CommunicationMessageService {
             .sources(filter.getSources())
             .sender(filter.getSender())
             .senders(filter.getSenders())
+            .bypassType(filter.getBypassType())
             .build();
 
     final var spec = new CommunicationMessageSpecification(messageFilter);

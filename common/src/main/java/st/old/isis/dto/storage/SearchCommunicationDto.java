@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.enums.SourceType;
 
 import java.time.LocalDate;
@@ -33,5 +34,7 @@ public class SearchCommunicationDto implements Dto {
     private LocalDate dateTo;
 
     private SourceType sourceType;
+
+    private MessageBypassType bypassType;
 
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.utils.ListUtils;
 
@@ -78,6 +79,12 @@ public class CommunicationMessageSpecification implements Specification<Communic
     if (filter.getDateSentFrom() != null && filter.getDateSentTo() != null) {
       predicates.add(
           cb.between(root.get("timeSent"), filter.getDateSentFrom(), filter.getDateSentTo()));
+    }
+
+    if (filter.getBypassType() == MessageBypassType.DEFAULT) {
+      predicates.add(root.get("bypassType").isNull());
+    } else if (filter.getBypassType() != null) {
+      predicates.add(cb.equal(root.get("bypassType"), filter.getBypassType()));
     }
 
     predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
