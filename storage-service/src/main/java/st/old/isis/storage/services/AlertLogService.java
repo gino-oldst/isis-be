@@ -36,6 +36,9 @@ public class AlertLogService {
 
     private final AssignToUserHistoryService assignToUserHistoryService;
 
+    private final NotificationLogService notificationLogService;
+
+    private final AppUserService appUserService;
 
     @Audited(event = "CREATE_ALERT_LOG")
     public AlertLogDto create(@NonNull @Audited final AlertLogDto dto) {
@@ -77,7 +80,6 @@ public class AlertLogService {
 
         determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
 
-        //TODO - Add assigned to History changes
         determineAssignToUserHistoryChange(oldEntity, newEntity, dto.getExecutorId());
 
         final var updatedEntity = repository.save(newEntity);
@@ -207,6 +209,14 @@ public class AlertLogService {
         }
     }
 
+    private void determineAlertsActivityChanges(AlertLog existingRecord, AlertLog updateRecord, String executorId) throws IsisException {
+        String fullName = "name";
+
+        if (!existingRecord.getAssignedUserId().equals(updateRecord.getAssignedUserId()) && updateRecord.getAssignedUserId() != null) {
+            createNotificationLog(existingRecord, fullName + " has assigned an alert to you", updateRecord.getAssignedUserId());
+        }
+    }
+
     private void createEscalationHistoryRecord(AlertLog alert, Escalation from, Escalation to, String executorId) throws IsisException {
 
         // Workaround: Handle from null values prior to this feature
@@ -230,6 +240,9 @@ public class AlertLogService {
 
     private void createAssignToUserHistoryRecord(AlertLog alert, String assignFrom, String assignTo, String executorId) throws IsisException {
 
+        // Get Name of executor
+        final var appUser = appUserService.getById(assignFrom);
+
         // Retain the 1st executor of the assignment
         final var topExistingRow = assignToUserHistoryService.getRecordById(alert.getId());
 
@@ -244,6 +257,10 @@ public class AlertLogService {
 
         addAssignToUserActivityLog(alert.getCommMessageId(), alert.getId(),
                 String.format("Alert [%s] has been assigned to [%s] by [%s] to review", alert.getId(), assignTo, assignFrom), executorId);
+
+        if(assignTo != null){
+            createNotificationLog(alert, appUser.getUsername() + " has assigned an alert to you", assignTo);
+        }
     }
 
     private AlertLogDto mapToResource(@NonNull final AlertLog entity) {
@@ -338,5 +355,17 @@ public class AlertLogService {
                         .target(ActivityTargetType.ALERT)
                         .event(message)
                         .build());
+    }
+
+    private void createNotificationLog(@NonNull final AlertLog alert, @NonNull String message, @NonNull final String userId) throws IsisException {
+        // userId, message
+        notificationLogService.create(
+          NotificationLogDto.builder()
+              .userId(userId)
+              .message(message)
+              .alertId(alert.getCommMessageId())
+              .alertStatus(alert.getStatus())
+              .build()
+        );
     }
 }

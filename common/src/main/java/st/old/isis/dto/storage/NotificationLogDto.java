@@ -5,7 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import st.old.isis.dto.Dto;
+import st.old.isis.enums.AlertStatusType;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,6 +24,10 @@ public class NotificationLogDto implements Dto {
     private String userId;
 
     private String message;
+
+    private String alertId;
+
+    private AlertStatusType alertStatus;
 
     private boolean seen;
 

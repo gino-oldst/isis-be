@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+import st.old.isis.enums.AlertStatusType;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -30,6 +31,11 @@ public class NotificationLog implements Serializable {
 
     @Column(columnDefinition = "TEXT")
     private String message;
+
+    private String alertId;
+
+    @Enumerated(EnumType.STRING)
+    private AlertStatusType alertStatus;
 
     private boolean seen;
 
