@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import st.old.isis.enums.AlertStatusType;
 import st.old.isis.enums.Escalation;
 
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -80,6 +81,7 @@ public class AlertLog implements Serializable {
     @Column(name = "escalation", columnDefinition = "varchar(255) default 'BASE'")
     private Escalation escalation = Escalation.BASE;
 
+    @Nullable
     private String assignedUserId;
 
     private boolean deleted;

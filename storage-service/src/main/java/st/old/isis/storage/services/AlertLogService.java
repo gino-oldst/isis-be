@@ -64,23 +64,35 @@ public class AlertLogService {
 
         if(newEntity.getNotes() != null) {
             if((oldEntity.getNotes() == null) || !oldEntity.getNotes().equalsIgnoreCase(newEntity.getNotes())){
+                // addActivityLog(newEntity.getCommMessageId(),
+                //        String.format(
+                //                "Note was added for alert [%s] : %s",
+                //                dto.getPolicyId(), dto.getNotes()), oldEntity.getId(), ActivityTargetType.COMMUNICATION_MESSAGE);
+
                 addActivityLog(newEntity.getCommMessageId(),
                         String.format(
                                 "Note was added for alert [%s] : %s",
-                                dto.getPolicyId(), dto.getNotes()), oldEntity.getId(), ActivityTargetType.COMMUNICATION_MESSAGE);
+                                newEntity.getKeyword(), dto.getNotes()), oldEntity.getId(), ActivityTargetType.COMMUNICATION_MESSAGE);
             }
         }
 
         if (oldEntity.getStatus() != newEntity.getStatus()) {
-            addActivityLog(newEntity.getCommMessageId(),
+            // addActivityLog(newEntity.getCommMessageId(),
+            //        String.format(
+            //                "Alert [%s] status has been updated to: [%s]",
+            //                dto.getId(), dto.getStatus()), oldEntity.getId(), ActivityTargetType.ALERT);
+
+             addActivityLog(newEntity.getCommMessageId(),
                     String.format(
                             "Alert [%s] status has been updated to: [%s]",
-                            dto.getId(), dto.getStatus()), oldEntity.getId(), ActivityTargetType.ALERT);
+                            newEntity.getKeyword(), dto.getStatus()), oldEntity.getId(), ActivityTargetType.ALERT);
+        }
+
+        if (oldEntity.getAssignedUserId() != newEntity.getAssignedUserId()) {
+            determineAssignToUserHistoryChange(oldEntity, newEntity, dto.getExecutorId());
         }
 
         determineEscalationHistoryChanges(oldEntity, newEntity, dto.getExecutorId());
-
-        determineAssignToUserHistoryChange(oldEntity, newEntity, dto.getExecutorId());
 
         final var updatedEntity = repository.save(newEntity);
 
@@ -209,14 +221,6 @@ public class AlertLogService {
         }
     }
 
-    private void determineAlertsActivityChanges(AlertLog existingRecord, AlertLog updateRecord, String executorId) throws IsisException {
-        String fullName = "name";
-
-        if (!existingRecord.getAssignedUserId().equals(updateRecord.getAssignedUserId()) && updateRecord.getAssignedUserId() != null) {
-            createNotificationLog(existingRecord, fullName + " has assigned an alert to you", updateRecord.getAssignedUserId());
-        }
-    }
-
     private void createEscalationHistoryRecord(AlertLog alert, Escalation from, Escalation to, String executorId) throws IsisException {
 
         // Workaround: Handle from null values prior to this feature
@@ -234,14 +238,19 @@ public class AlertLogService {
 
         escalationHistoryService.createRecord(escalationHistoryDto);
 
+        // TODO - Make this into a dynamic type of activity logging and notification this is for preparation for more activities to be monitored
+        // addEscalationActivityLog(alert.getCommMessageId(), alert.getId(),
+        //        String.format("Alert [%s] has been escalated from [%s] to [%s]", alert.getId(), tempFrom, to), executorId);
+
         addEscalationActivityLog(alert.getCommMessageId(), alert.getId(),
-                String.format("Alert [%s] has been escalated from [%s] to [%s]", alert.getId(), tempFrom, to), executorId);
+                String.format("Alert [%s] has been escalated from [%s] to [%s]",alert.getKeyword(), tempFrom, to), executorId);
     }
 
     private void createAssignToUserHistoryRecord(AlertLog alert, String assignFrom, String assignTo, String executorId) throws IsisException {
 
         // Get Name of executor
-        final var appUser = appUserService.getById(assignFrom);
+        // Null handlers
+        final var appUserFrom = appUserService.getById(assignFrom);
 
         // Retain the 1st executor of the assignment
         final var topExistingRow = assignToUserHistoryService.getRecordById(alert.getId());
@@ -255,11 +264,17 @@ public class AlertLogService {
 
         assignToUserHistoryService.createRecord(assignToUserHistoryDto);
 
-        addAssignToUserActivityLog(alert.getCommMessageId(), alert.getId(),
-                String.format("Alert [%s] has been assigned to [%s] by [%s] to review", alert.getId(), assignTo, assignFrom), executorId);
-
+        // TODO - Make this into a dynamic type of activity logging and notification this is for preparation for more activities to be monitored
         if(assignTo != null){
-            createNotificationLog(alert, appUser.getUsername() + " has assigned an alert to you", assignTo);
+            final var appUserTo = appUserService.getById(assignTo);
+
+            addAssignToUserActivityLog(alert.getCommMessageId(), alert.getId(),
+                    String.format("Alert [%s] has been assigned to [%s] by [%s] to review", alert.getKeyword(), appUserTo.getUsername(), appUserFrom.getUsername()), executorId);
+
+            createNotificationLog(alert, appUserFrom.getUsername() + " has assigned an alert to you", assignTo);
+        } else {
+            addAssignToUserActivityLog(alert.getCommMessageId(), alert.getId(),
+                    String.format("Alert [%s] has been unassigned by %s", alert.getKeyword(), appUserFrom.getUsername()), executorId);
         }
     }
 
@@ -315,7 +330,9 @@ public class AlertLogService {
             updatedEntity.setEscalation(newDto.getEscalation());
         }
 
-        if(newDto.getAssignedUserId() != null && !newDto.getAssignedUserId().equals(oldEntity.getAssignedUserId())){
+        if(newDto.getAssignedUserId() == null){
+            updatedEntity.setAssignedUserId(null);
+        } else {
             updatedEntity.setAssignedUserId(newDto.getAssignedUserId());
         }
 
