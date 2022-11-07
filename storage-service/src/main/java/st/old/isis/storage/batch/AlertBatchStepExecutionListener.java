@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import st.old.isis.dto.storage.AlertPolicyDto;
 import st.old.isis.dto.storage.KeywordDto;
+import st.old.isis.dto.storage.PatternBypassDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.services.PatternBypassService;
 import st.old.isis.storage.utils.BatchJobUtils;
 
 import java.time.Instant;
@@ -23,6 +25,8 @@ public class AlertBatchStepExecutionListener extends StepExecutionListenerSuppor
 
     @Autowired private PolicyMapBeanService policyMapServiceBean;
 
+    @Autowired private PatternBypassService patternBypassServiceBean;
+
     @Override
     @BeforeStep
     public void beforeStep(StepExecution stepExecution) {
@@ -35,7 +39,12 @@ public class AlertBatchStepExecutionListener extends StepExecutionListenerSuppor
         } catch (IsisException e) {
             log.error("An error occurred while generating policy map for step execution. {}", e.getMessage());
         }
+
+        log.info("beforeStep - Generating pattern bypass map for steps");
+        List<PatternBypassDto> patternBypassList =  patternBypassServiceBean.findWithFilter(PatternBypassDto.builder().build()).getData();
+
         stepExecution.getJobExecution().getExecutionContext().put(BatchJobUtils.EXECUTION_CONTEXT_KEY_POLICY_MAP, policyMap);
+        stepExecution.getJobExecution().getExecutionContext().put(BatchJobUtils.EXECUTION_CONTEXT_KEY_PATTERN_BYPASS, patternBypassList);
     }
 
 }

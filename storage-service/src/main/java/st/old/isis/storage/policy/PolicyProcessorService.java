@@ -142,7 +142,8 @@ public class PolicyProcessorService {
         return null;
     }
 
-    public BatchAlertNotificationDto processSingleMessageByAllPolicies(@NonNull Map<AlertPolicyDto, List<KeywordDto>> policyMap, @NonNull CommunicationMessage message) throws IsisException {
+    public BatchAlertNotificationDto processSingleMessageByAllPolicies(@NonNull Map<AlertPolicyDto, List<KeywordDto>> policyMap,
+                                                                       @NonNull CommunicationMessage message) throws IsisException {
 
         log.debug("STARTED - Processing All Policies by Message: {}", message.getId());
 
@@ -151,6 +152,8 @@ public class PolicyProcessorService {
         for(AlertPolicyDto policy: policyMap.keySet()){
             if(message == null){
                 log.warn("No communication message for processing.", message);
+            } else if(message.getBypassType() != null) {
+                log.debug("Message bypassed with id {} and bypass type {}", message.getId(), message.getBypassType());
             } else {
                 switch (policy.getInternalCode()) {
                     case "INAPPROPRIATE_LANGUAGE":

@@ -221,6 +221,14 @@ public class AlertLogService {
         }
     }
 
+    private void determineAlertsActivityChanges(AlertLog existingRecord, AlertLog updateRecord, String executorId) throws IsisException {
+        String fullName = "name";
+
+        if (!existingRecord.getAssignedUserId().equals(updateRecord.getAssignedUserId()) && updateRecord.getAssignedUserId() != null) {
+            createNotificationLog(existingRecord, fullName + " has assigned an alert to you", updateRecord.getAssignedUserId());
+        }
+    }
+
     private void createEscalationHistoryRecord(AlertLog alert, Escalation from, Escalation to, String executorId) throws IsisException {
 
         // Workaround: Handle from null values prior to this feature
@@ -249,8 +257,8 @@ public class AlertLogService {
     private void createAssignToUserHistoryRecord(AlertLog alert, String assignFrom, String assignTo, String executorId) throws IsisException {
 
         // Get Name of executor
-        // Null handlers
         final var appUserFrom = appUserService.getById(assignFrom);
+
 
         // Retain the 1st executor of the assignment
         final var topExistingRow = assignToUserHistoryService.getRecordById(alert.getId());

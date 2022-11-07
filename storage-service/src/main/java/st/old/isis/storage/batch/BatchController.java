@@ -9,6 +9,9 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,14 +21,14 @@ import st.old.isis.exception.IsisException;
 
 @RestController
 @RequestMapping(path = "/batch-policy")
-@RequiredArgsConstructor
 public class BatchController {
 
-    private final JobLauncher jobLauncher;
-    private final Job job;
+    @Autowired private JobLauncher jobLauncher;
+
+    @Autowired private ApplicationContext applicationContext;
 
     @PostMapping(path = "/start")
-    public void startBatch(@RequestBody PolicyProcessorDto dto) throws IsisException {
+    public void startPolicyProcessingBatchJob(@RequestBody PolicyProcessorDto dto) throws IsisException {
 
         if(dto.getDateFrom() == null ||
                 dto.getDateTo() == null||
@@ -39,12 +42,14 @@ public class BatchController {
                 .addString("dateTo", dto.getDateTo().toString())
                 .addString("source", dto.getSource())
                 .toJobParameters();
+
         try {
-            jobLauncher.run(job, jobParameters);
+            jobLauncher.run(applicationContext.getBean("batchPolicyJob", Job.class), jobParameters);
         } catch (JobExecutionAlreadyRunningException | JobRestartException
                 | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
 
             e.printStackTrace();
         }
     }
+
 }

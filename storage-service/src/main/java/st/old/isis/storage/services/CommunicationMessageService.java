@@ -13,6 +13,7 @@ import st.old.isis.dto.audit.AuditEvent;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.dto.storage.CommunicationRecipientDto;
+import st.old.isis.dto.storage.PatternBypassDto;
 import st.old.isis.dto.storage.RecentMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,19 +44,46 @@ public class CommunicationMessageService {
   private final CommunicationRecipientService communicationRecipientService;
   private final MessageSearchProcessor messageSearchProcessor;
 
+  private final PatternBypassService patternBypassService;
+
   @Audited(event = "BATCH_MESSAGE_SAVE")
   public List<CommunicationMessageDto> batchSave(
       @NonNull final List<CommunicationMessageDto> request) {
 
+    final List<PatternBypassDto> patternBypassList= patternBypassService.findWithFilter(PatternBypassDto.builder().build()).getData();
+
     final var messages =
         request.stream()
             .filter(message -> !Strings.isEmpty(message.getSender()))
+            .map(message -> {
+
+              if(message.getMessage() == null || message.getMessage().isEmpty()) return message;
+
+              final var bypassMatch = patternBypassList.stream().filter(bypass -> message.getMessage().contains(bypass.getValue())).findFirst().orElse(null);
+              if(bypassMatch != null){
+                message.setBypassType(bypassMatch.getBypassType());
+              }
+              return message;
+            })
             .map(this::mapToTempEntity)
             .collect(Collectors.toList());
 
     return tempRepository.saveAll(messages).stream()
         .map(this::mapToResource)
         .collect(Collectors.toList());
+  }
+
+  @Audited(event = "BATCH_MESSAGE_SAVE_FROM_BATCH_JOB")
+  public List<CommunicationMessageDto> batchSaveFromBatchJob(
+          @NonNull final List<CommunicationMessageDto> request) {
+
+    final var entityList = request.stream()
+            .filter(Objects::nonNull)
+            .map(this::mapToEntity).collect(Collectors.toList());
+
+    repository.saveAllAndFlush(entityList);
+
+    return request;
   }
 
   @Audited(event = "FINALIZE_BATCH_SAVE_MESSAGES")
@@ -101,6 +130,18 @@ public class CommunicationMessageService {
     final var newEntity = mapToEntity(dto);
 
     final var updatedEntity = repository.save(newEntity);
+
+    return mapToResource(updatedEntity);
+  }
+
+  public CommunicationMessageDto saveAndFlush(@NonNull final CommunicationMessageDto dto)
+          throws IsisException {
+
+    final var oldEntity = findById(dto.getId());
+
+    final var newEntity = mapToEntity(dto);
+
+    final var updatedEntity = repository.saveAndFlush(newEntity);
 
     return mapToResource(updatedEntity);
   }
@@ -263,6 +304,41 @@ public class CommunicationMessageService {
                     String.format("Cannot find a message with id: [%s]", id), "NotFoundException"));
   }
 
+  public CommunicationMessageDto processIfSystemEvent(List<PatternBypassDto> patternBypassList,  CommunicationMessage message) throws IsisException {
+
+    if(message.getMessage() == null) return null;
+
+    final var bypassMatch = patternBypassList.stream()
+            .filter(bypass -> message.getMessage().contains(bypass.getValue()))
+            .findFirst()
+            .orElse(null);
+
+    if(bypassMatch != null){
+//      log.info("System Event Found for Message Id: {} of type {}", message.getId(), bypassMatch.getBypassType());
+      final var dto = this.mapToResource(message);
+      dto.setBypassType(bypassMatch.getBypassType());
+      return dto;
+    }
+
+    return null;
+  }
+
+  public int updateBypassMessageType(List<CommunicationMessageDto> messages){
+
+    AtomicInteger resultSize = new AtomicInteger();
+
+    final var bypassTypeMap = messages.stream()
+            .collect(Collectors.groupingBy(map -> map.getBypassType(), Collectors.mapping(dto -> dto.getId(), Collectors.toList())));
+
+    bypassTypeMap.keySet().stream().forEach(
+        b -> {
+          resultSize.getAndAdd(repository.updateBypassPattern(b, bypassTypeMap.get(b)));
+        }
+    );
+
+    return resultSize.get();
+  }
+
   private CommunicationMessage mapToEntity(@NonNull final CommunicationMessageDto dto) {
     return CommunicationMessage.builder()
         .id(dto.getId())
@@ -276,6 +352,7 @@ public class CommunicationMessageService {
         .source(dto.getSource())
         .type(dto.getType())
         .metadata(dto.getMetadata())
+        .bypassType(dto.getBypassType())
         .build();
   }
 
@@ -293,6 +370,7 @@ public class CommunicationMessageService {
         .type(dto.getType())
         .metadata(dto.getMetadata())
         .fileSource(dto.getFileSource())
+        .bypassType(dto.getBypassType())
         .build();
   }
 
@@ -309,6 +387,7 @@ public class CommunicationMessageService {
         .source(entity.getSource())
         .type(entity.getType())
         .metadata(entity.getMetadata())
+        .bypassType(entity.getBypassType())
         .build();
   }
 
@@ -325,6 +404,7 @@ public class CommunicationMessageService {
         .source(entity.getSource())
         .type(entity.getType())
         .metadata(entity.getMetadata())
+        .bypassType(entity.getBypassType())
         .build();
   }
 
@@ -421,6 +501,7 @@ public class CommunicationMessageService {
             .sources(filter.getSources())
             .sender(filter.getSender())
             .senders(filter.getSenders())
+            .bypassType(filter.getBypassType())
             .build();
 
     final var spec = new CommunicationMessageSpecification(messageFilter);

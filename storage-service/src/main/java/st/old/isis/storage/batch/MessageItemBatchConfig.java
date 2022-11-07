@@ -1,6 +1,5 @@
 package st.old.isis.storage.batch;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -15,6 +14,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +36,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 @EnableBatchProcessing
-@RequiredArgsConstructor
 @Slf4j
 public class MessageItemBatchConfig {
 
@@ -46,29 +45,36 @@ public class MessageItemBatchConfig {
     @Autowired private BatchConfiguration batchConfiguration;
     @Bean
     @StepScope
-    public RepositoryItemReader<CommunicationMessage> reader(   @Value("#{jobParameters['source']}") String source,
-                                                                @Value("#{jobParameters['dateFrom']}") String dateFrom,
-                                                                @Value("#{jobParameters['dateTo']}")String dateTo) {
+    public RepositoryItemReader<CommunicationMessage> batchPolicyReader(@Value("#{jobParameters['source']}") String source,
+                                                                        @Value("#{jobParameters['dateFrom']}") String dateFrom,
+                                                                        @Value("#{jobParameters['dateTo']}")String dateTo) {
         RepositoryItemReader<CommunicationMessage> reader = new RepositoryItemReader<>();
-        reader.setRepository(communicationMessageRepository);
-        reader.setMethodName("findAllBySourceAndImportDateBetween");
 
         List<Object> queryMethodArguments = new ArrayList<>();
-        queryMethodArguments.add(source);
+
+        if(source != null && !source.isEmpty()){
+            reader.setMethodName("findAllBySourceAndBypassTypeIsNullAndImportDateBetween");
+            queryMethodArguments.add(source);
+        } else {
+            reader.setMethodName("findAllByBypassTypeIsNullAndImportDateBetween");
+        }
+
+        reader.setRepository(communicationMessageRepository);
+
         queryMethodArguments.add(LocalDate.parse(dateFrom));
         queryMethodArguments.add(LocalDate.parse(dateTo));
+
         reader.setArguments(queryMethodArguments);
 
         reader.setPageSize(batchConfiguration.getPolicyProcessingReaderPageSize());
         Map<String, Sort.Direction> sorts = new HashMap<>();
         sorts.put("timeSent", Sort.Direction.ASC);
         reader.setSort(sorts);
-
         return reader;
     }
 
     @Bean
-    public TaskExecutor taskExecutor() {
+    public TaskExecutor batchPolicyTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(batchConfiguration.getPolicyProcessingCorePoolSize());
         executor.setMaxPoolSize(batchConfiguration.getPolicyProcessingMaxPoolSize());
@@ -79,58 +85,58 @@ public class MessageItemBatchConfig {
     }
 
     @Bean
-    public MessageItemWriter writer() {
+    public MessageItemWriter batchPolicyWriter() {
         return new MessageItemWriter();
     }
 
     @Bean
-    public MessageItemProcessor processor() {
+    public MessageItemProcessor batchPolicyProcessor() {
         return new MessageItemProcessor();
     }
 
     @Bean
-    public AsyncItemProcessor<CommunicationMessage, BatchAlertNotificationDto> asyncProcessor() {
+    public AsyncItemProcessor<CommunicationMessage, BatchAlertNotificationDto> batchPolicyAsyncProcessor() {
         AsyncItemProcessor<CommunicationMessage, BatchAlertNotificationDto> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(processor());
-        asyncItemProcessor.setTaskExecutor(taskExecutor());
+        asyncItemProcessor.setDelegate(batchPolicyProcessor());
+        asyncItemProcessor.setTaskExecutor(batchPolicyTaskExecutor());
         return asyncItemProcessor;
     }
 
     @Bean
-    public AsyncItemWriter<BatchAlertNotificationDto> asyncWriter() {
+    public AsyncItemWriter<BatchAlertNotificationDto> batchPolicyAsyncWriter() {
         AsyncItemWriter<BatchAlertNotificationDto> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(writer());
+        asyncItemWriter.setDelegate(batchPolicyWriter());
         return asyncItemWriter;
     }
 
-    @Bean
-    public Step step1(ItemReader<CommunicationMessage> itemReader, ItemWriter<BatchAlertNotificationDto> itemWriter)
-            throws Exception {
-        return this.stepBuilderFactory
-                .get("step1")
-                .<CommunicationMessage, Future<BatchAlertNotificationDto>>chunk(batchConfiguration.getPolicyProcessingBatchSize())
-                .reader(itemReader)
-                .processor(asyncProcessor())
-                .writer(asyncWriter())
-                .listener(initializeStepExecutionListener())
-                .listener(processor())
-                .taskExecutor(taskExecutor())
-                .build();
-    }
+
 
     @Bean
-    public AlertBatchStepExecutionListener initializeStepExecutionListener() throws Exception {
+    public AlertBatchStepExecutionListener systemEventsInitializeStepExecutionListener() throws Exception {
         return new AlertBatchStepExecutionListener();
     }
 
     @Bean
-    public Job profileUpdateJob(JobCompletionNotificationListener listener, Step step1)
+    public Step batchPolicyJobStep1(ItemReader<CommunicationMessage> batchPolicyReader, ItemWriter<BatchAlertNotificationDto> batchPolicyWriter)
             throws Exception {
+        return this.stepBuilderFactory
+                .get("batchPolicyJobStep1")
+                .<CommunicationMessage, Future<BatchAlertNotificationDto>>chunk(batchConfiguration.getPolicyProcessingBatchSize())
+                .reader(batchPolicyReader)
+                .processor(batchPolicyAsyncProcessor())
+                .writer(batchPolicyAsyncWriter())
+                .listener(systemEventsInitializeStepExecutionListener())
+                .taskExecutor(batchPolicyTaskExecutor())
+                .build();
+    }
 
-        return this.jobBuilderFactory.get("policyProcessorBatchJob")
+    @Bean
+    public Job batchPolicyJob(JobCompletionNotificationListener listener, Step batchPolicyJobStep1) {
+
+        return this.jobBuilderFactory.get("batchPolicyJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
-                .flow(step1)
+                .flow(batchPolicyJobStep1)
                 .end().build();
     }
 

@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 import st.old.isis.dto.metadata.Metadata;
+import st.old.isis.enums.MessageBypassType;
 import st.old.isis.mappers.MetadataConverter;
 
 import javax.persistence.*;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
       @Index(name = "idx_communication_message_sender", columnList = "sender"),
       @Index(name = "idx_communication_message_chain_link_id", columnList = "chainLinkId"),
       @Index(name = "idx_communication_message_import_date", columnList = "importDate"),
+      @Index(name = "idx_communication_message_bypass_type", columnList = "bypassType")
     })
 public class CommunicationMessage implements Serializable {
 
@@ -62,6 +64,9 @@ public class CommunicationMessage implements Serializable {
   @CreationTimestamp private LocalDateTime dateCreated;
 
   @UpdateTimestamp private LocalDateTime dateModified;
+
+  @Enumerated(EnumType.STRING)
+  private MessageBypassType bypassType;
 
   private boolean deleted;
 }
