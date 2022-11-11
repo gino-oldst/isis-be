@@ -117,6 +117,7 @@ public class SystemMessageBatchConfig {
                 .processor(systemEventsProcessor())
                 .writer(systemEventsWriter())
                 .listener(systemEventsInitializeStepExecutionListener())
+                .listener(systemEventsProcessor())
                 .taskExecutor(systemEventsTaskExecutor())
                 .build();
     }

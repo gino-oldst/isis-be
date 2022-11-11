@@ -126,6 +126,7 @@ public class MessageItemBatchConfig {
                 .processor(batchPolicyAsyncProcessor())
                 .writer(batchPolicyAsyncWriter())
                 .listener(systemEventsInitializeStepExecutionListener())
+                .listener(batchPolicyProcessor())
                 .taskExecutor(batchPolicyTaskExecutor())
                 .build();
     }
