@@ -119,7 +119,11 @@ public class UserLinkService {
                 .id(dto.getId())
                 .userId(dto.getUserId())
                 .externalUserId(dto.getExternalUserId())
-                .dateCreated(dto.getDateCreated())
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .company(dto.getCompany())
+                .externalCompanyId(dto.getExternalCompanyId())
+                .isInternal(dto.isInternal())
                 .deleted(dto.isDeleted())
                 .build();
     }
@@ -129,7 +133,13 @@ public class UserLinkService {
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .externalUserId(entity.getExternalUserId())
+                .firstName(entity.getFirstName())
+                .lastName(entity.getLastName())
+                .company(entity.getCompany())
+                .externalCompanyId(entity.getExternalCompanyId())
+                .isInternal(entity.isInternal())
                 .dateCreated(entity.getDateCreated())
+                .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
                 .build();
     }

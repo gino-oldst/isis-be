@@ -1,5 +1,6 @@
 package st.old.isis.storage.validators;
 
+import io.micrometer.core.instrument.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -20,14 +21,15 @@ public class UserLinkValidator {
 
     public void createValidate(@NonNull final UserLinkDto dto) throws IsisException {
 
-        validate(dto);
+        if(StringUtils.isEmpty(dto.getFirstName())) throw IsisException.badRequest("First Name is required", "InvalidUserLinkException");
 
-        final var userId = dto.getUserId();
-        final var externalUserId = dto.getExternalUserId();
+        if(StringUtils.isEmpty(dto.getLastName())) throw IsisException.badRequest("Last Name is required", "InvalidUserLinkException");
 
-        final var optUserLink = repository.findByUserIdAndExternalUserId(userId, externalUserId);
+        if(StringUtils.isEmpty(dto.getCompany())) throw IsisException.badRequest("Company is required", "InvalidUserLinkException");
 
-        if (optUserLink.isPresent()) {
+        final var optExistingUserLink = repository.findByFirstNameAndLastNameAndCompany(dto.getFirstName(), dto.getLastName(), dto.getCompany());
+
+        if (optExistingUserLink.isPresent()) {
             throw IsisException.conflict("User link already exists", "ConflictException");
         }
     }

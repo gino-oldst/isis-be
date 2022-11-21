@@ -22,7 +22,19 @@ public class UserLinkDto implements Dto {
 
     private String externalUserId;
 
+    private String firstName;
+
+    private String lastName;
+
+    private String company;
+
+    private String externalCompanyId;
+
+    private boolean isInternal;
+
     private LocalDateTime dateCreated;
+
+    private LocalDateTime dateModified;
 
     private boolean deleted;
 }
