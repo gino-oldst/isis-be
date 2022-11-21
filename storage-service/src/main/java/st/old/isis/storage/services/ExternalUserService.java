@@ -98,6 +98,14 @@ public class ExternalUserService {
     return mapToResource(entity);
   }
 
+  @Audited(event = "GET_EXTERNAL_USER_BY_EMAIL")
+  public ExternalUserDto getByEmail(@NonNull @Audited final String email) throws IsisException {
+
+    final var entity = findByEmail(email);
+
+    return mapToResource(entity);
+  }
+
   @Audited(event = "SEARCH_EXTERNAL_USER")
   public ListDto<ExternalUserDto> search(
       @NonNull @Audited final ExternalUserDto filter, Sort sort) {
@@ -155,6 +163,16 @@ public class ExternalUserService {
                 IsisException.notFound(
                     String.format("Cannot find external user with id: [%s]", id),
                     "NotFoundException"));
+  }
+
+  private ExternalUser findByEmail(@NonNull final String email) throws IsisException {
+    return repository
+            .findByEmail(email)
+            .orElseThrow(
+                    () ->
+                            IsisException.notFound(
+                                    String.format("Cannot find external user with id: [%s]", email),
+                                    "NotFoundException"));
   }
 
   private ExternalUser findByExternalId(@NonNull final String externalId) throws IsisException {

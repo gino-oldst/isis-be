@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -22,7 +23,8 @@ import java.time.LocalDateTime;
             @Index(name = "idx_userlink_firstname", columnList = "firstName"),
             @Index(name = "idx_userlink_lastname", columnList = "lastName"),
             @Index(name = "idx_userlink_company", columnList = "company"),
-            @Index(name = "idx_userlink_externalCompanyId", columnList = "externalCompanyId")
+            @Index(name = "idx_userlink_externalCompanyId", columnList = "externalCompanyId"),
+            @Index(name = "idx_userlink_import_date", columnList = "importDate")
     }
 )
 public class UserLink implements Serializable {
@@ -47,6 +49,8 @@ public class UserLink implements Serializable {
     private String externalCompanyId;
 
     private boolean isInternal;
+
+    private LocalDate importDate;
 
     @CreationTimestamp
     private LocalDateTime dateCreated;

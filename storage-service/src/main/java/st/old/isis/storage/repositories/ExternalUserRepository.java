@@ -29,4 +29,6 @@ public interface ExternalUserRepository
               + "VALUES (temp.id, temp.date_created, temp.date_modified, temp.deleted, temp.email, temp.external_id, temp.first_name, temp.last_name, temp.phone_number, temp.source, temp.type); SELECT @@ROWCOUNT AS mergedItems",
       nativeQuery = true)
   int merge(String fileSource);
+
+  Optional<ExternalUser> findByEmail(String email);
 }

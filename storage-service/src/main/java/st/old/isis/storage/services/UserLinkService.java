@@ -8,12 +8,16 @@ import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.UserLinkDto;
+import st.old.isis.dto.storage.UserLinkIdentifierDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.UserLink;
 import st.old.isis.storage.repositories.UserLinkRepository;
 import st.old.isis.storage.specifications.UserLinkSpecification;
 import st.old.isis.storage.validators.UserLinkValidator;
+import st.old.isis.utils.ListUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,6 +28,8 @@ public class UserLinkService {
     private final UserLinkRepository repository;
     private final UserLinkValidator validator;
 
+    private final UserLinkIdentifierService userLinkIdentifierService;
+
     @Audited(event = "CREATE_USER_LINK")
     public UserLinkDto create(@NonNull @Audited final UserLinkDto dto) throws IsisException {
 
@@ -31,9 +37,24 @@ public class UserLinkService {
 
         final var entity = mapToEntity(dto);
 
-        final var createdEntity = repository.save(entity);
+        final var createdEntity = mapToResource(repository.save(entity));
 
-        return mapToResource(createdEntity);
+        List<UserLinkIdentifierDto> results= new ArrayList<>();
+
+        if(!ListUtils.isNullOrEmpty(dto.getIdentifiers())){
+            for(String identifier: dto.getIdentifiers()){
+                try {
+                    results.add(userLinkIdentifierService.assign(createdEntity, identifier));
+                } catch (IsisException e) {
+                    log.error("Error occurred during creation of user link identifier. {}", identifier);
+                    throw IsisException.exception("Error occurred during creation of user link identifier", e.getMessage());
+                }
+            }
+        }
+
+        createdEntity.setUserLinkIdentifierDtos(results);
+
+        return createdEntity;
     }
 
     @Audited(event = "UPDATE_USER_LINK")
@@ -129,6 +150,9 @@ public class UserLinkService {
     }
 
     private UserLinkDto mapToResource(@NonNull final UserLink entity) {
+
+        final var identifierList= userLinkIdentifierService.findAll(entity.getId());
+
         return UserLinkDto.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
@@ -141,6 +165,7 @@ public class UserLinkService {
                 .dateCreated(entity.getDateCreated())
                 .dateModified(entity.getDateModified())
                 .deleted(entity.isDeleted())
+                .userLinkIdentifierDtos(identifierList)
                 .build();
     }
 

@@ -10,9 +10,6 @@ import java.util.Optional;
 public interface UserLinkRepository extends JpaRepository<UserLink, String>,
         JpaSpecificationExecutor<UserLink> {
 
-    Optional<UserLink> findByUserIdAndExternalUserId(@NonNull final String userId,
-                                                     @NonNull final String externalUserId);
-
     Optional<UserLink> findByFirstNameAndLastNameAndCompany(@NonNull final String firstName,
                                                      @NonNull final String lastName, @NonNull final String company);
 }

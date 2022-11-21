@@ -32,6 +32,7 @@ public class UserLinkValidator {
         if (optExistingUserLink.isPresent()) {
             throw IsisException.conflict("User link already exists", "ConflictException");
         }
+
     }
 
     public void updateValidate(@NonNull final UserLink oldEntity,
