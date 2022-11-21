@@ -48,7 +48,7 @@ public class SystemMessageBatchConfig {
     private final int JOB_SPECIFIC_CORE_POOL_SIZE = 1;
     private final int JOB_SPECIFIC_MAX_POOL_SIZE = 1;
     private final int JOB_SPECIFIC_QUEUE_CAPACITY = 2000;
-    private final int JOB_SPECIFIC_READER_PAGE_SIZE= 2000;
+    private final int JOB_SPECIFIC_READER_PAGE_SIZE= 10000;
     private final int JOB_SPECIFIC_PROCESSING_BATCH_SIZE= 2000;
 
     @Bean
