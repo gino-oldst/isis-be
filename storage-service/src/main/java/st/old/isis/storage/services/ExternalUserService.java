@@ -29,6 +29,19 @@ public class ExternalUserService {
   private final ExternalUserRepository repository;
   private final TempExternalUserRepository tempRepository;
 
+  @Audited(event = "UPDATE_EXTERNAL_USER")
+  public ExternalUserDto update(@NonNull final ExternalUserDto dto) {
+      final var updatedEntity = repository.save(mapToEntity(dto));
+      return mapToResource(updatedEntity);
+  }
+
+  public ExternalUserDto removeAssigned(@NonNull final String id) {
+    final var existingEntity = repository.getById(id);
+    existingEntity.setAssignedTo(null);
+    final var updatedEntity = repository.save(existingEntity);
+    return mapToResource(updatedEntity);
+  }
+
   @Audited(event = "BATCH_SAVE_EXTERNAL_USER")
   public ListDto<ExternalUserDto> batchedSave(@NonNull final List<ExternalUserDto> list) {
 
@@ -196,6 +209,8 @@ public class ExternalUserService {
         .source(dto.getSource())
         .type(dto.getType())
         .deleted(dto.isDeleted())
+        .assignedTo(dto.getAssignedTo())
+        .dateCreated(dto.getDateCreated())
         .build();
   }
 
@@ -225,6 +240,8 @@ public class ExternalUserService {
         .source(entity.getSource())
         .type(entity.getType())
         .deleted(entity.isDeleted())
+        .assignedTo(entity.getAssignedTo())
+        .dateCreated(entity.getDateCreated())
         .build();
   }
 

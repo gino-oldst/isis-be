@@ -49,6 +49,12 @@ public class UserLinkIdentifierService {
             throw IsisException.notFound("Identifier or External User does not exist", "ExternalUserFoundException");
         }
 
+        if(externalUser.getAssignedTo() != null){
+            final var error = String.format("Identifier %s is already assigned to user %s", identifier, externalUser.getAssignedTo());
+            log.error(error);
+            throw IsisException.conflict(error, "AlreadyAssignedException");
+        }
+
         final var dto = UserLinkIdentifierDto.builder()
                 .userLinkId(userLinkDto.getId())
                 .externalUserId(externalUser.getId())
@@ -59,7 +65,15 @@ public class UserLinkIdentifierService {
 
         final var createdEntity = repository.save(entity);
 
+        externalUser.setAssignedTo(userLinkDto.getId());
+        externalUserService.update(externalUser);
+
         return mapToResource(createdEntity);
+    }
+
+    @Audited(event = "DELETE_USER_LINK_IDENTIFIER")
+    public void delete(@NonNull @Audited final String id) {
+        repository.deleteById(id);
     }
 
     public List<UserLinkIdentifierDto> findAll(@NonNull final String userLinkId){

@@ -27,8 +27,9 @@ public class UserLinkService {
 
     private final UserLinkRepository repository;
     private final UserLinkValidator validator;
-
     private final UserLinkIdentifierService userLinkIdentifierService;
+
+    private final ExternalUserService externalUserService;
 
     @Audited(event = "CREATE_USER_LINK")
     public UserLinkDto create(@NonNull @Audited final UserLinkDto dto) throws IsisException {
@@ -47,7 +48,8 @@ public class UserLinkService {
                     results.add(userLinkIdentifierService.assign(createdEntity, identifier));
                 } catch (IsisException e) {
                     log.error("Error occurred during creation of user link identifier. {}", identifier);
-                    throw IsisException.exception("Error occurred during creation of user link identifier", e.getMessage());
+                    revertFailedCreate(createdEntity, results);
+                    throw IsisException.badRequest(e.getMessage(), e.getException());
                 }
             }
         }
@@ -55,6 +57,17 @@ public class UserLinkService {
         createdEntity.setUserLinkIdentifierDtos(results);
 
         return createdEntity;
+    }
+
+    public void revertFailedCreate(UserLinkDto createdUserLink, List<UserLinkIdentifierDto> createdIdentifiers) throws IsisException {
+        log.error("Deleting user link {}", createdUserLink.getId());
+        this.delete(createdUserLink.getId());
+
+        log.error("Deleting created identifiers");
+        createdIdentifiers.stream().forEach(identifier -> {
+            externalUserService.removeAssigned(identifier.getExternalUserId());
+            userLinkIdentifierService.delete(identifier.getId());
+        });
     }
 
     @Audited(event = "UPDATE_USER_LINK")
