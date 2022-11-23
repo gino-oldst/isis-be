@@ -45,4 +45,8 @@ public class UserLinkDto implements Dto {
 
     private boolean deleted;
 
+    private String likeFirstName;
+
+    private String likeLastName;
+
 }
