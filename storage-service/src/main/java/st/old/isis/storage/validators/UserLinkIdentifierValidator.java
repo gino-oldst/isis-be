@@ -41,7 +41,7 @@ public class UserLinkIdentifierValidator {
 //
 //    }
 
-    public void assignValidate(final UserLinkDto dto, String identifier) throws IsisException {
+    public void assignValidate(final UserLinkDto dto) throws IsisException {
 
         if(StringUtils.isEmpty(dto.getId())) throw IsisException.notFound("User Link Id is required", "InvalidUserLinkIdentifierException");
 

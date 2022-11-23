@@ -39,7 +39,7 @@ public class UserLinkIdentifierService {
 
     public UserLinkIdentifierDto assign(@NonNull @Audited final UserLinkDto userLinkDto, @NonNull String identifier) throws IsisException {
 
-        validator.assignValidate(userLinkDto, identifier);
+        validator.assignValidate(userLinkDto);
 
         if(StringUtils.isEmpty(identifier)) throw IsisException.badRequest("Identifier value is required", "InvalidUserLinkIdentifierException");
 
@@ -69,6 +69,27 @@ public class UserLinkIdentifierService {
         externalUserService.update(externalUser);
 
         return mapToResource(createdEntity);
+    }
+
+    public void delete(@NonNull final UserLinkIdentifierDto identifierDto) throws IsisException {
+
+        final var externalUser = externalUserService.getById(identifierDto.getExternalUserId());
+
+        if (externalUser == null || StringUtils.isEmpty(externalUser.getId()))  {
+            throw IsisException.notFound("Identifier or External User does not exist", "ExternalUserNotFoundException");
+        }
+
+        final var existingUserLinkIdentifier= repository.findById(identifierDto.getId());
+
+        if (existingUserLinkIdentifier.isEmpty())  {
+            throw IsisException.notFound("User Link does not exist", "UserLinkNotFoundException");
+        }
+
+        repository.delete(existingUserLinkIdentifier.get());
+
+        externalUser.setAssignedTo(null);
+        externalUserService.update(externalUser);
+
     }
 
     @Audited(event = "DELETE_USER_LINK_IDENTIFIER")

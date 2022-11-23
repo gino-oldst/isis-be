@@ -80,9 +80,48 @@ public class UserLinkService {
         final var newEntity = mapToEntity(oldEntity, dto);
 
         final var updatedEntity = repository.save(newEntity);
+        final var updatedEntityDto = mapWithoutIdentifiers(updatedEntity);
+
+        if(!ListUtils.isNullOrEmpty(dto.getIdentifiers())){
+
+            //Handle identifiers
+            final var existingIdentifiers = userLinkIdentifierService.findAll(dto.getId());
+            final var newIdentifiers = dto.getIdentifiers()
+                    .stream()
+                    .filter(ide -> !isPreviousIdentifer(ide, existingIdentifiers))
+                    .collect(Collectors.toList());
+
+            for(String identifier: newIdentifiers){
+                try {
+                    userLinkIdentifierService.assign(updatedEntityDto, identifier);
+                } catch (IsisException e) {
+                    log.error("Error occurred during creation of user link identifier. {}", identifier);
+                    throw IsisException.badRequest(e.getMessage(), e.getException());
+                }
+            }
+
+            final var deleteIdentifiers = existingIdentifiers
+                    .stream()
+                    .filter(ide -> !isPreviousIdentifer(ide, dto.getIdentifiers()))
+                    .collect(Collectors.toList());
+
+            for(UserLinkIdentifierDto identifier: deleteIdentifiers){
+                userLinkIdentifierService.delete(identifier);
+            }
+
+        }
 
         return mapToResource(updatedEntity);
     }
+
+    private boolean isPreviousIdentifer(String ide, List<UserLinkIdentifierDto> existingIdentifiers) {
+        return existingIdentifiers.stream().anyMatch(ei -> ei.getIdentifier().equals(ide));
+    }
+
+    private boolean isPreviousIdentifer(UserLinkIdentifierDto ide, List<String> existingIdentifiers) {
+        return existingIdentifiers.stream().anyMatch(ei -> ei.equals(ide.getIdentifier()));
+    }
+
 
     @Audited(event = "GET_USER_LINK_BY_ID")
     public UserLinkDto getById(@NonNull @Audited final String id) throws IsisException {
@@ -96,6 +135,12 @@ public class UserLinkService {
     public void delete(@NonNull @Audited final String id) throws IsisException {
 
         final var entity = findById(id);
+        final var existingDto = mapToResource(entity);
+
+        if(!ListUtils.isNullOrEmpty(existingDto.getUserLinkIdentifierDtos()))
+        for(UserLinkIdentifierDto identifier: existingDto.getUserLinkIdentifierDtos()){
+            userLinkIdentifierService.delete(identifier);
+        }
 
         repository.delete(entity);
     }
@@ -182,10 +227,27 @@ public class UserLinkService {
                 .build();
     }
 
+    private UserLinkDto mapWithoutIdentifiers(@NonNull final UserLink entity) {
+        return UserLinkDto.builder()
+                .id(entity.getId())
+                .userId(entity.getUserId())
+                .externalUserId(entity.getExternalUserId())
+                .firstName(entity.getFirstName())
+                .lastName(entity.getLastName())
+                .company(entity.getCompany())
+                .externalCompanyId(entity.getExternalCompanyId())
+                .isInternal(entity.isInternal())
+                .dateCreated(entity.getDateCreated())
+                .dateModified(entity.getDateModified())
+                .deleted(entity.isDeleted())
+                .build();
+    }
+
     //map read-only properties from old entity to new entity
     private UserLink mapToEntity(@NonNull UserLink oldEntity, @NonNull UserLinkDto newDto) {
 
         final var entity = mapToEntity(newDto);
+        entity.setId(oldEntity.getId());
         entity.setDateCreated(oldEntity.getDateCreated());
 
         return entity;
