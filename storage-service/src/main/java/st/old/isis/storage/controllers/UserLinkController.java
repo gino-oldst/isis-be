@@ -3,11 +3,17 @@ package st.old.isis.storage.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.UserLinkService;
+
+import java.io.IOException;
+import java.time.LocalDate;
 
 @Slf4j
 @RestController
@@ -25,6 +31,11 @@ public class UserLinkController {
     @PutMapping
     public UserLinkDto update(@RequestBody final UserLinkDto userLink) throws IsisException {
         return service.update(userLink);
+    }
+
+    @PostMapping("/upload-user-link")
+    public ListDto<UserLinkDto> uploadProfiles(@RequestPart MultipartFile file) throws IsisException, IOException {
+        return service.upload(file);
     }
 
     @GetMapping("/{id}")
