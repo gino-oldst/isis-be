@@ -39,6 +39,8 @@ public class ExternalUserDto implements Dto {
 
   private boolean deleted;
 
+  private String assignedTo;
+
   private List<String> ids;
   private List<String> externalIds;
   private List<String> sources;

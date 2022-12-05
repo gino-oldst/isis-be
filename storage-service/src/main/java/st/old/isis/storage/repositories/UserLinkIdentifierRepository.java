@@ -10,4 +10,6 @@ public interface UserLinkIdentifierRepository extends JpaRepository<UserLinkIden
         JpaSpecificationExecutor<UserLinkIdentifier> {
 
     List<UserLinkIdentifier> findAllByUserLinkId(String userLinkId);
+
+    UserLinkIdentifier findByUserLinkIdAndIdentifier(String userLinkId, String identifier);
 }

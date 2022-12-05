@@ -40,7 +40,7 @@ public class UserLinkIdentifierService {
 
     public UserLinkIdentifierDto assign(@NonNull @Audited final UserLinkDto userLinkDto, @NonNull String identifier) throws IsisException {
 
-        validator.assignValidate(userLinkDto, identifier);
+        validator.assignValidate(userLinkDto);
 
         if(StringUtils.isEmpty(identifier)) throw IsisException.badRequest("Identifier value is required", "InvalidUserLinkIdentifierException");
 
@@ -48,6 +48,12 @@ public class UserLinkIdentifierService {
 
         if (externalUser == null || StringUtils.isEmpty(externalUser.getId()))  {
             throw IsisException.notFound("Identifier or External User does not exist", "ExternalUserFoundException");
+        }
+
+        if(externalUser.getAssignedTo() != null){
+            final var error = String.format("Identifier %s is already assigned to user %s", identifier, externalUser.getAssignedTo());
+            log.error(error);
+            throw IsisException.conflict(error, "AlreadyAssignedException");
         }
 
         final var dto = UserLinkIdentifierDto.builder()
@@ -60,24 +66,28 @@ public class UserLinkIdentifierService {
 
         final var createdEntity = repository.save(entity);
 
+        externalUser.setAssignedTo(userLinkDto.getId());
+        externalUserService.update(externalUser);
+
         return mapToResource(createdEntity);
     }
 
     public UserLinkIdentifierDto assignFromImport(@NonNull @Audited final UserLinkDto userLinkDto, @NonNull String identifier) throws IsisException {
 
-        validator.assignValidate(userLinkDto, identifier);
+        validator.assignValidate(userLinkDto);
 
-        if(StringUtils.isEmpty(identifier)) throw IsisException.badRequest("Identifier value is required", "InvalidUserLinkIdentifierException");
+        if (StringUtils.isEmpty(identifier))
+            throw IsisException.badRequest("Identifier value is required", "InvalidUserLinkIdentifierException");
 
         ExternalUserDto externalUser = null;
 
-        try{
+        try {
             externalUser = externalUserService.getByEmail(identifier);
-        }catch(IsisException e){
+        } catch (IsisException e) {
             log.info(e.getMessage());
         }
 
-        if (externalUser == null || StringUtils.isEmpty(externalUser.getId()))  {
+        if (externalUser == null || StringUtils.isEmpty(externalUser.getId())) {
             // CREATE EXTERNAL
             log.info(String.format("Creating new external user with id: [%s]", identifier));
 
@@ -104,6 +114,32 @@ public class UserLinkIdentifierService {
         final var createdEntity = repository.save(entity);
 
         return mapToResource(createdEntity);
+    }
+
+    public void delete(@NonNull final UserLinkIdentifierDto identifierDto) throws IsisException {
+
+        final var externalUser = externalUserService.getById(identifierDto.getExternalUserId());
+
+        if (externalUser == null || StringUtils.isEmpty(externalUser.getId()))  {
+            throw IsisException.notFound("Identifier or External User does not exist", "ExternalUserNotFoundException");
+        }
+
+        final var existingUserLinkIdentifier= repository.findById(identifierDto.getId());
+
+        if (existingUserLinkIdentifier.isEmpty())  {
+            throw IsisException.notFound("User Link does not exist", "UserLinkNotFoundException");
+        }
+
+        repository.delete(existingUserLinkIdentifier.get());
+
+        externalUser.setAssignedTo(null);
+        externalUserService.update(externalUser);
+
+    }
+
+    @Audited(event = "DELETE_USER_LINK_IDENTIFIER")
+    public void delete(@NonNull @Audited final String id) {
+        repository.deleteById(id);
     }
 
     public List<UserLinkIdentifierDto> findAll(@NonNull final String userLinkId){

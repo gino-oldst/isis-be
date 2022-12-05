@@ -48,6 +48,8 @@ public class ExternalUser implements Serializable {
 
   private String source;
 
+  private String assignedTo;
+
   @CreationTimestamp private LocalDateTime dateCreated;
 
   @UpdateTimestamp private LocalDateTime dateModified;

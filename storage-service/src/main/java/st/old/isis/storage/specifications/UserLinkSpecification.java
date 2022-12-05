@@ -29,6 +29,25 @@ public class UserLinkSpecification implements Specification<UserLink> {
 
         predicates.add(cb.equal(root.get("deleted"), filter.isDeleted()));
 
+        final var sortPredicates = new ArrayList<Predicate>();
+
+        final var likeFirstname = filter.getLikeFirstName();
+
+        if (likeFirstname != null) {
+            final var concatExp = cb.concat(cb.concat(root.get("firstName"), " "), root.get("lastName"));
+            sortPredicates.add(cb.like(concatExp, likeFirstname + "%"));
+        }
+
+        final var likeLastname = filter.getLikeLastName();
+
+        if (likeLastname != null) {
+            sortPredicates.add(cb.like(root.get("lastName"), likeLastname + "%"));
+        }
+
+        if (!sortPredicates.isEmpty()) {
+            predicates.add(cb.or(sortPredicates.toArray(Predicate[]::new)));
+        }
+
         return cb.and(predicates.toArray(Predicate[]::new));
     }
 }
