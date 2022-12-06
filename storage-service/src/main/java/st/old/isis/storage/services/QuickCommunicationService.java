@@ -47,6 +47,7 @@ public class QuickCommunicationService {
 
     private List<QuickCommunicationDto> filterAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
         // Remove status sorting for now
+
         final var sortByStatus = pageable.getSort().by("status");
 
         Sort newSort = Sort.by(pageable.getSort()
@@ -76,6 +77,7 @@ public class QuickCommunicationService {
             // Retrieve alerts for that specific message
             final var alerts = alertLogService.search(AlertLogDto.builder()
                     .keywordIds(filter.getKeywordIds())
+                    .policyIds(filter.getPolicyIds())
                     .statusTypes(filter.getStatusTypes())
                     .sources(filter.getSources())
                     .senders(filter.getSenders())

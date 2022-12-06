@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
+import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.dto.storage.UserLinkIdentifierDto;
 import st.old.isis.exception.IsisException;
@@ -67,6 +68,50 @@ public class UserLinkIdentifierService {
 
         externalUser.setAssignedTo(userLinkDto.getId());
         externalUserService.update(externalUser);
+
+        return mapToResource(createdEntity);
+    }
+
+    public UserLinkIdentifierDto assignFromImport(@NonNull @Audited final UserLinkDto userLinkDto, @NonNull String identifier) throws IsisException {
+
+        validator.assignValidate(userLinkDto);
+
+        if (StringUtils.isEmpty(identifier))
+            throw IsisException.badRequest("Identifier value is required", "InvalidUserLinkIdentifierException");
+
+        ExternalUserDto externalUser = null;
+
+        try {
+            externalUser = externalUserService.getByEmail(identifier);
+        } catch (IsisException e) {
+            log.info(e.getMessage());
+        }
+
+        if (externalUser == null || StringUtils.isEmpty(externalUser.getId())) {
+            // CREATE EXTERNAL
+            log.info(String.format("Creating new external user with id: [%s]", identifier));
+
+            final var externalUserDto = ExternalUserDto.builder()
+                    .firstName(userLinkDto.getFirstName())
+                    .lastName(userLinkDto.getLastName())
+                    .email(identifier)
+                    .externalId(identifier)
+                    .build();
+
+            externalUser = externalUserService.create(externalUserDto);
+
+            log.info(String.format("Created new external user with id: [%s]", identifier));
+        }
+
+        final var dto = UserLinkIdentifierDto.builder()
+                .userLinkId(userLinkDto.getId())
+                .externalUserId(externalUser.getId())
+                .identifier(externalUser.getEmail())
+                .build();
+
+        final var entity = mapToEntity(dto);
+
+        final var createdEntity = repository.save(entity);
 
         return mapToResource(createdEntity);
     }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.dto.storage.TempDto;
+import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.ExternalUserService;
 import st.old.isis.utils.ObjectUtils;
@@ -32,6 +33,10 @@ public class ExternalUserController {
       log.error("Persistence error: {} - {}", users.size(), ex.getMessage());
     }
     return ListDto.emptyList();
+  }
+
+  public ExternalUserDto create(@RequestBody final ExternalUserDto externalUserDto) throws IsisException {
+    return service.create(externalUserDto);
   }
 
   @PostMapping("/merge")

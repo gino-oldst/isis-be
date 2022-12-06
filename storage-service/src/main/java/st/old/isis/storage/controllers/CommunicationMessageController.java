@@ -53,7 +53,7 @@ public class CommunicationMessageController {
     try {
       return service.search(filter, pageable);
     } catch (TransactionTimedOutException e) {
-      throw IsisException.timeout(
+      throw IsisException.  timeout(
           "Search reached timeout. Modify filters to generate smaller result",
           "RequestTimeoutException");
     } finally {

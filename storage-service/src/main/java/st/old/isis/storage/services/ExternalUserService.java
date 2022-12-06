@@ -95,6 +95,16 @@ public class ExternalUserService {
     log.info("Delete temp users time elapsed: {} ms", System.currentTimeMillis() - start);
   }
 
+  @Audited(event = "CREATE_EXTERNAL_USER")
+  public ExternalUserDto create(@NonNull @Audited final ExternalUserDto dto) throws IsisException {
+
+    final var entity = mapToEntity(dto);
+
+    final var createdEntity = mapToResource(repository.save(entity));
+
+    return createdEntity;
+  }
+
   @Audited(event = "DELETE_EXTERNAL_USER")
   public void delete(@NonNull @Audited final String id) throws IsisException {
 

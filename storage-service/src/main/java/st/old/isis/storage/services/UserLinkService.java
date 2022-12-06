@@ -2,9 +2,13 @@ package st.old.isis.storage.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
 import st.old.isis.dto.storage.UserLinkDto;
@@ -16,9 +20,15 @@ import st.old.isis.storage.specifications.UserLinkSpecification;
 import st.old.isis.storage.validators.UserLinkValidator;
 import st.old.isis.utils.ListUtils;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -50,6 +60,34 @@ public class UserLinkService {
                     log.error("Error occurred during creation of user link identifier. {}", identifier);
                     revertFailedCreate(createdEntity, results);
                     throw IsisException.badRequest(e.getMessage(), e.getException());
+                }
+            }
+        }
+
+        createdEntity.setUserLinkIdentifierDtos(results);
+
+        return createdEntity;
+    }
+
+    @Audited(event = "CREATE_USER_LINK_FROM_IMPORT")
+    public UserLinkDto createUserLinkFromImport(@NonNull @Audited final UserLinkDto dto) throws IsisException {
+
+        validator.createValidate(dto);
+
+        final var entity = mapToEntity(dto);
+
+        final var createdEntity = mapToResource(repository.save(entity));
+
+        List<UserLinkIdentifierDto> results = new ArrayList<>();
+
+        if (!ListUtils.isNullOrEmpty(dto.getIdentifiers())) {
+            for (String identifier : dto.getIdentifiers()) {
+                try {
+                    results.add(userLinkIdentifierService.assignFromImport(createdEntity, identifier));
+                } catch (IsisException e) {
+                    log.error("Error occurred during creation of user link identifier. {}", identifier);
+                    revertFailedCreate(createdEntity, results);
+                    throw IsisException.exception("Error occurred during creation of user link identifier", e.getMessage());
                 }
             }
         }
@@ -186,6 +224,99 @@ public class UserLinkService {
                 .success();
     }
 
+    @Audited(event = "UPLOAD_USER_LINK")
+    public ListDto<UserLinkDto> upload(MultipartFile multipartFile) throws IOException, IsisException {
+        var temp = File.createTempFile(multipartFile.getOriginalFilename(), ".csv");
+        temp.deleteOnExit();
+        multipartFile.transferTo(temp);
+        try{
+            var results = processUpload(temp);
+
+            // Add Verified UserLinks
+            for (UserLinkDto userLinkDto : results){
+                createUserLinkFromImport(userLinkDto);
+            }
+
+            // Delete the temporary CSV File
+            temp.delete();
+
+            log.info("Completed Profile Records Data Upload");
+            return ListDto.<UserLinkDto>builder()
+                    .data(results)
+                    .totalNoOfRecords(results.size())
+                    .build()
+                    .success();
+        } catch (Exception e) {
+            log.info(e.toString());
+            throw IsisException.badRequest(e.getMessage(), "InvalidUserLinkException");
+        }
+    }
+
+    private List<UserLinkDto> processUpload(File tempFile) throws IsisException {
+        try{
+            CSVParser csvParser = new CSVParser(new FileReader(tempFile),
+                    CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+
+            long recordCount = StreamSupport.stream(csvRecords.spliterator(), false).count();
+            log.info("Importing {} Profile Records", recordCount);
+
+            final Pattern emailPattern = Pattern.compile("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$");
+
+            int ctr = 1;
+
+            List<UserLinkDto> fillUserLinkDtos = new ArrayList<>();
+
+            for (CSVRecord csvRecord : csvRecords) {
+                if (recordCount < 100 && ctr % 10 == 0) {
+                    log.info("Importing {} of {} , increments of 10 ", ctr, recordCount);
+                }
+
+                if (recordCount > 100 && recordCount < 500 && ctr % 50 == 0) {
+                    log.info("Importing {} of {} , increments of 50 ", ctr, recordCount);
+                }
+
+                if (recordCount > 500 && recordCount < 1000 && ctr % 100 == 0) {
+                    log.info("Importing {} of {}, , increments of 100", ctr, recordCount);
+                }
+
+                if (recordCount > 1000 && ctr % 500 == 0) {
+                    log.info("Importing {} of {} , increments of 500", ctr, recordCount);
+                }
+
+                var roughEmails = Arrays.asList(csvRecord.get(4).replaceAll("\"","").split(",",-1));
+                var cleanedEmails = roughEmails.stream()
+                        .map(String::trim)
+                        .filter(emailPattern.asPredicate())
+                        .collect(Collectors.toList());
+
+                if (roughEmails.size() != cleanedEmails.size()) {
+                    throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
+                }
+
+                UserLinkDto dto = UserLinkDto.builder()
+                        .firstName(csvRecord.get(0).replaceAll("\"",""))
+                        .lastName(csvRecord.get(1).replaceAll("\"", ""))
+                        .company(csvRecord.get(2).replaceAll("\"",""))
+                        .isInternal(csvRecord.get(3).replaceAll("\"", "").equalsIgnoreCase("yes"))
+                        .identifiers(cleanedEmails)
+                        .build();
+
+                // Change this to add to list after the list is finalized and has no errors.
+                // No creation of user link if the list is not good and error free.
+                // For now this is for test of creating a single record in externalUser, UserLink, UserLinkIdentifier
+                fillUserLinkDtos.add(dto);
+                ctr++;
+            }
+
+            log.info("Completed Profile Records Data Verification");
+            return fillUserLinkDtos;
+        } catch(IOException e) {
+            log.info("File Upload Failed");
+            throw new IllegalArgumentException("Error occurred while uploading the CSV File");
+        }
+    }
+
     private UserLink findById(@NonNull final String id) throws IsisException {
         return repository.findById(id)
                 .orElseThrow(() -> IsisException.notFound(
@@ -251,5 +382,19 @@ public class UserLinkService {
         entity.setDateCreated(oldEntity.getDateCreated());
 
         return entity;
+    }
+
+    private List<UserLink> mapToEntityList(List<UserLinkDto> userLinkDtos) {
+
+        return userLinkDtos.stream()
+                .map(this::mapToEntity)
+                .collect(Collectors.toList());
+    }
+
+    private List<UserLinkDto> mapToDtoList(List<UserLink> fills) {
+
+        return fills.stream()
+                .map(this::mapToResource)
+                .collect(Collectors.toList());
     }
 }
