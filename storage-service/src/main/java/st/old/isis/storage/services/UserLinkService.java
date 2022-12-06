@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -256,7 +258,9 @@ public class UserLinkService {
         try{
             CSVParser csvParser = new CSVParser(new FileReader(tempFile),
                     CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
-            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+            Iterable<CSVRecord> csvRecords = csvParser.getRecords().stream()
+                    .filter(item -> !Strings.isEmpty(item.get(0)))
+                    .collect(Collectors.toList());
 
             long recordCount = StreamSupport.stream(csvRecords.spliterator(), false).count();
             log.info("Importing {} Profile Records", recordCount);
@@ -268,30 +272,17 @@ public class UserLinkService {
             List<UserLinkDto> fillUserLinkDtos = new ArrayList<>();
 
             for (CSVRecord csvRecord : csvRecords) {
-                if (recordCount < 100 && ctr % 10 == 0) {
-                    log.info("Importing {} of {} , increments of 10 ", ctr, recordCount);
-                }
-
-                if (recordCount > 100 && recordCount < 500 && ctr % 50 == 0) {
-                    log.info("Importing {} of {} , increments of 50 ", ctr, recordCount);
-                }
-
-                if (recordCount > 500 && recordCount < 1000 && ctr % 100 == 0) {
-                    log.info("Importing {} of {}, , increments of 100", ctr, recordCount);
-                }
-
-                if (recordCount > 1000 && ctr % 500 == 0) {
-                    log.info("Importing {} of {} , increments of 500", ctr, recordCount);
-                }
-
-                var roughEmails = Arrays.asList(csvRecord.get(4).replaceAll("\"","").split(",",-1));
-                var cleanedEmails = roughEmails.stream()
-                        .map(String::trim)
-                        .filter(emailPattern.asPredicate())
+                var identifiers = Arrays
+                        .asList(csvRecord.get(4).replaceAll("\"","").split(",",-1))
+                        .stream().map(String::trim)
                         .collect(Collectors.toList());
 
-                if (roughEmails.size() != cleanedEmails.size()) {
-                    throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
+                for (String str : identifiers){
+                    Matcher m = emailPattern.matcher(str.trim());
+                    if (!m.matches() && !str.isEmpty()) {
+                        log.error(String.format("Error on row %s", ctr));
+                        throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
+                    }
                 }
 
                 UserLinkDto dto = UserLinkDto.builder()
@@ -299,7 +290,7 @@ public class UserLinkService {
                         .lastName(csvRecord.get(1).replaceAll("\"", ""))
                         .company(csvRecord.get(2).replaceAll("\"",""))
                         .isInternal(csvRecord.get(3).replaceAll("\"", "").equalsIgnoreCase("yes"))
-                        .identifiers(cleanedEmails)
+                        .identifiers(identifiers.get(0).isEmpty() ? null : identifiers )
                         .build();
 
                 // Change this to add to list after the list is finalized and has no errors.
