@@ -282,17 +282,24 @@ public class UserLinkService {
 
                 for (String str : identifiers){
                     Matcher m = emailPattern.matcher(str.trim());
-                    var externalUser = externalUserService.getByEmail(str.trim());
+                    ExternalUserDto externalUser = null;
 
                     if (!m.matches() && !str.isEmpty()) {
                         log.error(String.format("Error on row %s", ctr));
                         throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
                     }
 
-                    if(externalUser.getAssignedTo() != null){
-                        final var error = String.format("On Row %s. Identifier %s is already assigned to user %s.", ctr, str.trim(), externalUser.getAssignedTo());
-                        log.error(error);
-                        throw IsisException.conflict(error, "AlreadyAssignedException");
+                    try{
+                        externalUser = externalUserService.getByEmail(str.trim());
+
+                        if(externalUser.getAssignedTo() != null){
+                            final var error = String.format("On Row %s. Identifier %s is already assigned to user %s.", ctr, str.trim(), externalUser.getAssignedTo());
+                            log.error(error);
+                            throw IsisException.conflict(error, "AlreadyAssignedException");
+                        }
+
+                    } catch (Exception e) {
+                        log.info("Email {} is not assigned to a user", str.trim());
                     }
                 }
 

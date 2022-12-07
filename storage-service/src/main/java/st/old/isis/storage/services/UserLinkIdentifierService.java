@@ -103,6 +103,7 @@ public class UserLinkIdentifierService {
                     .externalId(identifier)
                     .build();
 
+            externalUser = externalUserService.create(externalUserDto);
 
             log.info(String.format("Created new external user with id: [%s]", identifier));
         }
