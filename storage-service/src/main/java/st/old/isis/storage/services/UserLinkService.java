@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.list.ListDto;
+import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.dto.storage.UserLinkIdentifierDto;
 import st.old.isis.exception.IsisException;
@@ -235,9 +236,9 @@ public class UserLinkService {
             var results = processUpload(temp);
 
             // Add Verified UserLinks
-            for (UserLinkDto userLinkDto : results){
-                createUserLinkFromImport(userLinkDto);
-            }
+//            for (UserLinkDto userLinkDto : results){
+//                createUserLinkFromImport(userLinkDto);
+//            }
 
             // Delete the temporary CSV File
             temp.delete();
@@ -248,9 +249,9 @@ public class UserLinkService {
                     .totalNoOfRecords(results.size())
                     .build()
                     .success();
-        } catch (Exception e) {
+        } catch (IsisException e) {
             log.info(e.toString());
-            throw IsisException.badRequest(e.getMessage(), "InvalidUserLinkException");
+            throw IsisException.badRequest(e.getMessage(), e.getException());
         }
     }
 
@@ -277,11 +278,28 @@ public class UserLinkService {
                         .stream().map(String::trim)
                         .collect(Collectors.toList());
 
+
+
                 for (String str : identifiers){
                     Matcher m = emailPattern.matcher(str.trim());
+                    ExternalUserDto externalUser = null;
+
                     if (!m.matches() && !str.isEmpty()) {
                         log.error(String.format("Error on row %s", ctr));
                         throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
+                    }
+
+                    try{
+                        externalUser = externalUserService.getByEmail(str.trim());
+
+                        if(externalUser.getAssignedTo() != null){
+                            final var error = String.format("On Row %s. Identifier %s is already assigned to user %s.", ctr, str.trim(), externalUser.getAssignedTo());
+                            log.error(error);
+                            throw IsisException.conflict(error, "AlreadyAssignedException");
+                        }
+
+                    } catch (Exception e) {
+                        log.info("Email {} is not assigned to a user", str.trim());
                     }
                 }
 
@@ -296,6 +314,7 @@ public class UserLinkService {
                 // Change this to add to list after the list is finalized and has no errors.
                 // No creation of user link if the list is not good and error free.
                 // For now this is for test of creating a single record in externalUser, UserLink, UserLinkIdentifier
+                createUserLinkFromImport(dto);
                 fillUserLinkDtos.add(dto);
                 ctr++;
             }
