@@ -313,7 +313,10 @@ public class UserLinkService {
                         }
 
                     } catch (IsisException e) {
-                        throw e;
+                        if (e.getException() == "AlreadyAssignedException") {
+                            throw e;
+                        }
+                        log.error(e.getMessage());
                     }
                 }
 
