@@ -16,6 +16,7 @@ import st.old.isis.dto.storage.ExternalUserDto;
 import st.old.isis.dto.storage.UserLinkDto;
 import st.old.isis.dto.storage.UserLinkIdentifierDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.storage.entities.User;
 import st.old.isis.storage.entities.UserLink;
 import st.old.isis.storage.repositories.UserLinkRepository;
 import st.old.isis.storage.specifications.UserLinkSpecification;
@@ -236,9 +237,9 @@ public class UserLinkService {
             var results = processUpload(temp);
 
             // Add Verified UserLinks
-//            for (UserLinkDto userLinkDto : results){
-//                createUserLinkFromImport(userLinkDto);
-//            }
+            for (UserLinkDto userLinkDto : results){
+                createUserLinkFromImport(userLinkDto);
+            }
 
             // Delete the temporary CSV File
             temp.delete();
@@ -253,6 +254,15 @@ public class UserLinkService {
             log.info(e.toString());
             throw IsisException.badRequest(e.getMessage(), e.getException());
         }
+    }
+
+    private boolean isOnPreceedingCSVRows(List<UserLinkDto> csvList, String str) {
+        List<UserLinkDto> foundUser = csvList.stream()
+                    .filter(userLink -> userLink.getIdentifiers().stream()
+                            .anyMatch(identifier ->
+                                    identifier.equals(str)))
+                            .collect(Collectors.toList());
+        return foundUser.size() > 0;
     }
 
     private List<UserLinkDto> processUpload(File tempFile) throws IsisException {
@@ -278,8 +288,6 @@ public class UserLinkService {
                         .stream().map(String::trim)
                         .collect(Collectors.toList());
 
-
-
                 for (String str : identifiers){
                     Matcher m = emailPattern.matcher(str.trim());
                     ExternalUserDto externalUser = null;
@@ -289,17 +297,23 @@ public class UserLinkService {
                         throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
                     }
 
+                    if (isOnPreceedingCSVRows(fillUserLinkDtos, str.trim())){
+                        final var error = String.format("On Row %s. Identifier %s is already assigned", ctr, str.trim());
+                        log.error(error);
+                        throw IsisException.conflict(error, "AlreadyAssignedException");
+                    }
+
                     try{
                         externalUser = externalUserService.getByEmail(str.trim());
 
                         if(externalUser.getAssignedTo() != null){
-                            final var error = String.format("On Row %s. Identifier %s is already assigned to user %s.", ctr, str.trim(), externalUser.getAssignedTo());
+                            final var error = String.format("On Row %s. Identifier %s is already assigned", ctr, str.trim());
                             log.error(error);
                             throw IsisException.conflict(error, "AlreadyAssignedException");
                         }
 
-                    } catch (Exception e) {
-                        log.info("Email {} is not assigned to a user", str.trim());
+                    } catch (IsisException e) {
+                        throw e;
                     }
                 }
 
@@ -314,7 +328,7 @@ public class UserLinkService {
                 // Change this to add to list after the list is finalized and has no errors.
                 // No creation of user link if the list is not good and error free.
                 // For now this is for test of creating a single record in externalUser, UserLink, UserLinkIdentifier
-                createUserLinkFromImport(dto);
+                //  createUserLinkFromImport(dto);
                 fillUserLinkDtos.add(dto);
                 ctr++;
             }

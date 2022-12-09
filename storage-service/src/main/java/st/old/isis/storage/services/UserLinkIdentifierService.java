@@ -84,16 +84,19 @@ public class UserLinkIdentifierService {
         try {
             externalUser = externalUserService.getByEmail(identifier);
             if(externalUser.getAssignedTo() != null){
-                final var error = String.format("Identifier %s is already assigned to user %s", identifier, externalUser.getAssignedTo());
+                final var error = String.format("Identifier %s is already assigned to user %s %s", identifier, externalUser.getFirstName(), externalUser.getLastName());
                 log.error(error);
                 throw IsisException.conflict(error, "AlreadyAssignedException");
+            } else {
+                externalUser.setAssignedTo(userLinkDto.getId());
+                externalUserService.update(externalUser);
             }
         } catch (IsisException e) {
             log.info(e.getMessage());
         }
 
         if (externalUser == null || StringUtils.isEmpty(externalUser.getId())) {
-            // CREATE EXTERNAL
+            // CREATE EXTERNAL AND ASSIGN TO USER-LINK PROFILE
             log.info(String.format("Creating new external user with id: [%s]", identifier));
 
             final var externalUserDto = ExternalUserDto.builder()
@@ -117,9 +120,6 @@ public class UserLinkIdentifierService {
         final var entity = mapToEntity(dto);
 
         final var createdEntity = repository.save(entity);
-
-        externalUser.setAssignedTo(userLinkDto.getId());
-        externalUserService.update(externalUser);
 
         return mapToResource(createdEntity);
     }
