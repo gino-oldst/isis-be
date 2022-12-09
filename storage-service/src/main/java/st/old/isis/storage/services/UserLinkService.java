@@ -265,6 +265,10 @@ public class UserLinkService {
         return foundUser.size() > 0;
     }
 
+    public static boolean isAlphaNumeric(String s) {
+        return s != null && !s.matches("^[a-zA-Z]*$");
+    }
+
     private List<UserLinkDto> processUpload(File tempFile) throws IsisException {
         try{
             CSVParser csvParser = new CSVParser(new FileReader(tempFile),
@@ -287,6 +291,36 @@ public class UserLinkService {
                         .asList(csvRecord.get(4).replaceAll("\"","").split(",",-1))
                         .stream().map(String::trim)
                         .collect(Collectors.toList());
+
+                if (isAlphaNumeric(csvRecord.get(0).replaceAll("\"",""))) {
+                    final var error = String.format("On Row %s. First Name should not contain numbers and special characters", ctr);
+                    log.error(error);
+                    throw IsisException.conflict(error, "InvalidField");
+                }
+
+                if (isAlphaNumeric(csvRecord.get(1).replaceAll("\"",""))) {
+                    final var error = String.format("On Row %s. Last Name should not contain numbers and special characters", ctr);
+                    log.error(error);
+                    throw IsisException.conflict(error, "InvalidField");
+                }
+
+                if (csvRecord.get(0).replaceAll("\"","").isEmpty()) {
+                    final var error = String.format("On Row %s. First Name should not be Empty", ctr);
+                    log.error(error);
+                    throw IsisException.conflict(error, "InvalidField");
+                }
+
+                if (csvRecord.get(1).replaceAll("\"","").isEmpty()) {
+                    final var error = String.format("On Row %s. Last Name should not be Empty", ctr);
+                    log.error(error);
+                    throw IsisException.conflict(error, "InvalidField");
+                }
+
+                if (csvRecord.get(2).replaceAll("\"","").isEmpty()) {
+                    final var error = String.format("On Row %s. Company Name should not be Empty", ctr);
+                    log.error(error);
+                    throw IsisException.conflict(error, "InvalidField");
+                }
 
                 for (String str : identifiers){
                     Matcher m = emailPattern.matcher(str.trim());
