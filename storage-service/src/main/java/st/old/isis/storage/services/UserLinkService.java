@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -288,8 +289,9 @@ public class UserLinkService {
 
             for (CSVRecord csvRecord : csvRecords) {
                 var identifiers = Arrays
-                        .asList(csvRecord.get(4).replaceAll("\"","").split(",",-1))
-                        .stream().map(String::trim)
+                        .asList(csvRecord.get(4).replaceAll("\"","").split(",",-1)).stream()
+                        .filter(item -> !Strings.isEmpty(item))
+                        .map(String::trim)
                         .collect(Collectors.toList());
 
                 if (isAlphaNumeric(csvRecord.get(0).replaceAll("\"",""))) {
@@ -331,10 +333,12 @@ public class UserLinkService {
                         throw new IllegalArgumentException("Invalid Email Format has been found in the CSV File");
                     }
 
-                    if (isOnPreceedingCSVRows(fillUserLinkDtos, str.trim())){
-                        final var error = String.format("On Row %s. Identifier %s is already assigned", ctr, str.trim());
-                        log.error(error);
-                        throw IsisException.conflict(error, "AlreadyAssignedException");
+                    if (fillUserLinkDtos.size() > 0) {
+                        if (isOnPreceedingCSVRows(fillUserLinkDtos, str.trim())){
+                            final var error = String.format("On Row %s. Identifier %s is already assigned", ctr, str.trim());
+                            log.error(error);
+                            throw IsisException.conflict(error, "AlreadyAssignedException");
+                        }
                     }
 
                     try{
@@ -359,7 +363,7 @@ public class UserLinkService {
                         .lastName(csvRecord.get(1).replaceAll("\"", ""))
                         .company(csvRecord.get(2).replaceAll("\"",""))
                         .isInternal(csvRecord.get(3).replaceAll("\"", "").equalsIgnoreCase("yes"))
-                        .identifiers(identifiers.get(0).isEmpty() ? null : identifiers )
+                        .identifiers(identifiers.size() == 0 ? null : identifiers )
                         .build();
 
                 // Change this to add to list after the list is finalized and has no errors.
