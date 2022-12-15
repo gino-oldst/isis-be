@@ -125,33 +125,29 @@ public class UserLinkService {
         final var updatedEntity = repository.save(newEntity);
         final var updatedEntityDto = mapWithoutIdentifiers(updatedEntity);
 
-        if(!ListUtils.isNullOrEmpty(dto.getIdentifiers())){
+        //Handle identifiers
+        final var existingIdentifiers = userLinkIdentifierService.findAll(dto.getId());
+        final var newIdentifiers = dto.getIdentifiers()
+                .stream()
+                .filter(ide -> !isPreviousIdentifer(ide, existingIdentifiers))
+                .collect(Collectors.toList());
 
-            //Handle identifiers
-            final var existingIdentifiers = userLinkIdentifierService.findAll(dto.getId());
-            final var newIdentifiers = dto.getIdentifiers()
-                    .stream()
-                    .filter(ide -> !isPreviousIdentifer(ide, existingIdentifiers))
-                    .collect(Collectors.toList());
-
-            for(String identifier: newIdentifiers){
-                try {
-                    userLinkIdentifierService.assign(updatedEntityDto, identifier);
-                } catch (IsisException e) {
-                    log.error("Error occurred during creation of user link identifier. {}", identifier);
-                    throw IsisException.badRequest(e.getMessage(), e.getException());
-                }
+        for(String identifier: newIdentifiers){
+            try {
+                userLinkIdentifierService.assign(updatedEntityDto, identifier);
+            } catch (IsisException e) {
+                log.error("Error occurred during creation of user link identifier. {}", identifier);
+                throw IsisException.badRequest(e.getMessage(), e.getException());
             }
+        }
 
-            final var deleteIdentifiers = existingIdentifiers
-                    .stream()
-                    .filter(ide -> !isPreviousIdentifer(ide, dto.getIdentifiers()))
-                    .collect(Collectors.toList());
+        final var deleteIdentifiers = existingIdentifiers
+                .stream()
+                .filter(ide -> !isPreviousIdentifer(ide, dto.getIdentifiers()))
+                .collect(Collectors.toList());
 
-            for(UserLinkIdentifierDto identifier: deleteIdentifiers){
-                userLinkIdentifierService.delete(identifier);
-            }
-
+        for(UserLinkIdentifierDto identifier: deleteIdentifiers){
+            userLinkIdentifierService.delete(identifier);
         }
 
         return mapToResource(updatedEntity);
