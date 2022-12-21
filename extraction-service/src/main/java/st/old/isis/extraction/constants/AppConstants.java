@@ -13,4 +13,13 @@ public class AppConstants {
     public static final String AWS_S3_RAW_BUCKET = "${isis.cloud.aws.s3.raw-bucket}";
     public static final String AWS_S3_INGRESS_BUCKET = "${isis.cloud.aws.s3.ingress-bucket}";
     public static final String AWS_S3_PROCESSED_BUCKET = "${isis.cloud.aws.s3.processed-bucket}";
+
+    public static final String AWS_OPENSEARCH_USERNAME = "${isis.cloud.aws.opensearch.username}";
+
+    public static final String AWS_OPENSEARCH_PASSWORD = "${isis.cloud.aws.opensearch.password}";
+
+    public static final String AWS_OPENSEARCH_HOSTNAME = "${isis.cloud.aws.opensearch.hostname}";
+
+
+
 }

@@ -41,6 +41,10 @@ isis:
         raw-bucket: ${AWS_S3_RAW_BUCKET}
         ingress-bucket: ${AWS_S3_INGRESS_BUCKET}
         processed-bucket: ${AWS_S3_PROCESSED_BUCKET}
+      opensearch:
+        username: ${AWS_OPENSEARCH_USERNAME}
+        password: ${AWS_OPENSEARCH_PASSWORD}
+        hostname: ${AWS_OPENSEARCH_HOSTNAME}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:
