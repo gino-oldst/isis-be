@@ -40,13 +40,14 @@ public class ReutersXmlExtractionService {
 
   private final StorageService storageService;
   private final NotificationService notificationService;
+  private final OpenSearchService openSearchService;
 
   @Audited(event = "PARSE_XML_STREAM")
   public ListDto<CommunicationChainDto> processXml(
       @NonNull final InputStream inputStream, @NonNull final String fileSource, LocalDate localDate)
       throws JAXBException, IsisException {
     try {
-      return processXml(new InputStreamReader(inputStream), localDate, fileSource);
+      return processXmlViaOpenSearch(new InputStreamReader(inputStream), localDate, fileSource);
     } catch (Throwable err) {
       sendParsingError(err);
       throw err;
@@ -58,7 +59,7 @@ public class ReutersXmlExtractionService {
       MultipartFile multipartFile, LocalDate importDate)
       throws IOException, JAXBException, IsisException {
     try {
-      return processXml(
+      return processXmlViaOpenSearch(
           new InputStreamReader(multipartFile.getInputStream()),
           importDate,
           multipartFile.getName());
@@ -88,6 +89,30 @@ public class ReutersXmlExtractionService {
     // Calls storage service to persist chain into the database
     final var importedChains = storageService.importChain(communicationChains);
     log.info("Imported {} communication chains complete", importedChains.getTotalNoOfRecords());
+
+    log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
+
+    DownloadContext.addCompletedFile(fileSource);
+
+    return communicationChains;
+  }
+
+  public ListDto<CommunicationChainDto> processXmlViaOpenSearch(
+          Reader reader, LocalDate importDate, String fileSource) throws JAXBException, IsisException {
+
+    log.info("START - Processing Reuters XML File for date {}", importDate);
+
+    // TODO In the future, possible to change to annotation based configuration
+    JAXBContext context = JAXBContext.newInstance(ComplianceActivity.class);
+    final var activity =
+            (ComplianceActivity) context.createUnmarshaller().unmarshal(new BufferedReader(reader));
+
+    // Process userLink entries
+//    final var communicationRecipients = parseCommunicationRecipients(activity, fileSource);
+//    storageService.saveExternalUsers(communicationRecipients);
+
+    // Process communication logs
+    final var communicationChains = ingestCommunicationData(activity, importDate, fileSource);
 
     log.info("COMPLETE - Processing Reuters XML File for date {}", importDate);
 
@@ -194,8 +219,8 @@ public class ReutersXmlExtractionService {
             }
           }
 
-          storageService.saveMessages(commMessageList);
-          storageService.saveRecipients(recipients);
+//          storageService.saveMessages(commMessageList);
+//          storageService.saveRecipients(recipients);
 
           final var commLog =
               CommunicationChainDto.builder()
@@ -218,6 +243,146 @@ public class ReutersXmlExtractionService {
           .totalCurrentElements(commLogList.size())
           .build()
           .success();
+    }
+
+    return ListDto.emptyList();
+  }
+
+  private ListDto<CommunicationChainDto> ingestCommunicationData(
+          ComplianceActivity activity, LocalDate importDate, String fileSource) throws IsisException {
+
+    log.info("START - Ingest Communication Data for OpenSearch");
+
+    final var datePeriod = parseDatePeriodFromDateFrom(activity.getHeaders());
+    log.info("Parsed date period from header date from {}", datePeriod);
+
+    if (null != activity.getChats() && !activity.getChats().getChat().isEmpty()) {
+
+      final var chatsList = activity.getChats().getChat();
+
+      final List<CommunicationChainDto> commLogList = new ArrayList<>();
+
+      for (ComplianceActivity.Chats.Chat chat : chatsList) {
+
+        final List<CommunicationMessageDto> commMessageList = new ArrayList<>();
+
+        final var sourceChainId = chat.getIdentifier();
+        final var recipients =
+                parseChatParticipants(chat.getParticipants(), sourceChainId, importDate, fileSource);
+
+        final var strRecipients = recipients.stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList());
+
+        if (null != chat.getEvents() && !chat.getEvents().getEvent().isEmpty()) {
+
+          final var eventList = chat.getEvents().getEvent();
+
+          for (ComplianceActivity.Chats.Chat.Events.Event event : eventList) {
+
+            final var eventUser = event.getUser();
+
+            if (Strings.isEmpty(eventUser)) {
+              continue;
+            }
+
+            // TODO Cleanup validation here
+
+            if (event.getType().equals(ReutersConstants.EVENT_TYPE_SEND)) {
+              final var message = event.getMessage().get(0);
+              final var timeSent =
+                      event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+
+              final var commMessage =
+                      CommunicationMessageDto.builder()
+                              .chainLinkId(sourceChainId)
+                              .message(message.getContent())
+                              .sourceMessageId(String.valueOf(message.getMessageID()))
+                              .timeSent(timeSent)
+                              .sender(eventUser)
+                              .importDate(importDate)
+                              .type(ReutersConstants.EVENT_TYPE_SEND)
+                              .source(SourceType.REUTERS.toString())
+                              .fileSource(fileSource)
+                              .recipients(strRecipients)
+                              .build();
+
+              commMessageList.add(commMessage);
+            }
+            else if (event.getType().equals(ReutersConstants.EVENT_TYPE_JOIN)) {
+              final var message = String.format("*** %s has joined the room", event.getUser());
+              final var timeSent =
+                      event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+
+              final var commMessage =
+                      CommunicationMessageDto.builder()
+                              .chainLinkId(sourceChainId)
+                              .message(message)
+                              // .sourceMessageId(String.valueOf(message.getMessageID()))
+                              .timeSent(timeSent)
+                              .sender(eventUser)
+                              .importDate(importDate)
+                              .type(ReutersConstants.EVENT_TYPE_JOIN)
+                              .source(SourceType.REUTERS.toString())
+                              .fileSource(fileSource)
+                              .recipients(strRecipients)
+                              .build();
+
+              commMessageList.add(commMessage);
+            }
+            else if (event.getType().equals(ReutersConstants.EVENT_TYPE_LEAVE)) {
+              final var message = String.format("*** %s has left the room", event.getUser());
+              final var timeSent =
+                      event.getUTCTime().toGregorianCalendar().toZonedDateTime().toLocalDateTime();
+
+              final var commMessage =
+                      CommunicationMessageDto.builder()
+                              .chainLinkId(sourceChainId)
+                              .message(message)
+                              // .sourceMessageId(String.valueOf(message.getMessageID()))
+                              .timeSent(timeSent)
+                              .sender(eventUser)
+                              .importDate(importDate)
+                              .type(ReutersConstants.EVENT_TYPE_LEAVE)
+                              .source(SourceType.REUTERS.toString())
+                              .fileSource(fileSource)
+                              .recipients(strRecipients)
+                              .build();
+
+              commMessageList.add(commMessage);
+            }
+          }
+
+//          storageService.saveMessages(commMessageList);
+//          storageService.saveRecipients(recipients);
+
+          final var commLog =
+                  CommunicationChainDto.builder()
+                          .source(SourceType.REUTERS.toString())
+                          .sourceChainId(sourceChainId)
+                          .datePeriod(datePeriod)
+                          .dateImported(importDate)
+                          .fileSource(fileSource)
+                          .build();
+
+          commLogList.add(commLog);
+        }
+
+        try {
+          openSearchService.indexBatch(commMessageList);
+        } catch (IOException ioe) {
+          log.error("An error occurred during batch index for OpenSearch", ioe);
+          throw IsisException.exception("An error occurred during batch index for OpenSearch", ioe);
+        }
+
+      }
+
+      log.info("COMPLETE - Parsing Communication Chains");
+
+      return ListDto.<CommunicationChainDto>builder()
+              .data(commLogList)
+              .totalNoOfRecords(commLogList.size())
+              .totalCurrentElements(commLogList.size())
+              .build()
+              .success();
     }
 
     return ListDto.emptyList();

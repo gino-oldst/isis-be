@@ -2,6 +2,7 @@ package st.old.isis.extraction.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import st.old.isis.extraction.services.OpenSearchService;
 import st.old.isis.extraction.services.amazon.AmazonS3ClientService;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -23,6 +25,11 @@ public class OpenSearchController {
     @PostMapping("/index-single")
     public IndexResponse indexSingleMessage(@RequestBody CommunicationMessageDto communicationMessageDto) throws IOException {
         return openSearchService.indexSingleMessage(communicationMessageDto);
+    }
+
+    @PostMapping("/index-bulk")
+    public BulkResponse indexBulk(@RequestBody List<CommunicationMessageDto> messages) throws IOException {
+        return openSearchService.indexBatch(messages);
     }
 
 }
