@@ -1,7 +1,10 @@
 package st.old.isis.extraction.services;
 
+import dev.failsafe.Failsafe;
+import dev.failsafe.RetryPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.OpenSearchStatusException;
 import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
@@ -12,6 +15,9 @@ import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +55,16 @@ public class OpenSearchService {
 
         log.info("Ingesting {} messages into OpenSearch. Estimated number of bytes at {}", request.requests().size(), request.estimatedSizeInBytes());
 
-        return restHighLevelClient.bulk(request, RequestOptions.DEFAULT);
+        RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
+                .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
+                .withDelay(Duration.ofSeconds(10))
+                .withMaxRetries(3)
+                .onFailedAttempt(e -> log.error("Connection attempt failed", e.getLastException()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying.", e.getAttemptCount()))
+                .build();
+
+        return Failsafe.with(retryPolicy).get(() -> restHighLevelClient.bulk(request, RequestOptions.DEFAULT));
+
     }
 
     private Map<String, String> parseCommMessage(CommunicationMessageDto message){
