@@ -30,6 +30,8 @@ public abstract class XmlExtractionService {
   public void parse(InputStream inputStream, LocalDate importDate, String fileSource)
       throws XMLStreamException, JAXBException {
 
+    log.info("STARTED - Parsing {} file for import date {}", fileSource, importDate);
+
     final var xmlInputFactory = XMLInputFactory.newInstance();
     final var reader = xmlInputFactory.createXMLStreamReader(inputStream);
 
@@ -47,6 +49,8 @@ public abstract class XmlExtractionService {
         finalizeParsing(fileSource);
       }
     }
+
+    log.info("COMPLETED - Parsing {} file for import date {}", fileSource, importDate);
   }
 
   protected void sendParsingError(Throwable e) {

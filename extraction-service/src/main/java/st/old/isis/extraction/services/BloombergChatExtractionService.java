@@ -1,5 +1,6 @@
 package st.old.isis.extraction.services;
 
+import joptsimple.internal.Strings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -121,6 +122,37 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     final var mappedExitEvents=
             parseExitEvents(conversation.getParticipantLeft(), importDate, fileSource);
 
+    final var mappedMessagesRecipients = mappedMessages.get("recipient");
+    final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
+    final var mappedAttachmentRecipients = attachmentMessages.get("recipient");
+
+    // concat list of recipients and remove duplicates
+    final var recipients =
+            new ArrayList<>(
+                    Stream.of(
+                                    mappedMessagesRecipients.stream(),
+                                    mappedEntryEventsRecipients.stream(),
+                                    mappedAttachmentRecipients.stream())
+                            .flatMap(stream -> stream)
+                            .map(recipient -> (CommunicationRecipientDto) recipient)
+                            .map(recipient -> recipient.getRecipient())
+                            .collect(Collectors.toSet()));
+
+    //    final var recipients =
+//            new ArrayList<>(
+//                    Stream.of(
+//                                    mappedMessagesRecipients.stream(),
+//                                    mappedEntryEventsRecipients.stream(),
+//                                    mappedAttachmentRecipients.stream())
+//                            .flatMap(stream -> stream)
+//                            .map(recipient -> (CommunicationRecipientDto) recipient)
+//                            .collect(
+//                                    Collectors.toMap(
+//                                            CommunicationRecipientDto::getRecipient,
+//                                            Function.identity(),
+//                                            (v1, v2) -> v1))
+//                            .values());
+
     final var mappedMessagesCommunications = mappedMessages.get("communication");
     final var mappedAttachmentCommunications = attachmentMessages.get("communication");
     final var mappedEntryEventsCommunications = mappedEntryEvents.get("communication");
@@ -134,49 +166,30 @@ public class BloombergChatExtractionService extends XmlExtractionService {
                 mappedExitEventsCommunications.stream())
             .flatMap(stream -> stream)
             .map(message -> (CommunicationMessageDto) message)
+            .peek(message -> message.setRecipients(recipients))
             .collect(Collectors.toList());
 
-    final var mappedMessagesRecipients = mappedMessages.get("recipient");
-    final var mappedEntryEventsRecipients = mappedEntryEvents.get("recipient");
-    final var mappedAttachmentRecipients = attachmentMessages.get("recipient");
-
-    // concat list of recipients and remove duplicates
-    final var recipients =
-        new ArrayList<>(
-            Stream.of(
-                    mappedMessagesRecipients.stream(),
-                    mappedEntryEventsRecipients.stream(),
-                    mappedAttachmentRecipients.stream())
-                .flatMap(stream -> stream)
-                .map(recipient -> (CommunicationRecipientDto) recipient)
-                .collect(
-                    Collectors.toMap(
-                        CommunicationRecipientDto::getRecipient,
-                        Function.identity(),
-                        (v1, v2) -> v1))
-                .values());
-
-    final var mappedMessagesUsers = mappedMessages.get("user");
-    final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
-    final var mappedAttachmentUsers = attachmentMessages.get("user");
+//    final var mappedMessagesUsers = mappedMessages.get("user");
+//    final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
+//    final var mappedAttachmentUsers = attachmentMessages.get("user");
 
     // concat list of users and remove duplicates
-    final var users =
-        new ArrayList<>(
-            Stream.of(
-                    mappedMessagesUsers.stream(),
-                    mappedEntryEventsUsers.stream(),
-                    mappedAttachmentUsers.stream())
-                .flatMap(stream -> stream)
-                .map(user -> (ExternalUserDto) user)
-                .collect(
-                    Collectors.toMap(
-                        ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
-                .values());
+//    final var users =
+//        new ArrayList<>(
+//            Stream.of(
+//                    mappedMessagesUsers.stream(),
+//                    mappedEntryEventsUsers.stream(),
+//                    mappedAttachmentUsers.stream())
+//                .flatMap(stream -> stream)
+//                .map(user -> (ExternalUserDto) user)
+//                .collect(
+//                    Collectors.toMap(
+//                        ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
+//                .values());
 
-    eventPublisher.addToExternalUserBatch(users);
+//    eventPublisher.addToExternalUserBatch(users);
     eventPublisher.addToMessageBatch(communications);
-    eventPublisher.addToRecipientBatch(recipients);
+//    eventPublisher.addToRecipientBatch(recipients);
 
     final var timeStarted =
         LocalDateTime.ofInstant(
