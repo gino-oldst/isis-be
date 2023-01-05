@@ -69,17 +69,17 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     if (reader.getName().getLocalPart().equals("Conversation")) {
       final var conversation = unmarshaller.unmarshal(reader, BloombergChatConversation.class);
 
-      Optional.ofNullable(parseConversation(conversation.getValue(), importDate, fileSource))
-          .ifPresent(eventPublisher::addToCommunicationChainBatch);
+      Optional.ofNullable(parseConversation(conversation.getValue(), importDate, fileSource));
+//          .ifPresent(result -> null);
     }
   }
 
   @Override
   protected void finalizeParsing(String fileSource) {
-    eventPublisher.finalizeBatchCommunication(true, fileSource);
-    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
+//    eventPublisher.finalizeBatchCommunication(true, fileSource);
+//    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
     eventPublisher.finalizeBatchMessages(true, fileSource);
-    eventPublisher.finalizeBatchRecipients(true, fileSource);
+//    eventPublisher.finalizeBatchRecipients(true, fileSource);
   }
 
   @Audited(event = "BLOOMBERG_PARSE_CHAT_XML_STREAM")
@@ -111,6 +111,10 @@ public class BloombergChatExtractionService extends XmlExtractionService {
       @NonNull final BloombergChatConversation conversation,
       @NonNull final LocalDate importDate,
       @NonNull final String fileSource) {
+
+    final var timeStarted =
+            LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(conversation.getStartTimeUTC()), ZoneId.systemDefault());
 
     final var roomId = conversation.getRoomID();
 
@@ -191,10 +195,6 @@ public class BloombergChatExtractionService extends XmlExtractionService {
     eventPublisher.addToMessageBatch(communications);
 //    eventPublisher.addToRecipientBatch(recipients);
 
-    final var timeStarted =
-        LocalDateTime.ofInstant(
-            Instant.ofEpochSecond(conversation.getStartTimeUTC()), ZoneId.systemDefault());
-
     final var timeEnded =
         LocalDateTime.ofInstant(
             Instant.ofEpochSecond(conversation.getEndTimeUTC()), ZoneId.systemDefault());
@@ -236,6 +236,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
               .chainLinkId(chainLinkId)
               .sender(user.getEmailAddress())
               .source(SourceType.BLOOMBERG_CHAT.toString())
+              .type(BloombergChatConstants.EVENT_TYPE_SEND)
               .fileSource(fileSource)
               .build();
 

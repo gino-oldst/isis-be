@@ -6,6 +6,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import st.old.isis.annotations.Audited;
+import st.old.isis.constants.BloombergChatConstants;
 import st.old.isis.dto.metadata.*;
 import st.old.isis.dto.storage.CommunicationChainDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
@@ -67,17 +68,17 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
     if (reader.getName().getLocalPart().equals("Message")) {
       final var conversation = unmarshaller.unmarshal(reader, BloombergEmailMessage.class);
 
-      Optional.ofNullable(parseMessage(conversation.getValue(), importDate, fileSource))
-          .ifPresent(eventPublisher::addToCommunicationChainBatch);
+      Optional.ofNullable(parseMessage(conversation.getValue(), importDate, fileSource));
+//          .ifPresent(eventPublisher::addToCommunicationChainBatch);
     }
   }
 
   @Override
   protected void finalizeParsing(String fileSource) {
-    eventPublisher.finalizeBatchCommunication(true, fileSource);
-    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
+//    eventPublisher.finalizeBatchCommunication(true, fileSource);
+//    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
     eventPublisher.finalizeBatchMessages(true, fileSource);
-    eventPublisher.finalizeBatchRecipients(true, fileSource);
+//    eventPublisher.finalizeBatchRecipients(true, fileSource);
   }
 
   @Audited(event = "BLOOMBERG_PARSE_EMAIL_XML_STREAM")
@@ -124,6 +125,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
             .sender(sender)
             .timeSent(timeSent)
             .source(SourceType.BLOOMBERG_MAIL.toString())
+            .type(BloombergChatConstants.EVENT_TYPE_SEND)
             .importDate(importDate)
             .fileSource(fileSource)
             .build();
@@ -179,12 +181,14 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
     final var subject = message.getSubject();
 
     final var recipients = parseRecipients(message, importDate, fileSource);
+    final var strRecipients = new ArrayList<>(recipients.stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toSet()));
+    content.setRecipients(strRecipients);
 
     final var users = parseUsers(message, fileSource);
 
-    eventPublisher.addToExternalUserBatch(users);
+//    eventPublisher.addToExternalUserBatch(users);
     eventPublisher.addToMessageBatch(List.of(content));
-    eventPublisher.addToRecipientBatch(recipients);
+//    eventPublisher.addToRecipientBatch(recipients);
 
     return CommunicationChainDto.builder()
         .source(SourceType.BLOOMBERG_MAIL.toString())
