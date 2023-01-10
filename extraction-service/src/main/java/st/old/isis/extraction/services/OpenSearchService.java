@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +58,10 @@ public class OpenSearchService {
 
         RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
                 .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
-                .withDelay(Duration.ofSeconds(10))
+                .withBackoff(10, 30, ChronoUnit.SECONDS)
                 .withMaxRetries(3)
                 .onFailedAttempt(e -> log.error("Connection attempt failed", e.getLastException()))
-                .onRetry(e -> log.warn("Failure #{}. Retrying.", e.getAttemptCount()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying bulk index.", e.getAttemptCount()))
                 .build();
 
         return Failsafe.with(retryPolicy).get(() -> restHighLevelClient.bulk(request, RequestOptions.DEFAULT));

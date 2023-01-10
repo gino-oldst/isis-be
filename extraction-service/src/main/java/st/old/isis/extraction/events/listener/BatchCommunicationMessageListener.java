@@ -49,7 +49,7 @@ public class BatchCommunicationMessageListener
 
     try {
 //      storageService.saveMessages(list.getData());
-        openSearchService.indexBatch(list.getData());
+      openSearchService.indexBatch(list.getData());
     } catch (Throwable e) {
       // todo: save failed requests to a file for retrying or do an immediate retry
       log.error("Error persisting messages: {}", e.getMessage());

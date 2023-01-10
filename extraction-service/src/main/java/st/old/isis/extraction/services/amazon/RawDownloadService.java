@@ -6,15 +6,15 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import st.old.isis.dto.aws.AwsS3BucketObject;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.exception.IsisException;
-import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.services.FileDownloadHistoryService;
@@ -97,6 +97,7 @@ public abstract class RawDownloadService {
             @NonNull final String source) throws IsisException {
 
         String objectKey = os.getKey();
+
         String fileName = getS3FileName(objectKey);
         LocalDate processedImportDate = importDate;
 
@@ -109,6 +110,11 @@ public abstract class RawDownloadService {
             return;
         }
 
+        if(skipFileBasedOnFileIdAndKey(os.getETag(), objectKey)){
+            log.info("File already ingested: eTag {} with filePath {}", os.getETag(), objectKey);
+            return;
+        }
+
         log.info("Processing - {} for Import Date - {}", objectKey, processedImportDate);
 
         final var s3Object = amazonS3ClientService.downloadS3Object(os.getBucketName(), objectKey);
@@ -116,20 +122,25 @@ public abstract class RawDownloadService {
 
         try {
 
+            saveToHistory(importDate, os.getETag(), objectKey, ProcessedStatus.PENDING_PROCESS);
+
             processFile(s3Object, processedImportDate, source());
 
-            storageService.merge(DownloadContext.getBatchFilesMap());
+//          storageService.merge(DownloadContext.getBatchFilesMap());
 
-            // TODO Indexing
+            historyService.completeHistory(os.getETag());
+
+            // @Deprecated - 20230106 - Started using OpenSearch so there's no need to do our own indexing
             // Transfer to processed bucket
-            amazonS3ClientService.moveFileToProcessedBucket(AwsS3BucketObject.builder()
-                    .sourceBucket(os.getBucketName())
-                    .sourceKey(objectKey)
-                    .targetBucket(awsS3Properties.getIngressBucket())
-                    .targetKey(objectKey).build());
+//            amazonS3ClientService.moveFileToProcessedBucket(AwsS3BucketObject.builder()
+//                    .sourceBucket(os.getBucketName())
+//                    .sourceKey(objectKey)
+//                    .targetBucket(awsS3Properties.getIngressBucket())
+//                    .targetKey(objectKey).build());
 
         } catch (IsisException ie) {
             log.error("Error processing raw file: {} - {}", source, ie.getMessage());
+            historyService.failHistory(os.getETag());
             throw ie;
         }
 
@@ -221,11 +232,32 @@ public abstract class RawDownloadService {
         //    notificationService.sendNotification(List.of(request));
     }
 
-    protected void saveToHistory(@NonNull final String sha1, @NonNull final String filePath) {
+    protected void saveToHistory(LocalDate importDate, @NonNull final String sha1, @NonNull final String filePath, @NonNull final ProcessedStatus status) {
 
-        final var history = FileDownloadHistory.builder().id(sha1).filePath(filePath).build();
+        final var history = FileDownloadHistory.builder()
+                .id(sha1)
+                .filePath(filePath)
+                .importDate(importDate)
+                .status(status)
+                .build();
 
         historyService.saveHistory(history);
+    }
+    private boolean skipFileBasedOnFileIdAndKey(@NonNull final String fileId, @NonNull final String key) {
+
+        if (Strings.isEmpty(fileId)) {
+            log.info("Skipping file id is empty for file name: [{}]", key);
+            return true;
+        }
+
+        final var isFileIdExisting = historyService.isExistingByIdAndKeyAndStatus(fileId, key, ProcessedStatus.COMPLETED);
+
+        if (isFileIdExisting) {
+            log.info("Skipping file id is existing: [{}]", fileId);
+            return true;
+        }
+
+        return false;
     }
 
 }
