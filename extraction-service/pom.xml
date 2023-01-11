@@ -16,7 +16,7 @@
     <properties>
         <java.version>11</java.version>
         <shedlock.version>4.21.0</shedlock.version>
-        <aws.sdk.version>1.11.163</aws.sdk.version>
+        <aws.sdk.version>1.12.381</aws.sdk.version>
     </properties>
     <dependencies>
         <dependency>
