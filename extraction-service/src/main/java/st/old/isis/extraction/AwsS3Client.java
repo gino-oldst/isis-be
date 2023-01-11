@@ -1,5 +1,6 @@
 package st.old.isis.extraction;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -24,6 +25,7 @@ public class AwsS3Client {
 
         return AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                .withClientConfiguration(new ClientConfiguration().withTcpKeepAlive(true))
                 .withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(awsS3Properties.getUrl(), awsS3Properties.getRegion())
                 )
