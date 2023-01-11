@@ -23,6 +23,8 @@ import st.old.isis.extraction.services.internal.StorageService;
 import st.old.isis.extraction.utils.DownloadUtils;
 import st.old.isis.utils.AuditUtil;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -124,6 +126,8 @@ public abstract class RawDownloadService {
 
             saveToHistory(importDate, os.getETag(), objectKey, ProcessedStatus.PENDING_PROCESS);
 
+            Instant start = Instant.now();
+
             processFile(s3Object, processedImportDate, source());
 
 //          storageService.merge(DownloadContext.getBatchFilesMap());
@@ -137,6 +141,10 @@ public abstract class RawDownloadService {
 //                    .sourceKey(objectKey)
 //                    .targetBucket(awsS3Properties.getIngressBucket())
 //                    .targetKey(objectKey).build());
+
+            Instant end = Instant.now();
+
+            log.info("Successfully completed processing S3 file {} in {}", objectKey, Duration.between(start, end).toString());
 
         } catch (IsisException ie) {
             log.error("Error processing raw file: {} - {}", source, ie.getMessage());

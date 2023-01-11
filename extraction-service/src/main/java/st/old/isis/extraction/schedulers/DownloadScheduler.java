@@ -19,18 +19,18 @@ public class DownloadScheduler {
 
   @Scheduled(cron = "${isis.download.scheduler.reuters.cron}")
   @SchedulerLock(
-      name = "downloadReutersRawFiles",
+      name = "syncYesterdayReutersRawFiles",
       lockAtLeastFor = "${isis.download.scheduler.reuters.lock-time}")
-  public void downloadReutersRawFiles() throws IsisException {
+  public void syncYesterdayReutersRawFiles() throws IsisException {
     log.info("Downloading Reuters raw files from AWS S3...");
     reutersRawDownloadService.syncYesterdayDate();
   }
 
   @Scheduled(cron = "${isis.download.scheduler.bloomberg.cron}")
   @SchedulerLock(
-      name = "downloadBloombergRawFiles",
+      name = "syncYesterdayBloombergRawFiles",
       lockAtLeastFor = "${isis.download.scheduler.bloomberg.lock-time}")
-  public void downloadBloombergRawFiles() throws IsisException {
+  public void syncYesterdayBloombergRawFiles() throws IsisException {
     log.info("Downloading Bloomberg raw files from AWS S3...");
     bloombergRawDownloadService.syncYesterdayDate();
 
