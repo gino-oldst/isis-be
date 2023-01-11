@@ -113,7 +113,7 @@ public class BloombergDownloadService extends AzureDownloadService {
 
       saveToHistory(fileId, filePath);
 
-    } catch (JAXBException | XMLStreamException e) {
+    } catch (JAXBException | XMLStreamException | IsisException e) {
 
       DownloadContext.addFailedFile(filePath);
 

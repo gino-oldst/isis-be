@@ -51,8 +51,8 @@ public abstract class RawDownloadService {
     protected abstract String parseToS3FolderDate(LocalDate originalDate);
 
     @Async
-    public void syncCurrentDate() {
-        syncDate(LocalDate.now());
+    public void syncYesterdayDate() {
+        syncDate(LocalDate.now().minusDays(1));
     }
     @Async
     public void syncAll(DataImportRecordDto request) {
@@ -232,7 +232,7 @@ public abstract class RawDownloadService {
         //    notificationService.sendNotification(List.of(request));
     }
 
-    protected void saveToHistory(LocalDate importDate, @NonNull final String sha1, @NonNull final String filePath, @NonNull final ProcessedStatus status) {
+    protected void saveToHistory(LocalDate importDate, @NonNull final String sha1, @NonNull final String filePath, @NonNull final ProcessedStatus status) throws IsisException {
 
         final var history = FileDownloadHistory.builder()
                 .id(sha1)

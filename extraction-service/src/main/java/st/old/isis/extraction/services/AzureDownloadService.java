@@ -247,7 +247,7 @@ public abstract class AzureDownloadService {
     return resultStringBuilder.toString();
   }
 
-  protected void saveToHistory(@NonNull final String sha1, @NonNull final String filePath) {
+  protected void saveToHistory(@NonNull final String sha1, @NonNull final String filePath) throws IsisException {
 
     final var history = FileDownloadHistory.builder().id(sha1).filePath(filePath).build();
 

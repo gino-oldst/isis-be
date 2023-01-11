@@ -65,7 +65,7 @@ public class BloombergRawDownloadService extends RawDownloadService {
         } catch (JAXBException | XMLStreamException e) {
 
             final var event =
-                    auditUtil.auditEvent("REUTERS_UNZIP_FILE_ERROR", Map.of("filename", source));
+                    auditUtil.auditEvent("BLOOMBERG_UNZIP_FILE_ERROR", Map.of("filename", source));
 
             auditService.recordEvent(
                     EventLogDto.builder()

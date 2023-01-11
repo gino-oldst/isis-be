@@ -18,7 +18,15 @@ public class FileDownloadHistoryService {
   private final FileDownloadHistoryRepository repository;
 
   @Audited(event = "RECORD_DOWNLOADED_FILES")
-  public void saveHistory(@NonNull @Audited final FileDownloadHistory history) {
+  public void saveHistory(@NonNull @Audited final FileDownloadHistory history) throws IsisException {
+
+    final var existingRecord = repository.findById(history.getId());
+
+    if(existingRecord.isPresent()){
+      //TODO Throw notification that file has already been download previous but failed
+      log.error("File download history id {} already exists and is in status {}", existingRecord.get().getId(), existingRecord.get().getStatus());
+    }
+
     repository.save(history);
   }
 
