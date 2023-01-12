@@ -13,11 +13,11 @@ import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.extraction.configurations.OpenSearchConfiguration;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +29,14 @@ import java.util.Map;
 public class OpenSearchService {
 
     private final RestHighLevelClient restHighLevelClient;
+    private final OpenSearchConfiguration configuration;
 
     public IndexResponse indexSingleMessage(CommunicationMessageDto message) throws IOException {
-        return index("test-index", message);
+        return index(configuration.getIndexPath(), message);
     }
 
     public BulkResponse indexBatch(List<CommunicationMessageDto> messages) throws IOException {
-        return bulkIndex("test-index", messages);
+        return bulkIndex(configuration.getIndexPath(), messages);
     }
 
     private IndexResponse index(String indexPath, CommunicationMessageDto message) throws IOException {
