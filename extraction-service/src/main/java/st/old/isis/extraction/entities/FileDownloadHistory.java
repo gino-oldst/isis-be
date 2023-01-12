@@ -31,5 +31,7 @@ public class FileDownloadHistory implements Serializable {
   @Enumerated(EnumType.STRING)
   private ProcessedStatus status;
 
+  private String errorMessage;
+
   @CreationTimestamp private LocalDateTime dateCreated;
 }

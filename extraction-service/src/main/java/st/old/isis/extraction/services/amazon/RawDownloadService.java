@@ -169,7 +169,7 @@ public abstract class RawDownloadService {
             Instant end = Instant.now();
             log.error("Error processing raw file: {} - {}", source, ie.getMessage());
             log.info("Failed processing S3 file {} in {}", objectKey, Duration.between(start, end).toString());
-            historyService.failHistory(os.getETag());
+            historyService.failHistory(os.getETag(), ie.getCause().getMessage());
             throw ie;
         }
 

@@ -31,15 +31,15 @@ public class FileDownloadHistoryService {
   }
 
   public void completeHistory(@NonNull @Audited final String id) throws IsisException {
-    updateHistory(id, ProcessedStatus.COMPLETED);
+    updateHistory(id, ProcessedStatus.COMPLETED, null);
   }
 
-  public void failHistory(@NonNull @Audited final String id) throws IsisException {
-    updateHistory(id, ProcessedStatus.FAILED);
+  public void failHistory(@NonNull @Audited final String id, final String errorMessage) throws IsisException {
+    updateHistory(id, ProcessedStatus.FAILED, errorMessage);
   }
 
   @Audited(event = "UPDATE_DOWNLOADED_FILES")
-  public void updateHistory(@NonNull @Audited final String id, @NonNull @Audited final ProcessedStatus status) throws IsisException {
+  public void updateHistory(@NonNull @Audited final String id, @NonNull @Audited final ProcessedStatus status, String errorMessage) throws IsisException {
 
     log.info("Updating download history id {} to status {}", id, status.name());
 
@@ -51,6 +51,7 @@ public class FileDownloadHistoryService {
 
     final var updatedRecord = existingRecord.get();
     updatedRecord.setStatus(status);
+    updatedRecord.setErrorMessage(errorMessage);
 
     repository.save(updatedRecord);
   }
