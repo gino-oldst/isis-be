@@ -20,6 +20,8 @@ public class AppConstants {
 
     public static final String AWS_OPENSEARCH_HOSTNAME = "${isis.cloud.aws.opensearch.hostname}";
 
+    public static final String AWS_OPENSEARCH_INDEX_PATH = "${isis.cloud.aws.opensearch.index-path}";
+
 
 
 }

@@ -1,5 +1,7 @@
 package st.old.isis.extraction.configurations;
 
+import lombok.Data;
+import lombok.Getter;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -15,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 import st.old.isis.extraction.constants.AppConstants;
 
 @Configuration
+@Getter
 public class OpenSearchConfiguration {
 
     @Value(AppConstants.AWS_OPENSEARCH_USERNAME)
@@ -25,6 +28,9 @@ public class OpenSearchConfiguration {
 
     @Value(AppConstants.AWS_OPENSEARCH_HOSTNAME)
     private String hostname;
+
+    @Value(AppConstants.AWS_OPENSEARCH_INDEX_PATH)
+    private String indexPath;
 
     @Bean
     public RestHighLevelClient restHighLevelClient(){
