@@ -63,6 +63,8 @@ public class OpenSearchService {
                 .withMaxRetries(3)
                 .onFailedAttempt(e -> log.error("Connection attempt failed", e.getLastException()))
                 .onRetry(e -> log.warn("Failure #{}. Retrying bulk index.", e.getAttemptCount()))
+                //TODO Send notification that a batch has failed
+                .onFailure(e -> log.error("FAILED - Indexing Batch to OpenSearch. Max retries reached. {}", e.getException()))
                 .build();
 
         return Failsafe.with(retryPolicy).get(() -> restHighLevelClient.bulk(request, RequestOptions.DEFAULT));
