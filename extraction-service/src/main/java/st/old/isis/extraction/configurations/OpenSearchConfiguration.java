@@ -1,6 +1,5 @@
 package st.old.isis.extraction.configurations;
 
-import lombok.Data;
 import lombok.Getter;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;

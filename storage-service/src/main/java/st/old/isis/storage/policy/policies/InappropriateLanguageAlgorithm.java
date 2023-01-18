@@ -41,6 +41,95 @@ public class InappropriateLanguageAlgorithm {
     private static final List<String> DISCLAIMER_BYPASS_KEYWORDS = Arrays.asList("confidential", "info", "privacy", "privileged", "privilégié");
     private static final List<String> DISCLAIMER_INDICATORS = Arrays.asList("disclaimer", "copyright", "disclosure");
 
+    // TODO - CREATE OPENSEARCH IMPPLEMENTATION OF @processViaOpenSearch, List Must be changed to the DTO of OpenSearch
+    public void processViaOpenSearch(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
+
+        log.info("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+
+        final var policyId= policy.getId();
+
+        final var listPolicyMap = policyMapService.search(PolicyMapDto.builder().policyId(policyId).build());
+
+        if(listPolicyMap == null || ListUtils.isNullOrEmpty(listPolicyMap.getData())){
+            log.warn("No policy map keywords found for policy {}", policyId);
+            throw IsisException.notFound(
+                    String.format("No policy map keywords found for policy [%s]", policyId),
+                    "NotFoundException");
+        }
+
+        final var keywordsMap = new TreeMap<String, KeywordDto>(String.CASE_INSENSITIVE_ORDER);
+        keywordsMap.putAll(generateKeywordMap(listPolicyMap.getData()));
+
+        // Generate keyword set for trie
+        final var keywords = keywordsMap.entrySet().stream()
+                .map(k -> k.getValue().getWord())
+                .collect(Collectors.toSet());
+
+        Trie trie = Trie.builder().onlyWholeWordsWhiteSpaceSeparated().ignoreCase().addKeywords(keywords).build();
+
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
+            log.warn("No communication messages found.");
+            throw IsisException.notFound(
+                    String.format("No communication messages found."),
+                    "NotFoundException");
+        }
+
+        for(CommunicationMessageDto message: commMessages){
+
+            log.info("Processing inappropriate algorithm for message id {}", message.getId());
+
+            if(message.getMessage() == null) {
+                if(message.getType() != null || !message.getType().equals(MessageType.BLOOMBERG_CHAT_ATTACHMENT)){
+                    log.error("Message Id {} has a message of NULL value but is from source {}. ", message.getId(), message.getSource());
+                }
+            } else {
+                final var emits= trie.parseText(message.getMessage());
+
+                if(!emits.isEmpty()) {
+                    emits.stream()
+                            .forEach( emit -> {
+
+                                //Disregard if within disclaimer text
+                                if(!checkifBypassEmit(emit, message, message.getSource())) {
+                                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
+
+                                    final var keywordDto= keywordsMap.get(emit.getKeyword().toLowerCase());
+
+                                    if(keywordDto == null){
+                                        log.warn("No keywords found in keywords map for {}", emit.getKeyword());
+                                        return;
+                                    }
+
+                                    final var alert= AlertLogDto.builder()
+                                            .commChainLinkId(message.getChainLinkId())
+                                            .commMessageId(message.getId()) // TODO - hit ID from the hits item ie. searchResponse.hits().hits().get(i)._id;
+                                            .message(message.getMessage())
+                                            .policyId(policyId)
+                                            .description(null) // TODO Generated alert description
+                                            .status(AlertStatusType.OPEN)
+                                            .keyword(emit.getKeyword())
+                                            .keywordId(keywordDto.getId())
+                                            .importDate(importDate)  // For internal use only
+                                            .timeSent(message.getTimeSent())
+                                            .sender(message.getSender())
+                                            .source(message.getSource())
+                                            .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
+                                            .build();
+
+                                    log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
+                                    alertLogService.create(alert);
+                                }
+                            });
+                }
+            }
+
+        }
+
+
+        log.info("COMPLETED - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+
+    }
+
     public void process(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 
         log.info("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());

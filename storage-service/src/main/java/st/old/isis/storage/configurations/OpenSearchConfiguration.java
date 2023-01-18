@@ -18,7 +18,6 @@ import st.old.isis.storage.constants.AppConstants;
 @Configuration
 @Getter
 public class OpenSearchConfiguration {
-
     @Value(AppConstants.AWS_OPENSEARCH_USERNAME)
     private String username;
 
@@ -32,7 +31,7 @@ public class OpenSearchConfiguration {
     private String indexPath;
 
     @Bean
-    public RestHighLevelClient restHighLevelClient(){
+    public RestHighLevelClient restHighLevelClient() {
 
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY,
@@ -47,7 +46,5 @@ public class OpenSearchConfiguration {
                 });
 
         return new RestHighLevelClient(builder);
-
     }
-
 }

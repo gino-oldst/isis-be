@@ -42,6 +42,13 @@ spring:
 isis:
   audit:
     enabled: ${AUDIT_ENABLED}
+  cloud:
+    aws:
+      opensearch:
+        username: ${AWS_OPENSEARCH_USERNAME}
+        password: ${AWS_OPENSEARCH_PASSWORD}
+        hostname: ${AWS_OPENSEARCH_HOSTNAME}
+        index-path: ${AWS_OPENSEARCH_INDEX_PATH}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:

@@ -55,6 +55,31 @@ public class PolicyProcessorService {
 
     }
 
+    // TODO - processAllPendingImportDataViaOpenSearch
+    @Audited(event = "PROCESS_ALL_PENDING_IMPORT_DATA_VIA_OPEN_SEARCH")
+    public void processAllPendingImportDataViaOpenSearch() throws IsisException {
+
+        // Get Pending Records from the values made in ingestion
+        final var listOfDataImportRecords = dataImportRecordService.findByStatus(ProcessedStatus.PENDING_PROCESS);
+
+        log.info("START - Processing Data Imported Records  - Size : {}", listOfDataImportRecords.getData().size());
+
+        for (DataImportRecordDto rec : listOfDataImportRecords.getData()) {
+
+            log.info("Processing Imported Record By {}", rec.getImportDate());
+
+            // TODO @processAllPoliciesByImportDateViaOpenSearch
+            processAllPoliciesByImportDate(rec.getImportDate());
+
+            // Set status of data import to COMPLETED
+            rec.setProcessedStatus(ProcessedStatus.COMPLETED);
+            dataImportRecordService.update(rec);
+        }
+
+        log.info("COMPLETE - Processing Data Imported Records  - Size : {}", listOfDataImportRecords.getData().size());
+
+    }
+
     public void processPolicyByDateRange(@NonNull String policyId,
                                          @NonNull LocalDate dateFrom,
                                          @NonNull LocalDate dateTo) throws IsisException {
@@ -76,6 +101,7 @@ public class PolicyProcessorService {
 
         log.info("START - Processing All Policies by Import Date: {}", importDate);
 
+        // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
 
         if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
@@ -84,6 +110,30 @@ public class PolicyProcessorService {
         }
 
         for(AlertPolicyDto policy: listOfPolicies.getData()){
+            // Actually Processes the policy
+            processPolicy(policy, importDate);
+        }
+
+        log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
+    }
+
+    // TODO - processAllPoliciesByImportDateViaOpenSearch
+    public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException {
+
+        log.info("START - Processing All Policies by Import Date: {}", importDate);
+
+        // Gets The Policy
+        final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
+
+        if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
+            log.warn("No Policy Records Found");
+            throw IsisException.notFound("No Policy Records Found", "NotFoundException");
+        }
+
+        // Loop Through Each Policy
+        for(AlertPolicyDto policy: listOfPolicies.getData()){
+            // Actually Processes the policy
+            // TODO @processPolicyViaOpenSearch
             processPolicy(policy, importDate);
         }
 
@@ -96,6 +146,34 @@ public class PolicyProcessorService {
 
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
+        // TODO on a New ProcessPolicy with OpenSearch
+        final var commMessages= communicationMessageService.searchList(
+                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
+
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
+            log.warn("No communication messages found for date: {}.", importDate);
+        } else {
+            switch (policyRecord.getInternalCode()) {
+                case "INAPPROPRIATE_LANGUAGE":
+                    inappropriateLanguagePolicy.process(commMessages.getData(), policyRecord, importDate);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        log.info("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+
+    }
+
+    //TODO - processPolicyViaOpenSearch
+    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
+
+        log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+
+        final var policyRecord = alertPolicyService.getActiveById(filter.getId());
+
+        // TODO on a New ProcessPolicy with OpenSearch... Search by Date Range
         final var commMessages= communicationMessageService.searchList(
                 CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
 

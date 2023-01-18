@@ -36,4 +36,9 @@ public class PolicyProcessorController {
         log.info("processPolicyIdByFilter COMPLETED");
     }
 
+    // TODO - Add new calls for OpenSearch @ processAllPendingImportData()
+//    @PostMapping("/all/pending")
+//    public void processAllPendingImportDataViaOpenSearch() throws IsisException {
+//        // service.processAllPendingImportDataViaOpenSearch();
+//    }
 }

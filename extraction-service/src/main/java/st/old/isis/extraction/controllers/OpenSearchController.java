@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexResponse;
-import org.springframework.lang.NonNull;
-import org.springframework.web.bind.annotation.*;
-import st.old.isis.dto.aws.AwsS3BucketObject;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.extraction.services.OpenSearchService;
-import st.old.isis.extraction.services.amazon.AmazonS3ClientService;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,5 +31,4 @@ public class OpenSearchController {
     public BulkResponse indexBulk(@RequestBody List<CommunicationMessageDto> messages) throws IOException {
         return openSearchService.indexBatch(messages);
     }
-
 }
