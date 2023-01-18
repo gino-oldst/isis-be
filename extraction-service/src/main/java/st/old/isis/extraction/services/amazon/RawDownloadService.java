@@ -20,6 +20,7 @@ import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.services.FileDownloadHistoryService;
 import st.old.isis.extraction.services.internal.AuditService;
+import st.old.isis.extraction.services.internal.DataImportRecordService;
 import st.old.isis.extraction.services.internal.StorageService;
 import st.old.isis.extraction.utils.DownloadUtils;
 import st.old.isis.utils.AuditUtil;
@@ -40,6 +41,8 @@ public abstract class RawDownloadService {
     @Autowired protected AuditService auditService;
     @Autowired private FileDownloadHistoryService historyService;
     @Autowired protected DownloadUtils downloadUtils;
+
+    @Autowired protected DataImportRecordService dataImportRecordService;
 
     protected abstract String source();
 
@@ -149,9 +152,14 @@ public abstract class RawDownloadService {
 
             processFile(s3Object, processedImportDate, source());
 
-//          storageService.merge(DownloadContext.getBatchFilesMap());
-
             historyService.completeHistory(os.getETag());
+
+            dataImportRecordService.create(
+                    DataImportRecordDto.builder()
+                            .importDate(importDate)
+                            .processedStatus(ProcessedStatus.PENDING_PROCESS)
+                            .source(source)
+                            .build());
 
             // @Deprecated - 20230106 - Started using OpenSearch so there's no need to do our own indexing
             // Transfer to processed bucket
