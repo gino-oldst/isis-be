@@ -27,6 +27,13 @@ public class DataImportRecordService {
 
         log.debug("Creating data import record {}", dto);
 
+        final var existingEntity = repository.findBySourceAndImportDate(dto.getSource(), dto.getImportDate());
+
+        if(existingEntity.isPresent()){
+            log.info("Data Import Record {} with import date {} already exists", dto.getSource(), dto.getImportDate());
+            return dto;
+        }
+
         final var entity = mapToEntity(dto);
 
         final var createdEntity = repository.save(entity);
