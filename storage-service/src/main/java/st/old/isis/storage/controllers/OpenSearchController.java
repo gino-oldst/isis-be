@@ -21,4 +21,9 @@ public class OpenSearchController {
     public void indexSearch() throws IOException {
 //        openSearchService.search();
     }
+
+    @PostMapping("/scroll-search")
+    public void scrollSearch() throws IOException {
+        openSearchService.scroll();
+    }
 }
