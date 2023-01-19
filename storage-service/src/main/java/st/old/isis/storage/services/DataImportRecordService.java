@@ -18,7 +18,7 @@ import java.util.ArrayList;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DataImportRecordService {
+public class  DataImportRecordService {
 
     private final DataImportRecordRepository repository;
 

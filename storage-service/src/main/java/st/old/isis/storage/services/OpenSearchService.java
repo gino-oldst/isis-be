@@ -51,7 +51,7 @@ public class OpenSearchService {
 
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
-                .query(queryBuilder).from(0).size(10); //TODO - Must get everything no size
+                .query(queryBuilder).from(0).size(1000); //TODO - Must get everything no size
 
         SearchRequest searchRequest = Requests.searchRequest(configuration.getIndexPath())
                 .source(searchSourceBuilder).scroll(new TimeValue(60000));
@@ -69,9 +69,9 @@ public class OpenSearchService {
             (String) s.getSourceAsMap().get("content"),
             (String) s.getSourceAsMap().get("import_date")
         )).collect(Collectors.toList());
-        log.info(String.valueOf(searchResponse.toString()));
-        log.info(String.valueOf(result));
-        log.info(Arrays.toString(searchResponse.getHits().getHits()));
+//        log.info(String.valueOf(searchResponse.toString()));
+//        log.info(String.valueOf(result));
+//        log.info(Arrays.toString(searchResponse.getHits().getHits()));
 
         return result;
         // after first request
