@@ -1,5 +1,6 @@
 package st.old.isis.extraction.services.amazon;
 
+import com.amazonaws.services.iotevents.model.Input;
 import com.amazonaws.services.s3.model.S3Object;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +61,40 @@ public class BloombergRawDownloadService extends RawDownloadService {
                 // TODO (Optional) Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
 //            emailExtractionService.processXml(s3Object.getObjectContent(), source);
                 emailExtractionService.parse(s3Object.getObjectContent(), importDate, source);
+            }
+
+        } catch (JAXBException | XMLStreamException e) {
+
+            final var event =
+                    auditUtil.auditEvent("BLOOMBERG_UNZIP_FILE_ERROR", Map.of("filename", source));
+
+            auditService.recordEvent(
+                    EventLogDto.builder()
+                            .txnId(UUID.randomUUID().toString())
+                            .events(List.of(event))
+                            .source("Extraction Service")
+                            .build());
+
+            e.printStackTrace();
+            throw IsisException.exception("Error unzipping file: " + source, e);
+        }
+
+    }
+    @Override
+    protected void processInputStream(InputStream inputStream, String fileName, LocalDate importDate, String source) throws IsisException {
+
+        try {
+
+            if (isChat(fileName)) {
+                // TODO (Optional) Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
+//        bloombergChatExtractionService.processXml(s3Object.getObjectContent(), source);
+                bloombergChatExtractionService.parse(inputStream, importDate, source);
+            }
+
+            if(isEmail(fileName)){
+                // TODO (Optional) Will set import date manual for now, replace parse with processXML once scheduled jobs is activated
+//            emailExtractionService.processXml(s3Object.getObjectContent(), source);
+                emailExtractionService.parse(inputStream, importDate, source);
             }
 
         } catch (JAXBException | XMLStreamException e) {

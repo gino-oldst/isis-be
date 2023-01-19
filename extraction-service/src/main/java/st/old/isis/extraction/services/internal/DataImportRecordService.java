@@ -1,6 +1,7 @@
 package st.old.isis.extraction.services.internal;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Async;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DataImportRecordService {
 
   private final StorageUrl storageUrl;
@@ -34,6 +36,7 @@ public class DataImportRecordService {
                     .body(objectUtils.toString(request))
                     .build();
 
+    log.info("Creating Data Import Record {}. Sending to url {}", request, url);
 
     return restService.put(url, entity, DataImportRecordDto.class);
   }
