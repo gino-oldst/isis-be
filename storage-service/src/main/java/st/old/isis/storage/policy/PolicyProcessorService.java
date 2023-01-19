@@ -14,8 +14,10 @@ import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
 import st.old.isis.storage.services.AlertPolicyService;
 import st.old.isis.storage.services.CommunicationMessageService;
 import st.old.isis.storage.services.DataImportRecordService;
+import st.old.isis.storage.services.OpenSearchService;
 import st.old.isis.utils.ListUtils;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,8 @@ public class PolicyProcessorService {
     private final DataImportRecordService dataImportRecordService;
 
     private final CommunicationMessageService communicationMessageService;
+
+    private final OpenSearchService openSearchService;
 
     @Audited(event = "PROCESS_ALL_PENDING_IMPORT_DATA")
     public void processAllPendingImportData() throws IsisException {
@@ -118,7 +122,7 @@ public class PolicyProcessorService {
     }
 
     // TODO - processAllPoliciesByImportDateViaOpenSearch
-    public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException {
+    public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException, IOException {
 
         log.info("START - Processing All Policies by Import Date: {}", importDate);
 
@@ -134,7 +138,7 @@ public class PolicyProcessorService {
         for(AlertPolicyDto policy: listOfPolicies.getData()){
             // Actually Processes the policy
             // TODO @processPolicyViaOpenSearch
-            processPolicy(policy, importDate);
+            processPolicyViaOpenSearch(policy, importDate);
         }
 
         log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
@@ -167,22 +171,23 @@ public class PolicyProcessorService {
     }
 
     //TODO - processPolicyViaOpenSearch
-    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
+    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException, IOException {
 
         log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
         // TODO on a New ProcessPolicy with OpenSearch... Search by Date Range
-        final var commMessages= communicationMessageService.searchList(
-                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
+//        final var commMessages= communicationMessageService.searchList(
+//                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
+        final var commMessages = openSearchService.search(importDate);
 
-        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages.getData())){
+        if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
             log.warn("No communication messages found for date: {}.", importDate);
         } else {
             switch (policyRecord.getInternalCode()) {
                 case "INAPPROPRIATE_LANGUAGE":
-                    inappropriateLanguagePolicy.process(commMessages.getData(), policyRecord, importDate);
+                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages, policyRecord, importDate);
                     break;
                 default:
                     break;

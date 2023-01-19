@@ -18,9 +18,9 @@ public class OpenSearchMessageDto implements Dto {
 
     private String id;
 
-    private String chain_id;
+    private String chainLinkId;
 
-    private String time_sent;
+    private LocalDateTime timeSent;
 
     private String sender;
 
@@ -30,7 +30,7 @@ public class OpenSearchMessageDto implements Dto {
 
     private String type;
 
-    private String content;
+    private String message;
 
-    private String import_date;
+    private String importDate;
 }

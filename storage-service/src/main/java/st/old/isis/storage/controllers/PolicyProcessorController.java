@@ -7,6 +7,8 @@ import st.old.isis.dto.storage.PolicyProcessorDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.policy.PolicyProcessorService;
 
+import java.io.IOException;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -37,8 +39,8 @@ public class PolicyProcessorController {
     }
 
     // TODO - Add new calls for OpenSearch @ processAllPendingImportData()
-//    @PostMapping("/all/pending")
-//    public void processAllPendingImportDataViaOpenSearch() throws IsisException {
-//        // service.processAllPendingImportDataViaOpenSearch();
-//    }
+    @PostMapping("open-search/all/import-date")
+    public void processAllPendingImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
+         service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate());
+    }
 }

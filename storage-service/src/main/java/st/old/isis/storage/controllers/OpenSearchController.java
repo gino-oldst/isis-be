@@ -19,6 +19,6 @@ public class OpenSearchController {
 
     @PostMapping("/index-search")
     public void indexSearch() throws IOException {
-        openSearchService.search();
+//        openSearchService.search();
     }
 }
