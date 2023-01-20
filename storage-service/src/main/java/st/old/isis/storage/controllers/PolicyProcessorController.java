@@ -38,9 +38,26 @@ public class PolicyProcessorController {
         log.info("processPolicyIdByFilter COMPLETED");
     }
 
-    // TODO - Add new calls for OpenSearch @ processAllPendingImportData()
+    // OPEN SEARCH CALLS
+    @PostMapping("open-search/policy/range")
+    public void processPolicyByDateRangeViaOpenSearch(@RequestBody PolicyProcessorDto dto) throws IsisException, IOException {
+        service.processPolicyByDateRangeViaOpenSearch(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo());
+    }
+
+    @PostMapping("open-search/all/pending")
+    public void processAllPendingImportDataViaOpenSearch() throws IsisException, IOException {
+        service.processAllPendingImportDataViaOpenSearch();
+    }
+
     @PostMapping("open-search/all/import-date")
     public void processAllPendingImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
          service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate());
     }
+
+    @PostMapping("open-search/all/filter")
+    public void processPolicyIdByFilterViaOpenSearch(@RequestBody PolicyProcessorDto dto) throws IsisException, IOException {
+        service.processPolicyIdByFilterViaOpenSearch(dto);
+        log.info("processPolicyIdByFilter COMPLETED");
+    }
+
 }
