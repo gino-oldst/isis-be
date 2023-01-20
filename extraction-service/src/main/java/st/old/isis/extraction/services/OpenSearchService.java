@@ -61,7 +61,7 @@ public class OpenSearchService {
                 .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
                 .withBackoff(10, 30, ChronoUnit.SECONDS)
                 .withMaxRetries(3)
-                .onFailedAttempt(e -> log.error("Connection attempt failed", e.getLastException()))
+                .onFailedAttempt(e -> log.warn("Connection attempt failed", e.getLastException()))
                 .onRetry(e -> log.warn("Failure #{}. Retrying bulk index.", e.getAttemptCount()))
                 //TODO Send notification that a batch has failed
                 .onFailure(e -> log.error("FAILED - Indexing Batch to OpenSearch. Max retries reached. {}", e.getException()))

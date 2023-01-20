@@ -31,4 +31,5 @@ public abstract class StorageUrlRepository {
   public MergeUrl merge() {
     return new MergeUrl(this);
   }
+  public DataImportRecordUrl dataImportRecord() {return new DataImportRecordUrl(this);}
 }

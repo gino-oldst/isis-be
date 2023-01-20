@@ -89,6 +89,52 @@ public class ReutersRawDownloadService extends RawDownloadService {
         }
     }
 
+    @Override
+    protected void processInputStream(InputStream inputStream, String fileName, LocalDate importDate, String source) throws IsisException {
+
+        try (final var zis = new ZipInputStream(inputStream)) {
+
+            var zipEntry = zis.getNextEntry();
+
+            while (zipEntry != null) {
+
+                final var unSkipFile = unzippedFilenamePrefixes().contains(zipEntry.getName());
+
+                if (unSkipFile) {
+
+                    final var clone = cloneInputStream(zis);
+                    final var filename = zipEntry.getName();
+
+                    log.info("Process unzipped file: {}", filename);
+
+                    reutersXmlExtractionService.processXml(clone, Source.REUTERS.name(), importDate);
+
+                } else {
+                    log.info("Ignore unzipped file: {}", zipEntry.getName());
+                }
+
+                zipEntry = zis.getNextEntry();
+            }
+
+            zis.closeEntry();
+
+        } catch (IOException | JAXBException | IsisException e) {
+
+            final var event =
+                    auditUtil.auditEvent("REUTERS_UNZIP_FILE_ERROR", Map.of("filename", source));
+
+            auditService.recordEvent(
+                    EventLogDto.builder()
+                            .txnId(UUID.randomUUID().toString())
+                            .events(List.of(event))
+                            .source("Extraction Service")
+                            .build());
+
+            e.printStackTrace();
+            throw IsisException.exception("Error unzipping file: " + source, e);
+        }
+    }
+
     protected boolean skipFile(@NonNull String filename) {
         return !directoryFilenamePrefixes().contains(filename);
     }
