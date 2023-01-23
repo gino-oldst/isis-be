@@ -3,7 +3,10 @@ package st.old.isis.storage.policy;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.common.collect.Tuple;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.*;
@@ -22,6 +25,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -150,19 +155,26 @@ public class PolicyProcessorService {
         // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
 
-        // Gets All Messages From OpenSearch so that we wont keep on requesting data for same date per alert policy
-        final var commMessages = openSearchService.search(importDate);
-
         if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
             log.warn("No Policy Records Found");
             throw IsisException.notFound("No Policy Records Found", "NotFoundException");
         }
 
-        // Loop Through Each Policy
-        for(AlertPolicyDto policy: listOfPolicies.getData()){
-            // Actually Processes the policy
-            // TODO @processPolicyViaOpenSearch
-            processPolicyViaOpenSearch(policy, commMessages, importDate);
+        // Retrieve first batch
+        Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(importDate);
+
+        while(mapOfCommMessages != null){
+
+            for(AlertPolicyDto policy: listOfPolicies.getData()){
+                // Actually Processes the policy
+                // TODO @processPolicyViaOpenSearch
+//                processPolicyViaOpenSearch(policy, mapOfCommMessages.v2(), importDate);
+                log.info("Test Process {} messages", mapOfCommMessages.v2().size());
+            }
+
+            // Get next batches
+            mapOfCommMessages= openSearchService.scrollNextBatch(mapOfCommMessages.v1());
+
         }
 
         log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
