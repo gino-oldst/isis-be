@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.opensearch.common.collect.Tuple;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -163,14 +165,35 @@ public class PolicyProcessorService {
         // Retrieve first batch
         Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(importDate);
 
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(1000);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("OpensearchMultiThread-");
+        executor.initialize();
+
+        AtomicInteger counter= new AtomicInteger();
+
         while(mapOfCommMessages != null){
 
-            for(AlertPolicyDto policy: listOfPolicies.getData()){
-                // Actually Processes the policy
-                // TODO @processPolicyViaOpenSearch
-//                processPolicyViaOpenSearch(policy, mapOfCommMessages.v2(), importDate);
-                log.info("Test Process {} messages", mapOfCommMessages.v2().size());
-            }
+            final var processMessages = mapOfCommMessages.v2();
+
+            executor.submit(() -> {
+                for(AlertPolicyDto policy: listOfPolicies.getData()){
+                    // Actually Processes the policy
+                    // TODO @processPolicyViaOpenSearch
+                    try {
+                        processPolicyViaOpenSearch(policy, processMessages, importDate);
+                    } catch (IsisException | IOException e) {
+                        log.error("An exception was encountered during policy processing. {}", e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            counter.getAndAdd(processMessages.size());
+            log.info("Total Processed Messages - {} ", counter.get());
 
             // Get next batches
             mapOfCommMessages= openSearchService.scrollNextBatch(mapOfCommMessages.v1());
@@ -207,9 +230,10 @@ public class PolicyProcessorService {
     }
 
     //TODO - processPolicyViaOpenSearch
+    @Async
     public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<OpenSearchMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
 
-        log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+        log.debug("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
@@ -230,7 +254,7 @@ public class PolicyProcessorService {
             }
         }
 
-        log.info("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+        log.debug("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
     }
 
