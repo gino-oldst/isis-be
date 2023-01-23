@@ -20,6 +20,7 @@ import st.old.isis.utils.ListUtils;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -116,7 +117,7 @@ public class PolicyProcessorService {
             // Gets All Messages From OpenSearch
             final var commMessages = openSearchService.search(targetDate);
 
-            processPolicyViaOpenSearch(policyDto, commMessages, targetDate);
+//            processPolicyViaOpenSearch(policyDto, commMessages, targetDate);
         }
 
         log.info("COMPLETED - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);
@@ -150,20 +151,47 @@ public class PolicyProcessorService {
         // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
 
-        // Gets All Messages From OpenSearch so that we wont keep on requesting data for same date per alert policy
-        final var commMessages = openSearchService.search(importDate);
+        // Gets All Messages From OpenSearch so that we won't keep on requesting data for same date per alert policy
+        final var initialCommMessages = openSearchService.initialSearchByDate(importDate);
 
         if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
             log.warn("No Policy Records Found");
             throw IsisException.notFound("No Policy Records Found", "NotFoundException");
         }
+        var scrollId = initialCommMessages.get("scrollId").toString();
+        var hits = Integer.parseInt(initialCommMessages.get("hits").toString());
 
-        // Loop Through Each Policy
-        for(AlertPolicyDto policy: listOfPolicies.getData()){
-            // Actually Processes the policy
-            // TODO @processPolicyViaOpenSearch
-            processPolicyViaOpenSearch(policy, commMessages, importDate);
+        // Call Initial Search to get 1st batch and scroll id and initial data
+        //
+        // while(scroll_id != ""){
+        //   Loop through Policy and Process batch from OS(OpenSearch)
+        //
+        // }
+        while(hits > 0) {
+            var scrollResult = openSearchService.searchScrollByDate(importDate,
+                    scrollId,
+                    hits);
+
+            List<CommunicationMessageDto> commMessages = (List<CommunicationMessageDto>) scrollResult.get("result");
+
+            if (!initialCommMessages.isEmpty()) {
+                commMessages.addAll((Collection<? extends CommunicationMessageDto>) initialCommMessages.get("result"));
+                initialCommMessages.clear();
+            }
+
+            scrollId = scrollResult.get("scrollId").toString();
+            hits = Integer.parseInt(scrollResult.get("hits").toString());
+
+            // Loop Through Each Policy
+            for(AlertPolicyDto policy: listOfPolicies.getData()){
+                // Actually Processes the policy
+                // TODO @processPolicyViaOpenSearch
+                processPolicyViaOpenSearch(policy, commMessages, importDate);
+            }
         }
+
+        // Clear Search Context
+        openSearchService.clearSearchContext(scrollId);
 
         log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
     }
@@ -195,7 +223,7 @@ public class PolicyProcessorService {
     }
 
     //TODO - processPolicyViaOpenSearch
-    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<OpenSearchMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
+    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<CommunicationMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
 
         log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
@@ -329,7 +357,7 @@ public class PolicyProcessorService {
         } else {
             switch (policyRecord.getInternalCode()) {
                 case "INAPPROPRIATE_LANGUAGE":
-                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages, policyRecord, filter.getImportDate());
+//                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages, policyRecord, filter.getImportDate());
                     break;
                 default:
                     break;

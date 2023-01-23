@@ -40,7 +40,7 @@ public class InappropriateLanguageAlgorithm {
     private static final List<String> DISCLAIMER_INDICATORS = Arrays.asList("disclaimer", "copyright", "disclosure");
 
     // TODO - CREATE OPENSEARCH IMPPLEMENTATION OF @processViaOpenSearch, List Must be changed to the DTO of OpenSearch
-    public void processViaOpenSearch(List<OpenSearchMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
+    public void processViaOpenSearch(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 
         log.info("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
 
@@ -72,7 +72,7 @@ public class InappropriateLanguageAlgorithm {
                     "NotFoundException");
         }
 
-        for(OpenSearchMessageDto message: commMessages){
+        for(CommunicationMessageDto message: commMessages){
 
             log.info("Processing inappropriate algorithm for message id {}", message.getId());
 
@@ -88,7 +88,7 @@ public class InappropriateLanguageAlgorithm {
                             .forEach( emit -> {
 
                                 //Disregard if within disclaimer text
-                                if(!checkifBypassEmitOpenSearchMessages(emit, message, message.getSource())) {
+                                if(!checkifBypassEmit(emit, message, message.getSource())) {
                                     final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
 
                                     final var keywordDto= keywordsMap.get(emit.getKeyword().toLowerCase());
@@ -269,7 +269,7 @@ public class InappropriateLanguageAlgorithm {
 
     }
 
-    private static boolean checkifBypassEmitOpenSearchMessages(Emit emit, OpenSearchMessageDto messageDto, String source) {
+    private static boolean checkifBypassEmitOpenSearchMessages(Emit emit, CommunicationMessageDto messageDto, String source) {
 
         final String message = messageDto.getMessage();
 
