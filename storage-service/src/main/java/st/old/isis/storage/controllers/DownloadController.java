@@ -10,10 +10,12 @@ import st.old.isis.dto.communication.QuickCommunicationDto;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.services.CommunicationMessageService;
+import st.old.isis.storage.services.OpenSearchService;
 import st.old.isis.storage.services.QuickCommunicationService;
 import st.old.isis.utils.CsvUtil;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -25,11 +27,16 @@ public class DownloadController {
     private final CommunicationMessageService communicationMessageService;
     private final QuickCommunicationService quickCommunicationService;
 
+    private final OpenSearchService openSearchService;
+
     @PostMapping(path = "/messages")
     public void getMessages(@RequestBody CommunicationMessageDto filter,
-                                    HttpServletResponse response) {
+                                    HttpServletResponse response) throws IOException {
 
-        final var results = communicationMessageService.downloadMessages(filter);
+        // Replace With OpenSearch
+        // final var results = communicationMessageService.downloadMessages(filter);
+        final var results = openSearchService.downloadMessages(filter);
+
         CsvUtil.export(response, "messages-" + LocalDateTime.now().toString().concat(".csv"),
                 CommunicationMessageDto.csvHeaders(), results);
     }
