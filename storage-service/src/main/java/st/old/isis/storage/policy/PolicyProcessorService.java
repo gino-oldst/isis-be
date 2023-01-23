@@ -274,9 +274,9 @@ public class PolicyProcessorService {
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
         // TODO on a New ProcessPolicy with OpenSearch... Search by Date Range
-//        final var commMessages= communicationMessageService.searchList(
-//                CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
-//        final var commMessages = openSearchService.search(importDate);
+        // final var commMessages= communicationMessageService.searchList(
+        //      CommunicationMessageDto.builder().importDate(importDate).build(), Pageable.unpaged());
+        // final var commMessages = openSearchService.search(importDate);
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){
             log.warn("No communication messages found for date: {}.", importDate);
@@ -392,7 +392,6 @@ public class PolicyProcessorService {
                 .source(filter.getSource())
                 .build();
 
-//        final var commMessages= communicationMessageService.searchList(messageFilter, Pageable.unpaged());
         final var commMessages = openSearchService.searchList(messageFilter);
 
         if(commMessages == null || ListUtils.isNullOrEmpty(commMessages)){

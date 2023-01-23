@@ -128,7 +128,7 @@ public class OpenSearchService {
         log.info("SUCCESS - Processed all relevant messages. Clearing scroll context");
         // Clear scroll context
         // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-clear-scroll.html
-        ClearScrollResponse response = restHighLevelClient.clearScroll(request, RequestOptions.DEFAULT);
+        ClearScrollResponse response = Failsafe.with(retryPolicy).get(() -> restHighLevelClient.clearScroll(request, RequestOptions.DEFAULT));
 
         if(response.isSucceeded()){
             log.info("SUCCESS - Cleared scroll context");
@@ -227,7 +227,7 @@ public class OpenSearchService {
         log.info("SUCCESS - Processed all relevant messages. Clearing scroll context");
         // Clear scroll context
         // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-clear-scroll.html
-        ClearScrollResponse response = restHighLevelClient.clearScroll(request, RequestOptions.DEFAULT);
+        ClearScrollResponse response = Failsafe.with(retryPolicy).get(() -> restHighLevelClient.clearScroll(request, RequestOptions.DEFAULT));
 
         if(response.isSucceeded()){
             log.info("SUCCESS - Cleared scroll context");
@@ -369,15 +369,13 @@ public class OpenSearchService {
         AtomicInteger counter= new AtomicInteger(0);
 
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-//                .must(QueryBuilders.matchQuery("import_date", dto.getImportDate()))
-//                .must(QueryBuilders.matchQuery("source", dto.getSource()))
                 .filter(QueryBuilders.rangeQuery("time_sent")
                         .gte(dto.getDateSentFrom())
                         .lte(dto.getDateSentTo())
                         .format("yyyy-MM-dd")
                         .relation("within"))
                 .filter(QueryBuilders.matchPhraseQuery("type", "Send"))
-                .mustNot(QueryBuilders.matchPhraseQuery("content", "[Bloomberg created note: Remains as a participant of the room.]"));
+                .mustNot(QueryBuilders.matchPhraseQuery("content", "[Bloomberg created note:]"));
 
         if (!dto.getSenders().isEmpty()){
             dto.getSenders().forEach(obj -> {
@@ -401,11 +399,6 @@ public class OpenSearchService {
 
 
         queryBuilder.minimumShouldMatch(queryBuilder.should().size() -1);
-        //sure sure ang filter dateSentFrom, dateSentTo
-        // senders - array ni siya
-        // recipients - array ni siya
-        // sources - array ni siya
-        // keyword - str
 
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
