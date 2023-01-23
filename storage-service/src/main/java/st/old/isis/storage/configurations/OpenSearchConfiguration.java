@@ -30,6 +30,9 @@ public class OpenSearchConfiguration {
     @Value(AppConstants.AWS_OPENSEARCH_INDEX_PATH)
     private String indexPath;
 
+    @Value(AppConstants.AWS_OPENSEARCH_BATCH_SIZE)
+    private Integer batchSize;
+
     @Bean
     public RestHighLevelClient restHighLevelClient() {
 

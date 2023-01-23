@@ -49,6 +49,7 @@ isis:
         password: ${AWS_OPENSEARCH_PASSWORD}
         hostname: ${AWS_OPENSEARCH_HOSTNAME}
         index-path: ${AWS_OPENSEARCH_INDEX_PATH}
+        batch-size: ${AWS_OPENSEARCH_BATCH_SIZE}
   security:
     jwt-public-key: ${JWT_PUBLIC_KEY}
   internal:

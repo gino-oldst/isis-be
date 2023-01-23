@@ -48,7 +48,7 @@ public class OpenSearchService {
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
                 .query(queryBuilder)
-                .size(500);
+                .size(configuration.getBatchSize());
 
         SearchRequest firstBatch = Requests.searchRequest(configuration.getIndexPath())
                 .source(searchSourceBuilder).scroll(TimeValue.timeValueMinutes(1L));
@@ -147,7 +147,7 @@ public class OpenSearchService {
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
                 .query(queryBuilder)
-                .size(500);
+                .size(configuration.getBatchSize());
 
         SearchRequest firstBatch = Requests.searchRequest(configuration.getIndexPath())
                 .source(searchSourceBuilder).scroll(TimeValue.timeValueMinutes(1L));
