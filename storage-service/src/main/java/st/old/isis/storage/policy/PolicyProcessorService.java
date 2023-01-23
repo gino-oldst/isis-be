@@ -4,7 +4,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.common.collect.Tuple;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -28,7 +27,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -112,8 +110,8 @@ public class PolicyProcessorService {
     }
 
     public void processPolicyByDateRangeViaOpenSearch(@NonNull String policyId,
-                                         @NonNull LocalDate dateFrom,
-                                         @NonNull LocalDate dateTo) throws IsisException, IOException {
+                                                      @NonNull LocalDate dateFrom,
+                                                      @NonNull LocalDate dateTo) throws IsisException, IOException {
 
         final var policyDto = alertPolicyService.getActiveById(policyId);
 
