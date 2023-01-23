@@ -42,7 +42,7 @@ public class InappropriateLanguageAlgorithm {
     // TODO - CREATE OPENSEARCH IMPPLEMENTATION OF @processViaOpenSearch, List Must be changed to the DTO of OpenSearch
     public void processViaOpenSearch(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 
-        log.info("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+        log.debug("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
 
         final var policyId= policy.getId();
 
@@ -74,7 +74,7 @@ public class InappropriateLanguageAlgorithm {
 
         for(CommunicationMessageDto message: commMessages){
 
-            log.info("Processing inappropriate algorithm for message id {}", message.getId());
+            log.debug("Processing inappropriate algorithm for message id {}", message.getId());
 
             if(message.getMessage() == null) {
                 if(message.getType() != null || !message.getType().equals(MessageType.BLOOMBERG_CHAT_ATTACHMENT)){
@@ -124,7 +124,7 @@ public class InappropriateLanguageAlgorithm {
         }
 
 
-        log.info("COMPLETED - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
+        log.debug("COMPLETED - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
 
     }
 
@@ -162,7 +162,7 @@ public class InappropriateLanguageAlgorithm {
 
         for(CommunicationMessageDto message: commMessages){
 
-            log.info("Processing inappropriate algorithm for message id {}", message.getId());
+            log.debug("Processing inappropriate algorithm for message id {}", message.getId());
 
             if(message.getMessage() == null) {
                 if(message.getType() != null || !message.getType().equals(MessageType.BLOOMBERG_CHAT_ATTACHMENT)){

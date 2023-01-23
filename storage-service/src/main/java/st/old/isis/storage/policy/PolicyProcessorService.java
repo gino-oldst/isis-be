@@ -3,7 +3,11 @@ package st.old.isis.storage.policy;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.common.collect.Tuple;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.*;
@@ -18,11 +22,15 @@ import st.old.isis.storage.services.OpenSearchService;
 import st.old.isis.utils.ListUtils;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -117,7 +125,7 @@ public class PolicyProcessorService {
             // Gets All Messages From OpenSearch
             final var commMessages = openSearchService.search(targetDate);
 
-//            processPolicyViaOpenSearch(policyDto, commMessages, targetDate);
+            processPolicyViaOpenSearch(policyDto, commMessages, targetDate);
         }
 
         log.info("COMPLETED - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);
@@ -146,54 +154,61 @@ public class PolicyProcessorService {
     // TODO - processAllPoliciesByImportDateViaOpenSearch
     public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException, IOException {
 
-        log.info("START - Processing All Policies by Import Date: {}", importDate);
+        Instant start = Instant.now();
+
+        log.info("START - Processing All Policies by Import Date: {} on {}", importDate, start);
 
         // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
-
-        // Gets All Messages From OpenSearch so that we won't keep on requesting data for same date per alert policy
-        final var initialCommMessages = openSearchService.initialSearchByDate(importDate);
 
         if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
             log.warn("No Policy Records Found");
             throw IsisException.notFound("No Policy Records Found", "NotFoundException");
         }
-        var scrollId = initialCommMessages.get("scrollId").toString();
-        var hits = Integer.parseInt(initialCommMessages.get("hits").toString());
 
-        // Call Initial Search to get 1st batch and scroll id and initial data
-        //
-        // while(scroll_id != ""){
-        //   Loop through Policy and Process batch from OS(OpenSearch)
-        //
-        // }
-        while(hits > 0) {
-            var scrollResult = openSearchService.searchScrollByDate(importDate,
-                    scrollId,
-                    hits);
+        // Retrieve first batch
+        Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(importDate);
 
-            List<CommunicationMessageDto> commMessages = (List<CommunicationMessageDto>) scrollResult.get("result");
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(1000);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("OpensearchMultiThread-");
+        executor.initialize();
 
-            if (!initialCommMessages.isEmpty()) {
-                commMessages.addAll((Collection<? extends CommunicationMessageDto>) initialCommMessages.get("result"));
-                initialCommMessages.clear();
-            }
+        AtomicInteger counter= new AtomicInteger();
 
-            scrollId = scrollResult.get("scrollId").toString();
-            hits = Integer.parseInt(scrollResult.get("hits").toString());
+        while(mapOfCommMessages != null){
 
-            // Loop Through Each Policy
-            for(AlertPolicyDto policy: listOfPolicies.getData()){
-                // Actually Processes the policy
-                // TODO @processPolicyViaOpenSearch
-                processPolicyViaOpenSearch(policy, commMessages, importDate);
-            }
+            final var processMessages = mapOfCommMessages.v2();
+
+            executor.submit(() -> {
+                for(AlertPolicyDto policy: listOfPolicies.getData()){
+                    // Actually Processes the policy
+                    // TODO @processPolicyViaOpenSearch
+                    try {
+                        processPolicyViaOpenSearch(policy, processMessages, importDate);
+                    } catch (IsisException | IOException e) {
+                        log.error("An exception was encountered during policy processing. {}", e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            counter.getAndAdd(processMessages.size());
+            log.info("Total Processed Messages - {} ", counter.get());
+
+            // Get next batches
+            mapOfCommMessages= openSearchService.scrollNextBatch(mapOfCommMessages.v1());
+
         }
 
-        // Clear Search Context
-        openSearchService.clearSearchContext(scrollId);
+        Instant end = Instant.now();
 
-        log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
+        log.info("COMPLETED - Processing All Policies by Import Date: {} on {}", importDate, end);
+
+        log.info("Process took {}", Duration.between(start, end));
     }
 
     public void processPolicy(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
@@ -223,9 +238,10 @@ public class PolicyProcessorService {
     }
 
     //TODO - processPolicyViaOpenSearch
-    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<CommunicationMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
+    @Async
+    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<OpenSearchMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
 
-        log.info("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+        log.debug("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
         final var policyRecord = alertPolicyService.getActiveById(filter.getId());
 
@@ -246,7 +262,7 @@ public class PolicyProcessorService {
             }
         }
 
-        log.info("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
+        log.debug("COMPLETED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 
     }
 
@@ -357,7 +373,7 @@ public class PolicyProcessorService {
         } else {
             switch (policyRecord.getInternalCode()) {
                 case "INAPPROPRIATE_LANGUAGE":
-//                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages, policyRecord, filter.getImportDate());
+                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages, policyRecord, filter.getImportDate());
                     break;
                 default:
                     break;
