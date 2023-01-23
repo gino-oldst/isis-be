@@ -119,11 +119,41 @@ public class PolicyProcessorService {
 
         final var listOfDates= dateFrom.datesUntil(dateTo.plusDays(1)).collect(Collectors.toList());
 
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(1000);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("OpensearchMultiThread-");
+        executor.initialize();
+
+        AtomicInteger counter= new AtomicInteger();
+
         for(LocalDate targetDate: listOfDates){
             // Gets All Messages From OpenSearch
-            final var commMessages = openSearchService.search(targetDate);
 
-            processPolicyViaOpenSearch(policyDto, commMessages, targetDate);
+            // final var commMessages = openSearchService.search(targetDate);
+            // Retrieve first batch
+            Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(targetDate);
+
+            while(mapOfCommMessages != null) {
+                final var processMessages = mapOfCommMessages.v2();
+
+                executor.submit(() -> {
+                    try {
+                        processPolicyViaOpenSearch(policyDto, processMessages, targetDate);
+                    } catch (IsisException | IOException e) {
+                        log.error("An exception was encountered during policy processing. {}", e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                });
+
+                counter.getAndAdd(processMessages.size());
+                log.info("Total Processed Messages - {} ", counter.get());
+
+                // Get next batches
+                mapOfCommMessages= openSearchService.scrollNextBatch(mapOfCommMessages.v1());
+            }
         }
 
         log.info("COMPLETED - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);

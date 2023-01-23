@@ -41,17 +41,17 @@ public class PolicyProcessorController {
     // OPEN SEARCH CALLS
     @PostMapping("open-search/policy/range")
     public void processPolicyByDateRangeViaOpenSearch(@RequestBody PolicyProcessorDto dto) throws IsisException, IOException {
-        service.processPolicyByDateRangeViaOpenSearch(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo());
+        service.processPolicyByDateRangeViaOpenSearch(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo()); // THREADED
     }
 
     @PostMapping("open-search/all/pending")
     public void processAllPendingImportDataViaOpenSearch() throws IsisException, IOException {
-        service.processAllPendingImportDataViaOpenSearch();
+        service.processAllPendingImportDataViaOpenSearch(); // THREADED
     }
 
     @PostMapping("open-search/all/import-date")
     public void processAllPendingImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
-         service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate());
+         service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate()); //THREADED
     }
 
     @PostMapping("open-search/all/filter")

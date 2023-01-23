@@ -81,19 +81,19 @@ public class CommunicationMessageDto implements Dto {
   private MessageBypassType bypassType;
 
   public static List<String> csvHeaders() {
-    return List.of("id", "subject", "message", "source", "dateTime", "sender", "recipients");
+    return List.of("id", /*"subject",*/ "message", "source", "dateTime", "sender", "recipients");
   }
 
   @Override
   public String toCsvString() {
 
-    final var subjectVal = subject == null ? "" : subject;
+    // final var subjectVal = subject == null ? "" : subject;
     final var recipientsVal =
         ListUtils.isNullOrEmpty(recipients) ? Collections.emptyList() : recipients;
     return CsvUtil.mapToCsv(
         List.of(
             id,
-            subjectVal,
+            // subjectVal,
             message,
             source,
             timeSent.toString(),
