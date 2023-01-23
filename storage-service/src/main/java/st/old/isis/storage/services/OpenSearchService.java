@@ -39,30 +39,99 @@ public class OpenSearchService {
     private final OpenSearchConfiguration configuration;
 
     public List<OpenSearchMessageDto> searchList(OpenSearchMessageDto dto) throws IOException {
+        AtomicInteger counter= new AtomicInteger(0);
+
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
                 .must(QueryBuilders.matchQuery("import_date", dto.getImportDate()))
                 .must(QueryBuilders.matchQuery("source", dto.getSource()));
 
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
-                .query(queryBuilder).from(0).size(1000); //TODO - Must get everything no size
+                .query(queryBuilder)
+                .size(500);
 
-        SearchRequest searchRequest = Requests.searchRequest(configuration.getIndexPath())
-                .source(searchSourceBuilder).scroll(new TimeValue(60000));
+        SearchRequest firstBatch = Requests.searchRequest(configuration.getIndexPath())
+                .source(searchSourceBuilder).scroll(TimeValue.timeValueMinutes(1L));
 
-        searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+        searchResponse = restHighLevelClient.search(firstBatch, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId();
+        SearchHits hits = searchResponse.getHits();
 
+        // Declare Clear Scroll
+        ClearScrollRequest request = new ClearScrollRequest();
+        request.addScrollId(scrollId);
+
+        // Process first batch
+        long totalNumberOfHits = hits.getHits().length;
+
+        // STEP 2
+        // Retrieve all relevant documents/ succeeding batches
+        // Loop until results return 0
         List<OpenSearchMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
-            s.getId(),
-            (String) s.getSourceAsMap().get("chain_id"),
-            LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
-            (String) s.getSourceAsMap().get("sender"),
-            (String) s.getSourceAsMap().get("recipients"),
-            (String) s.getSourceAsMap().get("source"),
-            (String) s.getSourceAsMap().get("type"),
-            (String) s.getSourceAsMap().get("content"),
-            (String) s.getSourceAsMap().get("import_date")
+                s.getId(),
+                (String) s.getSourceAsMap().get("chain_id"),
+                LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
+                (String) s.getSourceAsMap().get("sender"),
+                (String) s.getSourceAsMap().get("recipients"),
+                (String) s.getSourceAsMap().get("source"),
+                (String) s.getSourceAsMap().get("type"),
+                (String) s.getSourceAsMap().get("content"),
+                (String) s.getSourceAsMap().get("import_date")
         )).collect(Collectors.toList());
+
+        RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
+                .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class, SearchPhaseExecutionException.class)
+                .withBackoff(10, 30, ChronoUnit.SECONDS)
+                .withMaxRetries(3)
+                .onFailedAttempt(e -> log.warn("Connection attempt failed", e.getLastException()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying scroll.", e.getAttemptCount()))
+                //TODO Send notification that a batch has failed
+                .onFailure(e -> log.error("FAILED - Scrolling through Records in OpenSearch. Max retries reached. {}", e.getException(), e.getException()))
+                .build();
+
+        while(hits.getHits().length > 0){
+            counter.getAndIncrement();
+            log.info("Processing Batch {}", counter.get());
+
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+            scrollRequest.scroll(TimeValue.timeValueMinutes(1L));
+
+            SearchResponse scrollResponse = Failsafe.with(retryPolicy).get(() -> restHighLevelClient.scroll(scrollRequest, RequestOptions.DEFAULT));
+
+            //  log.info(String.valueOf(scrollResponse.toString()));
+            Arrays.stream(scrollResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
+                    s.getId(),
+                    (String) s.getSourceAsMap().get("chain_id"),
+                    LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
+                    (String) s.getSourceAsMap().get("sender"),
+                    (String) s.getSourceAsMap().get("recipients"),
+                    (String) s.getSourceAsMap().get("source"),
+                    (String) s.getSourceAsMap().get("type"),
+                    (String) s.getSourceAsMap().get("content"),
+                    (String) s.getSourceAsMap().get("import_date")
+            )).forEachOrdered(result::add);
+            //  scrollId = searchScrollResponse.getScrollId();
+            hits = scrollResponse.getHits();
+
+            log.info("Added {} of messages", hits.getHits().length);
+            log.info("Result size {} of messages ", result.size());
+
+            totalNumberOfHits += hits.getHits().length;
+
+            log.info("Total Number of Hits: {} of {}", totalNumberOfHits, scrollResponse.getHits().getTotalHits().toString());
+        }
+
+        log.info("SUCCESS - Processed all relevant messages. Clearing scroll context");
+        // Clear scroll context
+        // https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-clear-scroll.html
+        ClearScrollResponse response = restHighLevelClient.clearScroll(request, RequestOptions.DEFAULT);
+
+        if(response.isSucceeded()){
+            log.info("SUCCESS - Cleared scroll context");
+            log.info("Cleared Number of Search context: {}", response.getNumFreed());
+        } else {
+            log.info("FAILED - Clearing scroll context");
+        }
 
         return result;
     }
@@ -166,4 +235,5 @@ public class OpenSearchService {
         return result;
     }
 
+    // TODO - Download Filter Via OpenSearch
 }
