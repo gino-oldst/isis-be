@@ -22,6 +22,8 @@ import st.old.isis.storage.services.OpenSearchService;
 import st.old.isis.utils.ListUtils;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -152,7 +154,9 @@ public class PolicyProcessorService {
     // TODO - processAllPoliciesByImportDateViaOpenSearch
     public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException, IOException {
 
-        log.info("START - Processing All Policies by Import Date: {}", importDate);
+        Instant start = Instant.now();
+
+        log.info("START - Processing All Policies by Import Date: {} on {}", importDate, start);
 
         // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
@@ -200,7 +204,11 @@ public class PolicyProcessorService {
 
         }
 
-        log.info("COMPLETED - Processing All Policies by Import Date: {}", importDate);
+        Instant end = Instant.now();
+
+        log.info("COMPLETED - Processing All Policies by Import Date: {} on {}", importDate, end);
+
+        log.info("Process took {}", Duration.between(start, end));
     }
 
     public void processPolicy(@NonNull AlertPolicyDto filter, LocalDate importDate) throws IsisException {
