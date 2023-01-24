@@ -26,6 +26,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -369,36 +370,45 @@ public class OpenSearchService {
         AtomicInteger counter= new AtomicInteger(0);
 
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
+                .mustNot(QueryBuilders.matchPhraseQuery("content", "[Bloomberg created note: ]"))
                 .filter(QueryBuilders.rangeQuery("time_sent")
-                        .gte(dto.getDateSentFrom())
-                        .lte(dto.getDateSentTo())
+                        .gte(dto.getDateSentFrom().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                        .lte(dto.getDateSentTo().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                         .format("yyyy-MM-dd")
                         .relation("within"))
-                .filter(QueryBuilders.matchPhraseQuery("type", "Send"))
-                .mustNot(QueryBuilders.matchPhraseQuery("content", "[Bloomberg created note:]"));
+                .filter(QueryBuilders.matchPhraseQuery("type", "Send"));
 
+        if (dto.getMessage() != ""){
+            queryBuilder.must(
+                    QueryBuilders.matchPhraseQuery("content", dto.getMessage())
+            );
+        }
+
+        var fieldsShouldMatchCounter = 0;
         if (!dto.getSenders().isEmpty()){
             dto.getSenders().forEach(obj -> {
                 queryBuilder.should(
                         QueryBuilders.matchPhraseQuery("sender", obj)
                 );
             });
+            fieldsShouldMatchCounter++;
         } else if (!dto.getRecipients().isEmpty()) {
             dto.getRecipients().forEach(obj -> {
                 queryBuilder.should(
                         QueryBuilders.matchPhraseQuery("recipients", obj)
                 );
             });
+            fieldsShouldMatchCounter++;
         } else if (!dto.getSources().isEmpty()) {
             dto.getSources().forEach(obj -> {
                 queryBuilder.should(
                         QueryBuilders.matchPhraseQuery("source", obj)
                 );
             });
+            fieldsShouldMatchCounter++;
         }
 
-
-        queryBuilder.minimumShouldMatch(queryBuilder.should().size() -1);
+        queryBuilder.minimumShouldMatch(fieldsShouldMatchCounter);
 
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
@@ -440,9 +450,9 @@ public class OpenSearchService {
                 .withBackoff(10, 30, ChronoUnit.SECONDS)
                 .withMaxRetries(3)
                 .onFailedAttempt(e -> log.warn("Connection attempt failed", e.getLastException()))
-                .onRetry(e -> log.warn("Failure #{}. Retrying scroll.", e.getAttemptCount()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying scroll for download.", e.getAttemptCount()))
                 //TODO Send notification that a batch has failed
-                .onFailure(e -> log.error("FAILED - Scrolling through Records in OpenSearch. Max retries reached. {}", e.getException(), e.getException()))
+                .onFailure(e -> log.error("FAILED - Scrolling through Records in OpenSearch for download. Max retries reached. {}", e.getException(), e.getException()))
                 .build();
 
         while(hits.getHits().length > 0){
