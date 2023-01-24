@@ -33,9 +33,9 @@ public class DownloadController {
     public void getMessages(@RequestBody CommunicationMessageDto filter,
                                     HttpServletResponse response) throws IOException {
 
-        // Relace With OpenSearch
-        final var results = communicationMessageService.downloadMessages(filter);
-//        final var results = openSearchService.downloadMessages(filter);
+        // Replace With OpenSearch
+        // final var results = communicationMessageService.downloadMessages(filter);
+        final var results = openSearchService.downloadMessages(filter);
 
         CsvUtil.export(response, "messages-" + LocalDateTime.now().toString().concat(".csv"),
                 CommunicationMessageDto.csvHeaders(), results);
