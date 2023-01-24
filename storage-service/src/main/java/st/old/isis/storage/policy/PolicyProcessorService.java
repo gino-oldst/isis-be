@@ -134,7 +134,7 @@ public class PolicyProcessorService {
 
             // final var commMessages = openSearchService.search(targetDate);
             // Retrieve first batch
-            Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(targetDate);
+            Tuple<String, List<CommunicationMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(targetDate);
 
             while(mapOfCommMessages != null) {
                 final var processMessages = mapOfCommMessages.v2();
@@ -195,7 +195,7 @@ public class PolicyProcessorService {
         }
 
         // Retrieve first batch
-        Tuple<String, List<OpenSearchMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(importDate);
+        Tuple<String, List<CommunicationMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatch(importDate);
 
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);
@@ -254,7 +254,7 @@ public class PolicyProcessorService {
         } else {
             switch (policyRecord.getInternalCode()) {
                 case "INAPPROPRIATE_LANGUAGE":
-                    inappropriateLanguagePolicy.process(commMessages.getData(), policyRecord, importDate);
+                    inappropriateLanguagePolicy.processViaOpenSearch(commMessages.getData(), policyRecord, importDate);
                     break;
                 default:
                     break;
@@ -267,7 +267,7 @@ public class PolicyProcessorService {
 
     //TODO - processPolicyViaOpenSearch
     @Async
-    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<OpenSearchMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
+    public void processPolicyViaOpenSearch(@NonNull AlertPolicyDto filter, List<CommunicationMessageDto> commMessages, LocalDate importDate) throws IsisException, IOException {
 
         log.debug("STARTED - Processing Policy Id {} and Import Date {}", filter.getId(), importDate);
 

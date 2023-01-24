@@ -43,7 +43,7 @@ public class OpenSearchService {
 
     private final OpenSearchConfiguration configuration;
 
-    public List<OpenSearchMessageDto> searchList(OpenSearchMessageDto dto) throws IOException {
+    public List<CommunicationMessageDto> searchList(OpenSearchMessageDto dto) throws IOException {
         AtomicInteger counter= new AtomicInteger(0);
 
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
@@ -72,17 +72,30 @@ public class OpenSearchService {
         // STEP 2
         // Retrieve all relevant documents/ succeeding batches
         // Loop until results return 0
-        List<OpenSearchMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
-                s.getId(),
-                (String) s.getSourceAsMap().get("chain_id"),
-                LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
-                (String) s.getSourceAsMap().get("sender"),
-                (String) s.getSourceAsMap().get("recipients"),
-                (String) s.getSourceAsMap().get("source"),
-                (String) s.getSourceAsMap().get("type"),
-                (String) s.getSourceAsMap().get("content"),
-                (String) s.getSourceAsMap().get("import_date")
-        )).collect(Collectors.toList());
+        //        List<OpenSearchMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
+        //                s.getId(),
+        //                (String) s.getSourceAsMap().get("chain_id"),
+        //                LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
+        //                (String) s.getSourceAsMap().get("sender"),
+        //                (String) s.getSourceAsMap().get("recipients"),
+        //                (String) s.getSourceAsMap().get("source"),
+        //                (String) s.getSourceAsMap().get("type"),
+        //                (String) s.getSourceAsMap().get("content"),
+        //                (String) s.getSourceAsMap().get("import_date")
+        //        )).collect(Collectors.toList());
+
+        List<CommunicationMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> CommunicationMessageDto.builder()
+                .id(s.getId())
+                .chainLinkId(s.getSourceAsMap().get("chain_id").toString())
+                .timeSent(LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()))
+                .sender(s.getSourceAsMap().get("sender").toString())
+                .recipients(Arrays.asList(s.getSourceAsMap().get("recipients").toString().split("\\s*,\\s*")))
+                .source(s.getSourceAsMap().get("source").toString())
+                .type(s.getSourceAsMap().get("type").toString())
+                .message((String) s.getSourceAsMap().get("content"))
+                .importDate(LocalDate.parse(s.getSourceAsMap().get("import_date").toString()))
+                .build()
+        ).collect(Collectors.toList());
 
         RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
                 .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class, SearchPhaseExecutionException.class)
@@ -104,17 +117,18 @@ public class OpenSearchService {
             SearchResponse scrollResponse = Failsafe.with(retryPolicy).get(() -> restHighLevelClient.scroll(scrollRequest, RequestOptions.DEFAULT));
 
             //  log.info(String.valueOf(scrollResponse.toString()));
-            Arrays.stream(scrollResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
-                    s.getId(),
-                    (String) s.getSourceAsMap().get("chain_id"),
-                    LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
-                    (String) s.getSourceAsMap().get("sender"),
-                    (String) s.getSourceAsMap().get("recipients"),
-                    (String) s.getSourceAsMap().get("source"),
-                    (String) s.getSourceAsMap().get("type"),
-                    (String) s.getSourceAsMap().get("content"),
-                    (String) s.getSourceAsMap().get("import_date")
-            )).forEachOrdered(result::add);
+            Arrays.stream(hits.getHits()).map(s -> CommunicationMessageDto.builder()
+                    .id(s.getId())
+                    .chainLinkId(s.getSourceAsMap().get("chain_id").toString())
+                    .timeSent(LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()))
+                    .sender(s.getSourceAsMap().get("sender").toString())
+                    .recipients(Arrays.asList(s.getSourceAsMap().get("recipients").toString().split("\\s*,\\s*")))
+                    .source(s.getSourceAsMap().get("source").toString())
+                    .type(s.getSourceAsMap().get("type").toString())
+                    .message((String) s.getSourceAsMap().get("content"))
+                    .importDate(LocalDate.parse(s.getSourceAsMap().get("import_date").toString()))
+                    .build()
+            ).forEachOrdered(result::add);
             //  scrollId = searchScrollResponse.getScrollId();
             hits = scrollResponse.getHits();
 
@@ -240,14 +254,20 @@ public class OpenSearchService {
         return result;
     }
 
-    public Tuple<String, List<OpenSearchMessageDto>> scrollFirstBatch(LocalDate importDate) throws IOException {
+    public Tuple<String, List<CommunicationMessageDto>> scrollFirstBatch(LocalDate importDate) throws IOException {
 
         AtomicInteger counter= new AtomicInteger(0);
 
         // STEP 1
         // Retrieve first batch
+        // Queries Inside mustNot and filter type send Cuts down messages that OpenSearch returns for us to process. As we don't need to process System generated Content
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder()
-                .must(QueryBuilders.matchQuery("import_date", importDate));
+                .mustNot(QueryBuilders.matchPhraseQuery("content", "[Bloomberg created note: ]"))
+                .mustNot(QueryBuilders.matchPhraseQuery("content", "BACKFILL CONTENT AUTOGENERATED FROM HISTORY"))
+                .mustNot(QueryBuilders.regexpQuery("content", "^[*][*][*]([\\s\\S]*)Disclaimer:([\\s\\S]*)$"))
+                .mustNot(QueryBuilders.regexpQuery("content", "^[\\[\\[\\:\\:\\]\\]]([\\s\\S]*)$"))
+                .must(QueryBuilders.matchQuery("import_date", importDate))
+                .filter(QueryBuilders.matchQuery("type", "Send"));
 
         SearchResponse searchResponse;
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
@@ -267,19 +287,21 @@ public class OpenSearchService {
         // STEP 2
         // Retrieve all relevant documents/ succeeding batches
         // Loop until results return 0
-        List<OpenSearchMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> new OpenSearchMessageDto(
-                s.getId(),
-                (String) s.getSourceAsMap().get("chain_id"),
-                LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
-                (String) s.getSourceAsMap().get("sender"),
-                (String) s.getSourceAsMap().get("recipients"),
-                (String) s.getSourceAsMap().get("source"),
-                (String) s.getSourceAsMap().get("type"),
-                (String) s.getSourceAsMap().get("content"),
-                (String) s.getSourceAsMap().get("import_date")
-        )).collect(Collectors.toList());
+        List<CommunicationMessageDto> result = Arrays.stream(searchResponse.getHits().getHits()).map(s -> CommunicationMessageDto.builder()
+                .id(s.getId())
+                .chainLinkId(s.getSourceAsMap().get("chain_id").toString())
+                .timeSent(LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()))
+                .sender(s.getSourceAsMap().get("sender").toString())
+                .recipients(Arrays.asList(s.getSourceAsMap().get("recipients").toString().split("\\s*,\\s*")))
+                .source(s.getSourceAsMap().get("source").toString())
+                .type(s.getSourceAsMap().get("type").toString())
+                .message((String) s.getSourceAsMap().get("content"))
+                .importDate(LocalDate.parse(s.getSourceAsMap().get("import_date").toString()))
+                .build()
+        ).collect(Collectors.toList());
 
         log.info("First Batch Result size {} of messages ", result.size());
+        log.info("Total Hits {} of messages ", hits.getTotalHits());
 
         if(hits.getHits().length <= 0){
             scrollClear(scrollId);
@@ -289,7 +311,7 @@ public class OpenSearchService {
        return Tuple.tuple(scrollId, result);
     }
 
-    public Tuple<String, List<OpenSearchMessageDto>> scrollNextBatch(String scrollId) throws IOException {
+    public Tuple<String, List<CommunicationMessageDto>> scrollNextBatch(String scrollId) throws IOException {
 
         SearchHits hits = null;
 
@@ -311,17 +333,18 @@ public class OpenSearchService {
 
         log.info("Processing Batch with {} hits", hits.getHits().length);
 
-        final var result = Arrays.stream(hits.getHits()).map(s -> new OpenSearchMessageDto(
-                s.getId(),
-                (String) s.getSourceAsMap().get("chain_id"),
-                LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()),
-                (String) s.getSourceAsMap().get("sender"),
-                (String) s.getSourceAsMap().get("recipients"),
-                (String) s.getSourceAsMap().get("source"),
-                (String) s.getSourceAsMap().get("type"),
-                (String) s.getSourceAsMap().get("content"),
-                (String) s.getSourceAsMap().get("import_date")
-        )).collect(Collectors.toList());
+        final var result = Arrays.stream(hits.getHits()).map(s -> CommunicationMessageDto.builder()
+                .id(s.getId())
+                .chainLinkId(s.getSourceAsMap().get("chain_id").toString())
+                .timeSent(LocalDateTime.parse(s.getSourceAsMap().get("time_sent").toString()))
+                .sender(s.getSourceAsMap().get("sender").toString())
+                .recipients(Arrays.asList(s.getSourceAsMap().get("recipients").toString().split("\\s*,\\s*")))
+                .source(s.getSourceAsMap().get("source").toString())
+                .type(s.getSourceAsMap().get("type").toString())
+                .message((String) s.getSourceAsMap().get("content"))
+                .importDate(LocalDate.parse(s.getSourceAsMap().get("import_date").toString()))
+                .build()
+        ).collect(Collectors.toList());
 
         // Indicates that there are no more items to scroll through
         // Clears the scroll context

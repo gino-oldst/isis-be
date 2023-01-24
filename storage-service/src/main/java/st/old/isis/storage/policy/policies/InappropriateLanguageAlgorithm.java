@@ -40,7 +40,7 @@ public class InappropriateLanguageAlgorithm {
     private static final List<String> DISCLAIMER_INDICATORS = Arrays.asList("disclaimer", "copyright", "disclosure");
 
     // TODO - CREATE OPENSEARCH IMPPLEMENTATION OF @processViaOpenSearch, List Must be changed to the DTO of OpenSearch
-    public void processViaOpenSearch(List<OpenSearchMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
+    public void processViaOpenSearch(List<CommunicationMessageDto> commMessages, AlertPolicyDto policy, LocalDate importDate) throws IsisException {
 
         log.debug("START - Processing Policy: {} for {} messages", policy.getName(), commMessages.size());
 
@@ -72,7 +72,7 @@ public class InappropriateLanguageAlgorithm {
                     "NotFoundException");
         }
 
-        for(OpenSearchMessageDto message: commMessages){
+        for(CommunicationMessageDto message: commMessages){
 
             log.debug("Processing inappropriate algorithm for message id {}", message.getId());
 
@@ -88,9 +88,7 @@ public class InappropriateLanguageAlgorithm {
                             .forEach( emit -> {
 
                                 //Disregard if within disclaimer text
-                                if(!checkifBypassEmitOpenSearchMessages(emit, message, message.getSource())) {
-                                    final var recipients = communicationRecipientService.search(CommunicationRecipientDto.builder().chainLinkId(message.getChainLinkId()).build());
-
+                                if(!checkifBypassEmit(emit, message, message.getSource())) {
                                     final var keywordDto= keywordsMap.get(emit.getKeyword().toLowerCase());
 
                                     if(keywordDto == null){
@@ -111,7 +109,7 @@ public class InappropriateLanguageAlgorithm {
                                             .timeSent(message.getTimeSent())
                                             .sender(message.getSender())
                                             .source(message.getSource())
-                                            .recipients(recipients.getData().stream().map(CommunicationRecipientDto::getRecipient).collect(Collectors.toList()))
+                                            .recipients(message.getRecipients())
                                             .build();
 
                                     log.info("Inappropriate Language Entry Found - Keyword: {} in Message Id: {}", emit.getKeyword() , message.getId());
@@ -244,7 +242,7 @@ public class InappropriateLanguageAlgorithm {
             *
             *  Ex. *** CLIENT NAME THAT (MARIANA UFP LLP) Firm Disclaimer: The contents of this message are confidential and intended for the addressee only. It may not be copied or reproduced and is not an investment recommendation as defined in MAR. It is issued
             *       for information and marketing purposes only and is not and should not be regarded as an offer to sell or buy any security or financial product. Emails and messages may not be secure or virus-free. We cannot accept responsibility for this message's
-            *       completeness or accuracy and it should not be relied upon as such. Mariana Capital Sales Limited (FRN 649237) is an appointed representative of Mariana UFP LLP which is authorised & regulated by the Financial Conduct Authority (FRN 551170).
+            *       completeness or accuracy, and it should not be relied upon as such. Mariana Capital Sales Limited (FRN 649237) is an appointed representative of Mariana UFP LLP which is authorised & regulated by the Financial Conduct Authority (FRN 551170).
             *
             * */
             log.debug("Keyword found {} in messageId {} but within BLOOOMBERG CHAT disclaimer text. No alerts flagged", emit.getKeyword(), messageDto.getId());
@@ -257,59 +255,6 @@ public class InappropriateLanguageAlgorithm {
             /*
             *   Bypass messages with emits that are included in the disclaimer bypass keywords AND the message contains indicators which may identify it as a disclaimer
             * */
-
-            if(ListUtils.containsItemsFromList(message, DISCLAIMER_INDICATORS)){
-                log.debug("Keyword found {} in messageId {} but identified as BYPASS BLOOMBERG CHAT/MAIL disclaimer text. No alerts flagged", emit.getKeyword(), messageDto.getId());
-                return true;
-            }
-
-        }
-
-        return false;
-
-    }
-
-    private static boolean checkifBypassEmitOpenSearchMessages(Emit emit, OpenSearchMessageDto messageDto, String source) {
-
-        final String message = messageDto.getMessage();
-
-        /*
-         *   Reuters Disclaimer Text
-         *
-         *   Ex. [[:Conversations will be recorded and may be monitored by the participants and their employers, and may be disclosed to governmental or other regulatory bodies in compliance with applicable laws.You acknowledge and agree that any interactive
-         *       features within Eikon, Eikon Messenger, Refinitiv Messenger, Refinitiv Workspace or any other services which are not advertised to be trade execution venues must not be used to conduct or execute any transactions or trades under any circumstances.:]]
-         *
-         * */
-        if(message.matches("^[\\[\\[\\:\\:\\]\\]]([\\s\\S]*)$")) {
-
-            int disclaimerStart = message.indexOf("[[:");
-            int disclaimerEnd = message.indexOf(":]]");
-
-            if(emit.getStart() > disclaimerStart && emit.getEnd() < disclaimerEnd){
-                log.debug("Keyword found {} in messageId {} but within REUTERS disclaimer text. No alerts flagged", emit.getKeyword(), messageDto.getId());
-                return true;
-            }
-
-        } else if (message.matches("^[*][*][*]([\\s\\S]*)Disclaimer:([\\s\\S]*)$")) {
-
-            /*
-             *   Bloomberg Chat Disclaimer Text
-             *
-             *  Ex. *** CLIENT NAME THAT (MARIANA UFP LLP) Firm Disclaimer: The contents of this message are confidential and intended for the addressee only. It may not be copied or reproduced and is not an investment recommendation as defined in MAR. It is issued
-             *       for information and marketing purposes only and is not and should not be regarded as an offer to sell or buy any security or financial product. Emails and messages may not be secure or virus-free. We cannot accept responsibility for this message's
-             *       completeness or accuracy and it should not be relied upon as such. Mariana Capital Sales Limited (FRN 649237) is an appointed representative of Mariana UFP LLP which is authorised & regulated by the Financial Conduct Authority (FRN 551170).
-             *
-             * */
-            log.debug("Keyword found {} in messageId {} but within BLOOOMBERG CHAT disclaimer text. No alerts flagged", emit.getKeyword(), messageDto.getId());
-            return true;
-        } else if(source.equals(SourceType.BLOOMBERG_CHAT.name()) && message.contains("BACKFILL CONTENT AUTOGENERATED FROM HISTORY")) {
-            log.debug("Keyword found {} in messageId {} but within BACKFILL CONTENT text. No alerts flagged", emit.getKeyword(), messageDto.getId());
-            return true;
-        }else  if ((source.equals(SourceType.BLOOMBERG_MAIL.name()) || source.equals(SourceType.BLOOMBERG_CHAT.name())) && ListUtils.containsItemsFromList(emit.getKeyword(), DISCLAIMER_BYPASS_KEYWORDS)){
-
-            /*
-             *   Bypass messages with emits that are included in the disclaimer bypass keywords AND the message contains indicators which may identify it as a disclaimer
-             * */
 
             if(ListUtils.containsItemsFromList(message, DISCLAIMER_INDICATORS)){
                 log.debug("Keyword found {} in messageId {} but identified as BYPASS BLOOMBERG CHAT/MAIL disclaimer text. No alerts flagged", emit.getKeyword(), messageDto.getId());
