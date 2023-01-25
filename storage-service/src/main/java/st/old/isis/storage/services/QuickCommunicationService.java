@@ -47,6 +47,7 @@ public class QuickCommunicationService {
 
     private List<QuickCommunicationDto> filterAlerts(@NonNull final QuickCommunicationDto filter, Pageable pageable) throws IsisException {
         // Remove status sorting for now
+        log.info("STARTED: filteredAlerts - {}", filter);
 
         final var sortByStatus = pageable.getSort().by("status");
 
