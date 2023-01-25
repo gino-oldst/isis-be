@@ -18,6 +18,7 @@ import st.old.isis.dto.util.ProcessRequestDto;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.enums.SourceType;
 import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.properties.AwsS3Properties;
 import st.old.isis.extraction.services.FileDownloadHistoryService;
@@ -196,8 +197,11 @@ public abstract class RawDownloadService {
             log.info("Failed processing S3 file {} in {}", objectKey, Duration.between(start, end).toString());
             historyService.failHistory(os.getETag(), ie.getCause().getMessage());
             throw ie;
+        } finally {
+            log.info("STARTED - Merging Batch Files Map");
+            storageService.merge(DownloadContext.getBatchFilesMap());
+            log.info("COMPLETED - Merging Batch Files Map");
         }
-
     }
 
     private String copyS3FileToLocalDirectory(S3Object s3Object, String fileName) throws IOException {

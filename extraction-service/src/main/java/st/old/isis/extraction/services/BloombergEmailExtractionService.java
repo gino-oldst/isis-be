@@ -76,7 +76,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
   @Override
   protected void finalizeParsing(String fileSource) {
 //    eventPublisher.finalizeBatchCommunication(true, fileSource);
-//    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
+    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
     eventPublisher.finalizeBatchMessages(true, fileSource);
 //    eventPublisher.finalizeBatchRecipients(true, fileSource);
   }
@@ -186,7 +186,7 @@ public class BloombergEmailExtractionService extends XmlExtractionService {
 
     final var users = parseUsers(message, fileSource);
 
-//    eventPublisher.addToExternalUserBatch(users);
+    eventPublisher.addToExternalUserBatch(users);
     eventPublisher.addToMessageBatch(List.of(content));
 //    eventPublisher.addToRecipientBatch(recipients);
 

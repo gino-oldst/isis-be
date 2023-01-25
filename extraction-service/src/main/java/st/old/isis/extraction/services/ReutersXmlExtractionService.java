@@ -108,8 +108,8 @@ public class ReutersXmlExtractionService {
             (ComplianceActivity) context.createUnmarshaller().unmarshal(new BufferedReader(reader));
 
     // Process userLink entries
-//    final var communicationRecipients = parseCommunicationRecipients(activity, fileSource);
-//    storageService.saveExternalUsers(communicationRecipients);
+    final var communicationRecipients = parseCommunicationRecipients(activity, fileSource);
+    storageService.saveExternalUsers(communicationRecipients);
 
     // Process communication logs
     final var communicationChains = ingestCommunicationData(activity, importDate, fileSource);

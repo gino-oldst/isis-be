@@ -77,7 +77,7 @@ public class BloombergChatExtractionService extends XmlExtractionService {
   @Override
   protected void finalizeParsing(String fileSource) {
 //    eventPublisher.finalizeBatchCommunication(true, fileSource);
-//    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
+    eventPublisher.finalizeBatchExternalUsers(true, fileSource);
     eventPublisher.finalizeBatchMessages(true, fileSource);
 //    eventPublisher.finalizeBatchRecipients(true, fileSource);
   }
@@ -173,25 +173,25 @@ public class BloombergChatExtractionService extends XmlExtractionService {
             .peek(message -> message.setRecipients(recipients))
             .collect(Collectors.toList());
 
-//    final var mappedMessagesUsers = mappedMessages.get("user");
-//    final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
-//    final var mappedAttachmentUsers = attachmentMessages.get("user");
+    final var mappedMessagesUsers = mappedMessages.get("user");
+    final var mappedEntryEventsUsers = mappedEntryEvents.get("user");
+    final var mappedAttachmentUsers = attachmentMessages.get("user");
 
     // concat list of users and remove duplicates
-//    final var users =
-//        new ArrayList<>(
-//            Stream.of(
-//                    mappedMessagesUsers.stream(),
-//                    mappedEntryEventsUsers.stream(),
-//                    mappedAttachmentUsers.stream())
-//                .flatMap(stream -> stream)
-//                .map(user -> (ExternalUserDto) user)
-//                .collect(
-//                    Collectors.toMap(
-//                        ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
-//                .values());
+    final var users =
+        new ArrayList<>(
+            Stream.of(
+                    mappedMessagesUsers.stream(),
+                    mappedEntryEventsUsers.stream(),
+                    mappedAttachmentUsers.stream())
+                .flatMap(stream -> stream)
+                .map(user -> (ExternalUserDto) user)
+                .collect(
+                    Collectors.toMap(
+                        ExternalUserDto::getExternalId, Function.identity(), (v1, v2) -> v1))
+                .values());
 
-//    eventPublisher.addToExternalUserBatch(users);
+    eventPublisher.addToExternalUserBatch(users);
     eventPublisher.addToMessageBatch(communications);
 //    eventPublisher.addToRecipientBatch(recipients);
 
