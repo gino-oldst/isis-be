@@ -187,6 +187,9 @@ public abstract class RawDownloadService {
 //                    .targetBucket(awsS3Properties.getIngressBucket())
 //                    .targetKey(objectKey).build());
 
+            log.info("Deleting s3Object {} from local folder", filePath);
+            localFile.delete();
+
             Instant end = Instant.now();
 
             log.info("Successfully completed processing S3 file {} in {}", objectKey, Duration.between(start, end).toString());
