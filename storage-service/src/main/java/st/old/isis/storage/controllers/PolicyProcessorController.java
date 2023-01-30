@@ -17,28 +17,6 @@ public class PolicyProcessorController {
 
     private final PolicyProcessorService service;
 
-    @PostMapping("/policy/range")
-    public void processPolicyByDateRange(@RequestBody PolicyProcessorDto dto) throws IsisException {
-        service.processPolicyByDateRange(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo());
-    }
-
-    @PostMapping("/all/pending")
-    public void processAllPendingImportData() throws IsisException {
-        service.processAllPendingImportData();
-    }
-
-    @PostMapping("/all/import-date")
-    public void processAllPoliciesByImportDate(@RequestBody PolicyProcessorDto request) throws IsisException {
-        service.processAllPoliciesByImportDate(request.getImportDate());
-    }
-
-    @PostMapping("/all/filter")
-    public void processPolicyIdByFilter(@RequestBody PolicyProcessorDto dto) throws IsisException {
-        service.processPolicyIdByFilter(dto);
-        log.info("processPolicyIdByFilter COMPLETED");
-    }
-
-    // OPEN SEARCH CALLS
     @PostMapping("open-search/policy/range")
     public void processPolicyByDateRangeViaOpenSearch(@RequestBody PolicyProcessorDto dto) throws IsisException, IOException {
         service.processPolicyByDateRangeViaOpenSearch(dto.getPolicyId(), dto.getDateFrom(), dto.getDateTo()); // THREADED
@@ -51,7 +29,7 @@ public class PolicyProcessorController {
 
     @PostMapping("open-search/all/import-date")
     public void processAllPendingImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
-         service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate()); //THREADED
+        service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate()); //THREADED
     }
 
     @PostMapping("open-search/all/filter")
