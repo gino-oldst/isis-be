@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import st.old.isis.exception.IsisException;
 import st.old.isis.storage.policy.PolicyProcessorService;
 
+import java.io.IOException;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -18,9 +20,9 @@ public class PolicyProcessorScheduler {
     @Scheduled(cron = "${isis.scheduler.policy-processor.all-pending.cron}")
     @SchedulerLock(name = "PolicyProcessorScheduler_processAllPendingImportData",
             lockAtLeastFor = "${isis.scheduler.policy-processor.all-pending.lock-time}")
-    public void processAllPendingImportData() throws IsisException {
+    public void processAllPendingImportData() throws IsisException, IOException {
         log.info("SCHEDULED - Processing Policies for All Pending Import Dates...");
-        policyProcessorService.processAllPendingImportData();
+        policyProcessorService.processAllPendingImportDataViaOpenSearch();
     }
 
 }
