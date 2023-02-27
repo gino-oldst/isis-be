@@ -77,6 +77,11 @@ isis:
       symphony: ${SYMPHONY_DIRECTORY_NAME}
       whatsapp: ${WHATSAPP_DIRECTORY_NAME}
     batch-size: ${BATCH_SIZE}
+  purge:
+    scheduler:
+      lock-time: ${PURGE_SCHEDULER_MAX_LOCK_TIME}
+      cron: ${PURGE_SCHEDULER_CRON}
+    purge-period-months: 3
   azure:
     connection-string: ${AZURE_CONNECTION_STRING}
     share-name: ${AZURE_SHARE_NAME}

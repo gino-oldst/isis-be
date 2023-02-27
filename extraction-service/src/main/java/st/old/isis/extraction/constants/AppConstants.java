@@ -22,6 +22,10 @@ public class AppConstants {
 
     public static final String AWS_OPENSEARCH_INDEX_PATH = "${isis.cloud.aws.opensearch.index-path}";
 
+    public static final String AWS_OPENSEARCH_PURGE_PERIOD_MONTHS = "${isis.purge.purge-period-months}";
+
+
+
 
 
 }
