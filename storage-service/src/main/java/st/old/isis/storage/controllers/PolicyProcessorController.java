@@ -28,8 +28,13 @@ public class PolicyProcessorController {
     }
 
     @PostMapping("open-search/all/import-date")
-    public void processAllPendingImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
+    public void processAllByImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
         service.processAllPoliciesByImportDateViaOpenSearch(request.getImportDate()); //THREADED
+    }
+
+    @PostMapping("open-search/all/source-import-date")
+    public void processAllBySourceAndImportDataViaOpenSearch(@RequestBody PolicyProcessorDto request) throws IsisException, IOException {
+        service.processAllPoliciesBySourceImportDateViaOpenSearch(request.getSource(), request.getImportDate()); //THREADED
     }
 
     @PostMapping("open-search/all/filter")
