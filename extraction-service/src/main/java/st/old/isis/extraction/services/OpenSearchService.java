@@ -2,6 +2,7 @@ package st.old.isis.extraction.services;
 
 import dev.failsafe.Failsafe;
 import dev.failsafe.RetryPolicy;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.OpenSearchStatusException;
@@ -11,6 +12,9 @@ import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
+import org.opensearch.index.query.TermQueryBuilder;
+import org.opensearch.index.reindex.BulkByScrollResponse;
+import org.opensearch.index.reindex.DeleteByQueryRequest;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.extraction.configurations.OpenSearchConfiguration;
@@ -18,6 +22,8 @@ import st.old.isis.extraction.configurations.OpenSearchConfiguration;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +43,30 @@ public class OpenSearchService {
 
     public BulkResponse indexBatch(List<CommunicationMessageDto> messages) throws IOException {
         return bulkIndex(configuration.getIndexPath(), messages);
+    }
+
+    public BulkByScrollResponse purgeProcess() {
+
+        final LocalDate today = LocalDate.now();
+        final var purgeDate = today.minusMonths(configuration.getPurgePeriodMonths());
+
+        log.info("Purging OpenSearch started for Import Date {}", purgeDate);
+
+        RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
+                .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
+                .withBackoff(10, 30, ChronoUnit.SECONDS)
+                .withMaxRetries(3)
+                .onFailedAttempt(e -> log.warn("Purging attempt failed", e.getLastException()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying purge process.", e.getAttemptCount()))
+                //TODO Send notification that a batch has failed
+                .onFailure(e -> log.error("FAILED - Indexing Batch to OpenSearch. Max retries reached. {}", e.getException()))
+                .build();
+
+        final var response =  Failsafe.with(retryPolicy).get(() -> deleteByQuery(purgeDate));
+
+        log.info("Purging OpenSearch complete for Import Date {}", purgeDate);
+
+        return response;
     }
 
     private IndexResponse index(String indexPath, CommunicationMessageDto message) throws IOException {
@@ -69,6 +99,12 @@ public class OpenSearchService {
 
         return Failsafe.with(retryPolicy).get(() -> restHighLevelClient.bulk(request, RequestOptions.DEFAULT));
 
+    }
+    public BulkByScrollResponse deleteByQuery(@NonNull LocalDate importDate) throws IOException {
+        DeleteByQueryRequest request = new DeleteByQueryRequest(configuration.getIndexPath());
+        request.setQuery(new TermQueryBuilder("import_date", importDate.format(DateTimeFormatter.ISO_LOCAL_DATE)));
+        request.setRefresh(true);
+        return restHighLevelClient.deleteByQuery(request, RequestOptions.DEFAULT);
     }
 
     private Map<String, String> parseCommMessage(CommunicationMessageDto message){

@@ -31,6 +31,9 @@ public class OpenSearchConfiguration {
     @Value(AppConstants.AWS_OPENSEARCH_INDEX_PATH)
     private String indexPath;
 
+    @Value(AppConstants.AWS_OPENSEARCH_PURGE_PERIOD_MONTHS)
+    private long purgePeriodMonths;
+
     @Bean
     public RestHighLevelClient restHighLevelClient(){
 

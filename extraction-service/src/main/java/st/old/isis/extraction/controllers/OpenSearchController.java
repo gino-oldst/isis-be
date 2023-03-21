@@ -4,10 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexResponse;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.opensearch.index.reindex.BulkByScrollResponse;
+import org.springframework.web.bind.annotation.*;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.extraction.services.OpenSearchService;
 
@@ -30,5 +28,10 @@ public class OpenSearchController {
     @PostMapping("/index-bulk")
     public BulkResponse indexBulk(@RequestBody List<CommunicationMessageDto> messages) throws IOException {
         return openSearchService.indexBatch(messages);
+    }
+
+    @DeleteMapping("/delete-by-query")
+    public BulkByScrollResponse indexBulk(@RequestBody CommunicationMessageDto communicationMessageDto) throws IOException {
+        return openSearchService.deleteByQuery(communicationMessageDto.getImportDate());
     }
 }

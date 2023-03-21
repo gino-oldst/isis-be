@@ -4,7 +4,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.common.collect.Tuple;
-import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.storage.entities.CommunicationMessage;
 import st.old.isis.storage.policy.policies.InappropriateLanguageAlgorithm;
 import st.old.isis.storage.services.AlertPolicyService;
-import st.old.isis.storage.services.CommunicationMessageService;
 import st.old.isis.storage.services.DataImportRecordService;
 import st.old.isis.storage.services.OpenSearchService;
 import st.old.isis.utils.ListUtils;
@@ -116,11 +114,11 @@ public class PolicyProcessorService {
 
         log.info("COMPLETED - Processing Policy {} by Date From: {} to Date To: {}", policyDto.getName(), dateFrom, dateTo);
     }
-    public void processAllPoliciesByImportDateViaOpenSearch(LocalDate importDate) throws IsisException, IOException {
+    public void processAllPoliciesByImportDateViaOpenSearch(@NonNull LocalDate importDate) throws IsisException, IOException {
 
         Instant start = Instant.now();
 
-        log.info("START - Processing All Policies by Import Date: {} on {}", importDate, start);
+        log.info("START - {} Processing All Policies by Import Date: {}", start, importDate);
 
         // Gets The Policy
         final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
@@ -170,7 +168,66 @@ public class PolicyProcessorService {
 
         Instant end = Instant.now();
 
-        log.info("COMPLETED - Processing All Policies by Import Date: {} on {}", importDate, end);
+        log.info("COMPLETED - {} Processing All Policies by Import Date: {}", end, importDate);
+
+        log.info("Process took {}", Duration.between(start, end));
+    }
+
+    public void processAllPoliciesBySourceImportDateViaOpenSearch(@NonNull String source, @NonNull LocalDate importDate) throws IsisException, IOException {
+
+        Instant start = Instant.now();
+
+        log.info("START - {} Processing All Policies by Import Date: {} and Source: {}", start, importDate, source);
+
+        // Gets The Policy
+        final var listOfPolicies = alertPolicyService.search(AlertPolicyDto.builder().build());
+
+        if (listOfPolicies == null || ListUtils.isNullOrEmpty(listOfPolicies.getData())) {
+            log.warn("No Policy Records Found");
+            throw IsisException.notFound("No Policy Records Found", "NotFoundException");
+        }
+
+        // Retrieve first batch
+        Tuple<String, List<CommunicationMessageDto>> mapOfCommMessages = openSearchService.scrollFirstBatchWithSource(source, importDate);
+
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(5);
+        executor.setQueueCapacity(1000);
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setThreadNamePrefix("OpensearchMultiThread-");
+        executor.initialize();
+
+        AtomicInteger counter= new AtomicInteger();
+
+        while(mapOfCommMessages != null){
+
+            final var processMessages = mapOfCommMessages.v2();
+
+            executor.submit(() -> {
+                for(AlertPolicyDto policy: listOfPolicies.getData()){
+                    // Actually Processes the policy
+                    // TODO @processPolicyViaOpenSearch
+                    try {
+                        processPolicyViaOpenSearch(policy, processMessages, importDate);
+                    } catch (IsisException | IOException e) {
+                        log.error("An exception was encountered during policy processing. {}", e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+
+            counter.getAndAdd(processMessages.size());
+            log.info("Total Processed Messages - {} ", counter.get());
+
+            // Get next batches
+            mapOfCommMessages= openSearchService.scrollNextBatch(mapOfCommMessages.v1());
+
+        }
+
+        Instant end = Instant.now();
+
+        log.info("COMPLETED - {} Processing All Policies by Import Date: {} and Source: {}", end, importDate, source);
 
         log.info("Process took {}", Duration.between(start, end));
     }
