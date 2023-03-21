@@ -37,4 +37,6 @@ public class HistoricData implements Serializable {
   private LocalDate dateExpiry;
 
   private boolean expired;
+
+  private String source;
 }

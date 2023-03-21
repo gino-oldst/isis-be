@@ -10,7 +10,9 @@ import java.util.List;
 import st.old.isis.extraction.entities.HistoricData;
 
 public interface HistoricDataRepository extends JpaRepository<HistoricData, Integer>, JpaSpecificationExecutor <HistoricData>{
-    HistoricData findByDataDate(LocalDate date);
+    List<HistoricData> findByDataDate(LocalDate date);
 
     List<HistoricData> findAllDataDateBetween(LocalDate dateFrom, LocalDate dateTo);
+
+    List<HistoricData> findBySource(String source);
 }
