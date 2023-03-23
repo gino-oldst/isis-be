@@ -38,6 +38,31 @@ public class HistoricDataService {
         return true;
     }
 
+    public HistoricDataDto create(@NonNull @Audited final HistoricDataDto dto){
+        final var entity = mapToEntity(dto);
+        final var createdEntity = repository.save(entity);
+
+        return mapToDto(createdEntity);
+    }
+
+    public List<HistoricDataDto> bulkCreate(LocalDate dateFrom, LocalDate dateTo, String userId, String source){
+        List<LocalDate> allDates = getDateRange(dateFrom, dateTo);
+        List<HistoricDataDto> returnDto = new ArrayList<HistoricDataDto>();
+        for(int i = 0; i < allDates.size(); i++){
+            HistoricDataDto dto = HistoricDataDto.builder().
+                                    userId(userId).
+                                    dataDate(allDates.get(i)).
+                                    dateExpiry(allDates.get(i).plusMonths(1)).
+                                    dateImported(LocalDate.now()).
+                                    expired(false).
+                                    source(source).
+                                    build();
+            returnDto.add(create(dto));
+        }
+
+        return returnDto;
+    }
+
     public Set<LocalDate> missingDates(LocalDate dateFrom, LocalDate dateTo){
         List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
         List<HistoricData> availableData = repository.findAllDataDateBetween(dateFrom, dateTo);
@@ -84,6 +109,7 @@ public class HistoricDataService {
             dateImported(entity.getDateImported()).
             dateExpiry(entity.getDataDate()).
             expired(entity.isExpired()).
+            source(entity.getSource()).
             build();
     }
 
@@ -95,6 +121,7 @@ public class HistoricDataService {
             dateImported(dto.getDateImported()).
             dateExpiry(dto.getDataDate()).
             expired(dto.isExpired()).
+            source(dto.getSource()).
             build();
     }
 }

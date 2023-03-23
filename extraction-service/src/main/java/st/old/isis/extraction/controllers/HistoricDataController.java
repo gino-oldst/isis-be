@@ -23,14 +23,18 @@ public class HistoricDataController {
 
     @PostMapping("/download/bloomberg")
     public void downloadBloombergRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo()))
+        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo())){
+            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "bloomberg");
             bloombergRawDownloadService.syncByDateRange(request);
+        }   
     }
 
     @PostMapping("/download/reuters")
     public void downloadReutersRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(),request.getDateTo()))
+        if(historicDataService.allDatesMissing(request.getDateFrom(),request.getDateTo())){
+            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "reuters");
             reutersRawDownloadService.syncByDateRange(request);
+        } 
     }
 
 

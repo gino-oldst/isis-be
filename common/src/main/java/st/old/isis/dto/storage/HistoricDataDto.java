@@ -27,4 +27,6 @@ public class HistoricDataDto implements Dto{
     private LocalDate dateExpiry;
 
     private boolean expired;
+
+    private String source;
 }
