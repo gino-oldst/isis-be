@@ -65,7 +65,7 @@ public class HistoricDataService {
 
     public Set<LocalDate> missingDates(LocalDate dateFrom, LocalDate dateTo){
         List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
-        List<HistoricData> availableData = repository.findAllDataDateBetween(dateFrom, dateTo);
+        List<HistoricData> availableData = repository.findByDataDateBetween(dateTo, dateFrom);
         List<LocalDate> datesAvailable = new ArrayList<LocalDate>();
         for(int i = 0; i<availableData.size(); i++){
             HistoricDataDto dataDto = mapToDto(availableData.get(i));
