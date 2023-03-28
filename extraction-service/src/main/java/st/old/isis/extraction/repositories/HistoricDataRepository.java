@@ -15,4 +15,5 @@ public interface HistoricDataRepository extends JpaRepository<HistoricData, Inte
     List<HistoricData> findByDataDateBetween(LocalDate dateTo, LocalDate dateFrom);
 
     List<HistoricData> findBySource(String source);
+
 }

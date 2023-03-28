@@ -6,11 +6,14 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 import st.old.isis.annotations.Audited;
 import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.dto.storage.HistoricDataDto;
 import st.old.isis.dto.util.ProcessRequestDto;
 import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.services.amazon.BloombergRawDownloadService;
 import st.old.isis.extraction.services.amazon.ReutersRawDownloadService;
 import st.old.isis.extraction.services.HistoricDataService;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -25,7 +28,7 @@ public class HistoricDataController {
     public void downloadBloombergRange(@NonNull @RequestBody final ProcessRequestDto request){
         if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo())){
             historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "bloomberg");
-            bloombergRawDownloadService.syncByDateRange(request);
+             bloombergRawDownloadService.syncByDateRange(request);
         }   
     }
 
@@ -33,8 +36,13 @@ public class HistoricDataController {
     public void downloadReutersRange(@NonNull @RequestBody final ProcessRequestDto request){
         if(historicDataService.allDatesMissing(request.getDateFrom(),request.getDateTo())){
             historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "reuters");
-            reutersRawDownloadService.syncByDateRange(request);
+             reutersRawDownloadService.syncByDateRange(request);
         } 
+    }
+
+    @GetMapping("/all")
+    public List<HistoricDataDto> getAllData(){
+        return historicDataService.getAllEntries();
     }
 
 

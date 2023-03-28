@@ -48,12 +48,14 @@ public class HistoricDataService {
     public List<HistoricDataDto> bulkCreate(LocalDate dateFrom, LocalDate dateTo, String userId, String source){
         List<LocalDate> allDates = getDateRange(dateFrom, dateTo);
         List<HistoricDataDto> returnDto = new ArrayList<HistoricDataDto>();
+        LocalDate today = LocalDate.now();
+        LocalDate expiry = today.plusMonths(1);
         for(int i = 0; i < allDates.size(); i++){
             HistoricDataDto dto = HistoricDataDto.builder().
                                     userId(userId).
                                     dataDate(allDates.get(i)).
-                                    dateExpiry(allDates.get(i).plusMonths(1)).
-                                    dateImported(LocalDate.now()).
+                                    dateExpiry(expiry).
+                                    dateImported(today).
                                     expired(false).
                                     source(source).
                                     build();
@@ -74,6 +76,15 @@ public class HistoricDataService {
 
         return findDifference(datesAvailable, datesBetween);
 
+    }
+
+    public List<HistoricDataDto> getAllEntries(){
+        List<HistoricData> allData = repository.findAll();
+        List<HistoricDataDto> returnDtoList = new ArrayList<>();
+        for(int i = 0; i<allData.size(); i++){
+            returnDtoList.add(mapToDto(allData.get(i)));
+        }
+        return returnDtoList;
     }
 
     // handling for edge cases
@@ -107,7 +118,7 @@ public class HistoricDataService {
             userId(entity.getUserId()).
             dataDate(entity.getDataDate()).
             dateImported(entity.getDateImported()).
-            dateExpiry(entity.getDataDate()).
+            dateExpiry(entity.getDateExpiry()).
             expired(entity.isExpired()).
             source(entity.getSource()).
             build();
@@ -119,7 +130,7 @@ public class HistoricDataService {
             userId(dto.getUserId()).
             dataDate(dto.getDataDate()).
             dateImported(dto.getDateImported()).
-            dateExpiry(dto.getDataDate()).
+            dateExpiry(dto.getDateExpiry()).
             expired(dto.isExpired()).
             source(dto.getSource()).
             build();
