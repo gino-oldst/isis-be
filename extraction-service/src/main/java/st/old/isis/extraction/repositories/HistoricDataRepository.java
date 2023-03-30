@@ -16,4 +16,6 @@ public interface HistoricDataRepository extends JpaRepository<HistoricData, Inte
 
     List<HistoricData> findBySource(String source);
 
+    List<HistoricData> findByExpired(boolean expiry);
+
 }
