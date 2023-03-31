@@ -31,12 +31,12 @@ public class HistoricDataService {
     public boolean allDatesMissing(LocalDate dateFrom, LocalDate dateTo, String source){
         Set<LocalDate> missingDates = missingDates(dateFrom, dateTo, source);
         System.out.printf("Missing dates %s\n", missingDates);
-//        List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
-//        Set<LocalDate> allDates = new HashSet<>(datesBetween);
-//        //System.out.printf("dates to import %s\n", allDates);
-//        missingDates.removeAll(allDates);
+        List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
+        Set<LocalDate> allDates = new HashSet<>(datesBetween);
+        //System.out.printf("dates to import %s\n", allDates);
+        allDates.removeAll(missingDates);
 //        System.out.println(missingDates);
-        if (missingDates.size() > 0) return false;
+        if (allDates.size() > 0) return false;
 
         return true;
     }
@@ -112,7 +112,7 @@ public class HistoricDataService {
     }
 
     public List<HistoricDataDto> getAllEntries(){
-        List<HistoricData> allData = repository.findAll();
+        List<HistoricData> allData = repository.findByOrderByDateImportedDescDataDateAsc();
         List<HistoricDataDto> returnDtoList = new ArrayList<>();
         for(int i = 0; i<allData.size(); i++){
             returnDtoList.add(mapToDto(allData.get(i)));

@@ -24,4 +24,6 @@ public class ProcessRequestDto implements Dto {
 
     private LocalDate dateTo;
 
+    private String userId;
+
 }

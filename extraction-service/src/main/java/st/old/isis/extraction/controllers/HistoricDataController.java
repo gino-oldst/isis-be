@@ -28,31 +28,35 @@ public class HistoricDataController {
 
     @PostMapping("/download/bloomberg")
     public void downloadBloombergRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), request.getSource())){
-            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "Bloomberg");
-             bloombergRawDownloadService.syncByDateRange(request);
+        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Bloomberg")){
+            System.out.println("all dates missing");
+            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Bloomberg");
+            bloombergRawDownloadService.syncByDateRange(request);
         }
         else{
             Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Bloomberg");
             LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
             System.out.printf("Missing dates %s", missingDates);
             for(int i = 0; i < missingDates.size(); i++){
-                historicDataService.create(datesToAdd[i], "valid_id", "Bloomberg");
+                historicDataService.create(datesToAdd[i], request.getUserId(), "Bloomberg");
+                bloombergRawDownloadService.syncDate(datesToAdd[i]);
             }
         }
     }
 
     @PostMapping("/download/reuters")
     public void downloadReutersRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), request.getSource())){
-            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), "valid_id", "Reuters");
-             reutersRawDownloadService.syncByDateRange(request);
+        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Reuters")){
+            System.out.println("all dates missing");
+            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Reuters");
+            reutersRawDownloadService.syncByDateRange(request);
         }
         else{
             Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Reuters");
             LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
             for(int i = 0; i < missingDates.size(); i++){
-                historicDataService.create(datesToAdd[i], "valid_id", "Reuters");
+                historicDataService.create(datesToAdd[i], request.getUserId(), "Reuters");
+                reutersRawDownloadService.syncDate(datesToAdd[i]);
             }
         }
     }

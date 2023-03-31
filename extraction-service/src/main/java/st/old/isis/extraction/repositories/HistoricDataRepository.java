@@ -18,4 +18,6 @@ public interface HistoricDataRepository extends JpaRepository<HistoricData, Inte
 
     List<HistoricData> findByExpired(boolean expiry);
 
+    List<HistoricData> findByOrderByDateImportedDescDataDateAsc();
+
 }
