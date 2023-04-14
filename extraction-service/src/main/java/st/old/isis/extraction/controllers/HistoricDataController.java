@@ -9,6 +9,8 @@ import st.old.isis.dto.storage.DataImportRecordDto;
 import st.old.isis.dto.storage.HistoricDataDto;
 import st.old.isis.dto.util.ProcessRequestDto;
 import st.old.isis.exception.IsisException;
+import st.old.isis.extraction.entities.HistoricData;
+import st.old.isis.extraction.services.OpenSearchService;
 import st.old.isis.extraction.services.amazon.BloombergRawDownloadService;
 import st.old.isis.extraction.services.amazon.ReutersRawDownloadService;
 import st.old.isis.extraction.services.HistoricDataService;
@@ -26,38 +28,29 @@ public class HistoricDataController {
     private final ReutersRawDownloadService reutersRawDownloadService;
     private final HistoricDataService historicDataService;
 
+    private final OpenSearchService openSearchService;
+
     @PostMapping("/download/bloomberg")
     public void downloadBloombergRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Bloomberg")){
-            System.out.println("all dates missing");
-            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Bloomberg");
-            bloombergRawDownloadService.syncByDateRange(request);
-        }
-        else{
-            Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Bloomberg");
-            LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
-            System.out.printf("Missing dates %s", missingDates);
-            for(int i = 0; i < missingDates.size(); i++){
-                historicDataService.create(datesToAdd[i], request.getUserId(), "Bloomberg");
-                bloombergRawDownloadService.syncDate(datesToAdd[i]);
-            }
+        Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Bloomberg");
+        LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
+        System.out.printf("Missing dates %s", missingDates);
+        for(int i = 0; i < missingDates.size(); i++){
+            HistoricDataDto dto = historicDataService.create(datesToAdd[i], request.getUserId(), "Bloomberg");
+            System.out.println(dto);
+            bloombergRawDownloadService.historicDownload(datesToAdd[i], dto);
         }
     }
 
     @PostMapping("/download/reuters")
     public void downloadReutersRange(@NonNull @RequestBody final ProcessRequestDto request){
-        if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Reuters")){
-            System.out.println("all dates missing");
-            historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Reuters");
-            reutersRawDownloadService.syncByDateRange(request);
-        }
-        else{
-            Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Reuters");
-            LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
-            for(int i = 0; i < missingDates.size(); i++){
-                historicDataService.create(datesToAdd[i], request.getUserId(), "Reuters");
-                reutersRawDownloadService.syncDate(datesToAdd[i]);
-            }
+
+        System.out.println(historicDataService);
+        Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Reuters");
+        LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
+        for(int i = 0; i < missingDates.size(); i++){
+            HistoricDataDto dto = historicDataService.create(datesToAdd[i], request.getUserId(), "Reuters");
+            reutersRawDownloadService.historicDownload(datesToAdd[i], dto);
         }
     }
 
@@ -67,9 +60,14 @@ public class HistoricDataController {
     }
 
     @GetMapping("/unexpired-data")
-    public List<LocalDate>  getUnexpiredData() {
+    public List<HistoricDataDto>  getUnexpiredData() {
         return historicDataService.getAllUnexpiredDates();
     }
 
+    @PutMapping("/purge-data")
+    public HistoricDataDto purgeHistoricData(@NonNull @RequestBody final HistoricDataDto request){
+        openSearchService.purgeByDate(request.getDataDate());
+        return historicDataService.update(request);
+    }
 
 }

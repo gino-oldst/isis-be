@@ -10,10 +10,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.notification.MessageDto;
 import st.old.isis.dto.notification.NotificationRequestDto;
 import st.old.isis.dto.storage.DataImportRecordDto;
+import st.old.isis.dto.storage.HistoricDataDto;
 import st.old.isis.dto.util.ProcessRequestDto;
 import st.old.isis.enums.ProcessedStatus;
 import st.old.isis.enums.SourceType;
@@ -21,7 +23,9 @@ import st.old.isis.exception.IsisException;
 import st.old.isis.extraction.context.DownloadContext;
 import st.old.isis.extraction.entities.FileDownloadHistory;
 import st.old.isis.extraction.properties.AwsS3Properties;
+import st.old.isis.extraction.repositories.HistoricDataRepository;
 import st.old.isis.extraction.services.FileDownloadHistoryService;
+import st.old.isis.extraction.services.HistoricDataService;
 import st.old.isis.extraction.services.internal.AuditService;
 import st.old.isis.extraction.services.internal.DataImportRecordService;
 import st.old.isis.extraction.services.internal.StorageService;
@@ -36,6 +40,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -51,6 +56,8 @@ public abstract class RawDownloadService {
     @Autowired protected DownloadUtils downloadUtils;
 
     @Autowired protected DataImportRecordService dataImportRecordService;
+
+    @Autowired protected HistoricDataService historicDataService;
 
     protected abstract String source();
 
@@ -404,6 +411,23 @@ public abstract class RawDownloadService {
         }
 
         return false;
+    }
+
+    @Async
+    public void historicDownload(LocalDate importDate, HistoricDataDto dto){
+
+        List<S3ObjectSummary> listOfSummaries = retrieveRawMessageDataFromSourceByDate(importDate);
+
+        listOfSummaries.stream().forEach(o -> {
+            try {
+                inspectItem(o, importDate, source());
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendDownloadingError(e);
+            }
+        });
+
+        historicDataService.setStatusToDone(dto);
     }
 
 }

@@ -15,6 +15,7 @@ import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.index.query.TermQueryBuilder;
 import org.opensearch.index.reindex.BulkByScrollResponse;
 import org.opensearch.index.reindex.DeleteByQueryRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.CommunicationMessageDto;
 import st.old.isis.extraction.configurations.OpenSearchConfiguration;
@@ -103,6 +104,7 @@ public class OpenSearchService {
     public BulkByScrollResponse deleteByQuery(@NonNull LocalDate importDate) throws IOException {
         DeleteByQueryRequest request = new DeleteByQueryRequest(configuration.getIndexPath());
         request.setQuery(new TermQueryBuilder("import_date", importDate.format(DateTimeFormatter.ISO_LOCAL_DATE)));
+        System.out.println(request);
         request.setRefresh(true);
         return restHighLevelClient.deleteByQuery(request, RequestOptions.DEFAULT);
     }
@@ -120,6 +122,27 @@ public class OpenSearchService {
         stringMapping.put("import_date", message.getImportDate().toString());
 
         return stringMapping;
+    }
+
+    @Async
+    public BulkByScrollResponse purgeByDate(@NonNull LocalDate dataDate){
+        log.info("Purging OpenSearch started for Historic Data with Import Date {}", dataDate);
+
+        RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
+                .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
+                .withBackoff(10, 30, ChronoUnit.SECONDS)
+                .withMaxRetries(3)
+                .onFailedAttempt(e -> log.warn("Purging attempt failed", e.getLastException()))
+                .onRetry(e -> log.warn("Failure #{}. Retrying purge process.", e.getAttemptCount()))
+                //TODO Send notification that a batch has failed
+                .onFailure(e -> log.error("FAILED - Indexing Batch to OpenSearch. Max retries reached. {}", e.getException()))
+                .build();
+
+        final var response =  Failsafe.with(retryPolicy).get(() -> deleteByQuery(dataDate));
+
+        log.info("Purging OpenSearch complete for Historic Data with Import Date {}", dataDate);
+
+        return response;
     }
 
 }

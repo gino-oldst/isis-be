@@ -29,4 +29,6 @@ public class HistoricDataDto implements Dto{
     private boolean expired;
 
     private String source;
+
+    private String historicDataStatus;
 }

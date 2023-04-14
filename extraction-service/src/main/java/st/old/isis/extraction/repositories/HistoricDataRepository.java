@@ -20,4 +20,6 @@ public interface HistoricDataRepository extends JpaRepository<HistoricData, Inte
 
     List<HistoricData> findByOrderByDateImportedDescDataDateAsc();
 
+    HistoricData findById(String id);
+
 }

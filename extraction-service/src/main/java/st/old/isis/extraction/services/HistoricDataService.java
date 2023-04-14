@@ -33,19 +33,17 @@ public class HistoricDataService {
         System.out.printf("Missing dates %s\n", missingDates);
         List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
         Set<LocalDate> allDates = new HashSet<>(datesBetween);
-        //System.out.printf("dates to import %s\n", allDates);
         allDates.removeAll(missingDates);
-//        System.out.println(missingDates);
         if (allDates.size() > 0) return false;
 
         return true;
     }
 
-    public HistoricDataDto createEntity(@NonNull @Audited final HistoricDataDto dto){
+    public HistoricData createEntity(@NonNull @Audited final HistoricDataDto dto){
         final var entity = mapToEntity(dto);
         final var createdEntity = repository.save(entity);
 
-        return mapToDto(createdEntity);
+        return createdEntity;
     }
 
     public HistoricDataDto create(@NonNull @Audited final LocalDate date, String userId, String source){
@@ -58,40 +56,44 @@ public class HistoricDataService {
                                 dateImported(today).
                                 source(source).
                                 expired(false).
+                                historicDataStatus("Downloading").
                                 build();
 
-        createEntity(dto);
-        return dto;
+        HistoricData entity = createEntity(dto);
+        return mapToDto(entity);
     }
 
-    public List<LocalDate> getAllUnexpiredDates(){
+    public List<HistoricDataDto> getAllUnexpiredDates(){
         List<HistoricData> unexpired = repository.findByExpired(false);
-        List<LocalDate> outputList = new ArrayList<>();
-        for(int i = 0; i< unexpired.size(); i++){
-            outputList.add(unexpired.get(i).getDataDate());
-        }
-        return outputList;
-    }
 
-    public List<HistoricDataDto> bulkCreate(LocalDate dateFrom, LocalDate dateTo, String userId, String source){
-        List<LocalDate> allDates = getDateRange(dateFrom, dateTo);
-        List<HistoricDataDto> returnDto = new ArrayList<HistoricDataDto>();
-        LocalDate today = LocalDate.now();
-        LocalDate expiry = today.plusMonths(1);
-        for(int i = 0; i < allDates.size(); i++){
-            HistoricDataDto dto = HistoricDataDto.builder().
-                                    userId(userId).
-                                    dataDate(allDates.get(i)).
-                                    dateExpiry(expiry).
-                                    dateImported(today).
-                                    expired(false).
-                                    source(source).
-                                    build();
-            returnDto.add(createEntity(dto));
+        List<HistoricDataDto> returnDtoList = new ArrayList<>();
+        for(int i = 0; i<unexpired.size(); i++){
+            returnDtoList.add(mapToDto(unexpired.get(i)));
         }
 
-        return returnDto;
+        return returnDtoList;
     }
+
+//    public List<HistoricDataDto> bulkCreate(LocalDate dateFrom, LocalDate dateTo, String userId, String source){
+//        List<LocalDate> allDates = getDateRange(dateFrom, dateTo);
+//        List<HistoricDataDto> returnDto = new ArrayList<HistoricDataDto>();
+//        LocalDate today = LocalDate.now();
+//        LocalDate expiry = today.plusMonths(1);
+//        for(int i = 0; i < allDates.size(); i++){
+//            HistoricDataDto dto = HistoricDataDto.builder().
+//                                    userId(userId).
+//                                    dataDate(allDates.get(i)).
+//                                    dateExpiry(expiry).
+//                                    dateImported(today).
+//                                    expired(false).
+//                                    source(source).
+//                                    historicDataStatus("Downloading").
+//                                    build();
+//            returnDto.add(createEntity(dto));
+//        }
+//
+//        return returnDto;
+//    }
 
     public Set<LocalDate> missingDates(LocalDate dateFrom, LocalDate dateTo, String source){
         List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
@@ -154,6 +156,7 @@ public class HistoricDataService {
             dateExpiry(entity.getDateExpiry()).
             expired(entity.isExpired()).
             source(entity.getSource()).
+            historicDataStatus(entity.getHistoricDataStatus()).
             build();
     }
 
@@ -166,6 +169,40 @@ public class HistoricDataService {
             dateExpiry(dto.getDateExpiry()).
             expired(dto.isExpired()).
             source(dto.getSource()).
+            historicDataStatus(dto.getHistoricDataStatus()).
             build();
+    }
+
+    public HistoricDataDto update(@NonNull HistoricDataDto dto){
+        HistoricData data = findById(dto.getId());
+
+        data.setHistoricDataStatus(dto.getHistoricDataStatus());
+        data.setExpired(dto.isExpired());
+        data.setDateExpiry(dto.getDateExpiry());
+
+        repository.save(data);
+
+        System.out.println(data);
+
+        return mapToDto(data);
+
+    }
+
+    public HistoricDataDto setStatusToDone(@NonNull HistoricDataDto dto){
+        HistoricData data = findById(dto.getId());
+
+        System.out.println(data);
+
+        data.setHistoricDataStatus("Done");
+
+        repository.save(data);
+
+        System.out.println(data);
+
+        return mapToDto(data);
+    }
+
+    private HistoricData findById(@NonNull String id) {
+        return repository.findById(id);
     }
 }

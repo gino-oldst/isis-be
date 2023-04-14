@@ -39,4 +39,7 @@ public class HistoricData implements Serializable {
   private boolean expired;
 
   private String source;
+
+  @Column(nullable=false, columnDefinition = "VARCHAR(255) default 'Done'")
+  private String historicDataStatus;
 }
