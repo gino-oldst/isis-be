@@ -418,6 +418,8 @@ public abstract class RawDownloadService {
 
         List<S3ObjectSummary> listOfSummaries = retrieveRawMessageDataFromSourceByDate(importDate);
 
+        System.out.println(listOfSummaries);
+
         listOfSummaries.stream().forEach(o -> {
             try {
                 inspectItem(o, importDate, source());
@@ -428,6 +430,27 @@ public abstract class RawDownloadService {
         });
 
         historicDataService.setStatusToDone(dto);
+    }
+
+    @Async
+    public void historicDownloadByDateRange(ProcessRequestDto request, List<HistoricDataDto> dtoList){
+        final var summariesMap = retrieveRawMessageDataFromSourceByDateRange(request);
+
+        summariesMap.keySet().stream().forEach(targetDate -> {
+            final var listOfSummaries = summariesMap.get(targetDate);
+            listOfSummaries.stream().forEach(o -> {
+                try {
+                    inspectItem(o, targetDate, source());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    sendDownloadingError(e);
+                }
+            });
+        });
+
+        for(int i = 0; i<dtoList.size(); i++){
+            historicDataService.setStatusToDone(dtoList.get(i));
+        }
     }
 
 }
