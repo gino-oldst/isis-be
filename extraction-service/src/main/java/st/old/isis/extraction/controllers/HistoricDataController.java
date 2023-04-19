@@ -35,7 +35,7 @@ public class HistoricDataController {
         if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Bloomberg")){
             System.out.println("all dates missing");
             List<HistoricDataDto> dtoList = historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Bloomberg");
-            bloombergRawDownloadService.historicDownloadByDateRange(request, dtoList);
+//            bloombergRawDownloadService.historicDownloadByDateRange(request, dtoList);
         }
         else{
             Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Bloomberg");
@@ -43,7 +43,7 @@ public class HistoricDataController {
             System.out.printf("Missing dates %s", missingDates);
             for(int i = 0; i < missingDates.size(); i++){
                 HistoricDataDto dto = historicDataService.create(datesToAdd[i], request.getUserId(), "Bloomberg");
-                bloombergRawDownloadService.historicDownload(datesToAdd[i], dto);
+//                bloombergRawDownloadService.historicDownload(datesToAdd[i], dto);
             }
         }
 
@@ -55,14 +55,14 @@ public class HistoricDataController {
         if(historicDataService.allDatesMissing(request.getDateFrom(), request.getDateTo(), "Reuters")){
             System.out.println("all dates missing");
             List<HistoricDataDto> dtoList =  historicDataService.bulkCreate(request.getDateFrom(), request.getDateTo(), request.getUserId(), "Reuters");
-            reutersRawDownloadService.historicDownloadByDateRange(request, dtoList);
+//            reutersRawDownloadService.historicDownloadByDateRange(request, dtoList);
         }
         else{
             Set<LocalDate> missingDates = historicDataService.missingDates(request.getDateFrom(), request.getDateTo(), "Reuters");
             LocalDate[] datesToAdd = missingDates.toArray(new LocalDate[0]);
             for(int i = 0; i < missingDates.size(); i++){
                 HistoricDataDto dto = historicDataService.create(datesToAdd[i], request.getUserId(), "Reuters");
-                reutersRawDownloadService.historicDownload(datesToAdd[i], dto);
+//                reutersRawDownloadService.historicDownload(datesToAdd[i], dto);
             }
         }
 

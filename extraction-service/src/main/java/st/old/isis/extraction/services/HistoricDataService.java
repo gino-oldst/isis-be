@@ -98,7 +98,8 @@ public class HistoricDataService {
 
     public Set<LocalDate> missingDates(LocalDate dateFrom, LocalDate dateTo, String source){
         List<LocalDate> datesBetween = getDateRange(dateFrom, dateTo);
-        List<HistoricData> availableData = repository.findByDataDateBetween(dateFrom, dateTo);
+        List<HistoricData> availableData = repository.findBySourceAndExpiredAndDataDateBetween(source, false, dateFrom, dateTo);
+//        System.out.println(repository.findBySourceAndExpiredAndDataDateBetween(source, false, dateFrom, dateTo));
         List<LocalDate> datesAvailable = new ArrayList<LocalDate>();
         for(int i = 0; i<availableData.size(); i++){
             HistoricDataDto dataDto = mapToDto(availableData.get(i));
@@ -206,4 +207,17 @@ public class HistoricDataService {
     private HistoricData findById(@NonNull String id) {
         return repository.findById(id);
     }
+
+    public void bulkDeleteStatus(LocalDate date){
+        List<HistoricData> dataList = repository.findByDataDate(date);
+        for(int i = 0; i < dataList.size(); i++){
+            System.out.println(dataList.get(i));
+            dataList.get(i).setExpired(true);
+            dataList.get(i).setHistoricDataStatus("Deleted");
+            System.out.println(dataList.get(i));
+            repository.save(dataList.get(i));
+        }
+    }
+
+
 }

@@ -12,7 +12,7 @@ import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
-import org.opensearch.index.query.TermQueryBuilder;
+import org.opensearch.index.query.*;
 import org.opensearch.index.reindex.BulkByScrollResponse;
 import org.opensearch.index.reindex.DeleteByQueryRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,9 +128,60 @@ public class OpenSearchService {
         return stringMapping;
     }
 
+    private BulkByScrollResponse deleteByQueries(@NonNull LocalDate dataDate, String source) throws IOException {
+        BoolQueryBuilder query = new BoolQueryBuilder();
+        query.must(new TermQueryBuilder("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)));
+//        System.out.println(query);
+        if(source.equalsIgnoreCase("REUTERS")){
+            System.out.println("Reuters");
+            query.must(new MatchPhraseQueryBuilder("source", "REUTERS"));
+//            System.out.println(query);
+        }
+        else if(source.equalsIgnoreCase("BLOOMBERG")){
+            query.must(new WildcardQueryBuilder("source", "BLOOMBERG_*"));
+        }
+
+        System.out.println(query);
+
+        DeleteByQueryRequest request = new DeleteByQueryRequest(configuration.getIndexPath());
+        if(source.equalsIgnoreCase("REUTERS")){
+            BoolQueryBuilder qb = QueryBuilders
+                    .boolQuery()
+                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+                    .must(QueryBuilders.matchQuery("source", "REUTERS"));
+
+            System.out.println(qb);
+            request.setQuery(QueryBuilders
+                    .boolQuery()
+                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+                    .must(QueryBuilders.matchQuery("source", "REUTERS")));
+        }
+        else if (source.equalsIgnoreCase("BLOOMBERG")){
+
+            BoolQueryBuilder qb2 = QueryBuilders
+                    .boolQuery()
+                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_MAIL"))
+                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_CHAT"))
+                    .minimumShouldMatch(1);
+
+            System.out.println(qb2);
+            request.setQuery(QueryBuilders
+                    .boolQuery()
+                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_MAIL"))
+                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_CHAT"))
+                    .minimumShouldMatch(1));
+        }
+        System.out.println(request);
+        request.setRefresh(true);
+
+        return restHighLevelClient.deleteByQuery(request, RequestOptions.DEFAULT);
+    }
+
     @Async
     public BulkByScrollResponse purgeByDate(@NonNull HistoricDataDto dto, LocalDate dataDate){
-        log.info("Purging OpenSearch started for Historic Data with Import Date {}", dataDate);
+        log.info("Purging OpenSearch started for Historic Data with Import Date {} and source {}", dataDate, dto.getSource());
 
         RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
                 .handle(IOException.class, ConnectException.class, SocketTimeoutException.class, OpenSearchStatusException.class)
@@ -141,12 +192,14 @@ public class OpenSearchService {
                 //TODO Send notification that a batch has failed
                 .onFailure(e -> log.error("FAILED - Indexing Batch to OpenSearch. Max retries reached. {}", e.getException()))
                 .build();
+        var firstRun = Failsafe.with(retryPolicy).get(()->deleteByQueries(dataDate, dto.getSource())); //need to run twice for larger data sets
+        final var response =  Failsafe.with(retryPolicy).get(() -> deleteByQueries(dataDate, dto.getSource()));
 
-        final var response =  Failsafe.with(retryPolicy).get(() -> deleteByQuery(dataDate));
-
-        log.info("Purging OpenSearch complete for Historic Data with Import Date {}", dataDate);
+        log.info("Purging OpenSearch complete for Historic Data with Import Date {} and source {}", dataDate, dto.getSource());
 
         historicDataService.setStatus(dto, "Deleted");
+
+//        historicDataService.bulkDeleteStatus(dto.getDataDate());
 
         return response;
     }
