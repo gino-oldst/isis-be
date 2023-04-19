@@ -129,43 +129,14 @@ public class OpenSearchService {
     }
 
     private BulkByScrollResponse deleteByQueries(@NonNull LocalDate dataDate, String source) throws IOException {
-        BoolQueryBuilder query = new BoolQueryBuilder();
-        query.must(new TermQueryBuilder("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)));
-//        System.out.println(query);
-        if(source.equalsIgnoreCase("REUTERS")){
-            System.out.println("Reuters");
-            query.must(new MatchPhraseQueryBuilder("source", "REUTERS"));
-//            System.out.println(query);
-        }
-        else if(source.equalsIgnoreCase("BLOOMBERG")){
-            query.must(new WildcardQueryBuilder("source", "BLOOMBERG_*"));
-        }
-
-        System.out.println(query);
-
         DeleteByQueryRequest request = new DeleteByQueryRequest(configuration.getIndexPath());
         if(source.equalsIgnoreCase("REUTERS")){
-            BoolQueryBuilder qb = QueryBuilders
-                    .boolQuery()
-                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
-                    .must(QueryBuilders.matchQuery("source", "REUTERS"));
-
-            System.out.println(qb);
             request.setQuery(QueryBuilders
                     .boolQuery()
                     .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
                     .must(QueryBuilders.matchQuery("source", "REUTERS")));
         }
         else if (source.equalsIgnoreCase("BLOOMBERG")){
-
-            BoolQueryBuilder qb2 = QueryBuilders
-                    .boolQuery()
-                    .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
-                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_MAIL"))
-                    .should(QueryBuilders.matchQuery("source", "BLOOMBERG_CHAT"))
-                    .minimumShouldMatch(1);
-
-            System.out.println(qb2);
             request.setQuery(QueryBuilders
                     .boolQuery()
                     .must(QueryBuilders.termQuery("import_date", dataDate.format(DateTimeFormatter.ISO_LOCAL_DATE)))
