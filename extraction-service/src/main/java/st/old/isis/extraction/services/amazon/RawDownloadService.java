@@ -429,7 +429,7 @@ public abstract class RawDownloadService {
             }
         });
 
-        historicDataService.setStatusToDone(dto);
+        historicDataService.setStatus(dto, "Done");
     }
 
     @Async
@@ -449,7 +449,7 @@ public abstract class RawDownloadService {
         });
 
         for(int i = 0; i<dtoList.size(); i++){
-            historicDataService.setStatusToDone(dtoList.get(i));
+            historicDataService.setStatus(dtoList.get(i), "Done");
         }
     }
 

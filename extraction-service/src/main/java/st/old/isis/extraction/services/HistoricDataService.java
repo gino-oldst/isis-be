@@ -189,12 +189,12 @@ public class HistoricDataService {
 
     }
 
-    public HistoricDataDto setStatusToDone(@NonNull HistoricDataDto dto){
+    public HistoricDataDto setStatus(@NonNull HistoricDataDto dto, String status){
         HistoricData data = findById(dto.getId());
 
         System.out.println(data);
 
-        data.setHistoricDataStatus("Done");
+        data.setHistoricDataStatus(status);
 
         repository.save(data);
 

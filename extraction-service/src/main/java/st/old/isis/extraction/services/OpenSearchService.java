@@ -15,9 +15,11 @@ import org.opensearch.client.RestHighLevelClient;
 import org.opensearch.index.query.TermQueryBuilder;
 import org.opensearch.index.reindex.BulkByScrollResponse;
 import org.opensearch.index.reindex.DeleteByQueryRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import st.old.isis.dto.storage.CommunicationMessageDto;
+import st.old.isis.dto.storage.HistoricDataDto;
 import st.old.isis.extraction.configurations.OpenSearchConfiguration;
 
 import java.io.IOException;
@@ -37,6 +39,8 @@ public class OpenSearchService {
 
     private final RestHighLevelClient restHighLevelClient;
     private final OpenSearchConfiguration configuration;
+    @Autowired
+    protected HistoricDataService historicDataService;
 
     public IndexResponse indexSingleMessage(CommunicationMessageDto message) throws IOException {
         return index(configuration.getIndexPath(), message);
@@ -125,7 +129,7 @@ public class OpenSearchService {
     }
 
     @Async
-    public BulkByScrollResponse purgeByDate(@NonNull LocalDate dataDate){
+    public BulkByScrollResponse purgeByDate(@NonNull HistoricDataDto dto, LocalDate dataDate){
         log.info("Purging OpenSearch started for Historic Data with Import Date {}", dataDate);
 
         RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
@@ -141,6 +145,8 @@ public class OpenSearchService {
         final var response =  Failsafe.with(retryPolicy).get(() -> deleteByQuery(dataDate));
 
         log.info("Purging OpenSearch complete for Historic Data with Import Date {}", dataDate);
+
+        historicDataService.setStatus(dto, "Deleted");
 
         return response;
     }

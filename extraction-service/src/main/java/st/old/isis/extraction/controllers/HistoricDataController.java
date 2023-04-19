@@ -80,7 +80,7 @@ public class HistoricDataController {
 
     @PutMapping("/purge-data")
     public HistoricDataDto purgeHistoricData(@NonNull @RequestBody final HistoricDataDto request){
-        openSearchService.purgeByDate(request.getDataDate());
+        openSearchService.purgeByDate(request, request.getDataDate());
         return historicDataService.update(request);
     }
 
